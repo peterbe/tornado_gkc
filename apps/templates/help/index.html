@@ -1,0 +1,32 @@
+{% extends "help_base.html" %}
+
+{% block content_inner %}
+
+<h1>Help</h1>
+
+<h2>Introduction video</h2>
+
+<iframe src="http://player.vimeo.com/video/16629401?autoplay=0" width="640" height="360" frameborder="0"></iframe>
+<p><a href="http://vimeo.com/16629401">Introduction to DoneCal.com</a> 
+on <a href="http://vimeo.com">Vimeo</a>.</p>
+
+
+<h2>Tagging</h2>
+<img src="{{ modules.StaticURL("images/tagging.png") }}" alt="Tagging" class="floatright inline">
+
+<p>With tagging you can separate events into different projects or categories. 
+A tag is a word that starts with an <code>@</code> or a <code>#</code> sign. 
+It can contain hyphens or underscores but not spaces.</p>
+
+<p>Don't worry about the case. Whichever way you spell it the last time, all other tags 
+care then rewritten in the same case.</p>
+
+
+<a name="bookmarklet"></a>
+<h2>Bookmarklet</h2>
+
+<iframe src="http://player.vimeo.com/video/17029739?title=0&amp;byline=0&amp;portrait=0" width="640" height="360" frameborder="0"></iframe>
+<p>Get your <a href="/help/Bookmarklet">Bookmarklet set up now</a>.</p>
+
+{% end %}
+

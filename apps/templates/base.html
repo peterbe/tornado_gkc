@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- revision: {{ git_revision }} -->
+        <title>{% block title %}GKC{% end %}</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="description" content="">
+        <meta name="keywords" content="">
+	<link rel="Shortcut Icon" href="{{ modules.StaticURL("images/favicon.ico") }}" type="image/x-icon">
+        {{ modules.Static("css/style.css", "css/ext/jquery.fancybox-1.3.2.css") }}
+        {% block extra_head_outer %}
+        {% block extra_head %}{% end %}
+        {% end %}
+
+{% block google_analytics %}
+{% if not debug %}
+<script type="text/javascript">
+</script>
+{% end %}
+{% end %}
+
+    </head>
+    <body>
+
+    {% block content %}
+
+    {% block h1 %}{% end %}
+
+
+    <div id="login" class="topnav">
+      {% if user %}
+      <p><a href="/user/account/" {% if user.premium %}title="You're a premium user!"{% end %} class="account">Hi {{ user_name }}</a>
+      <a href="/auth/logout/" class="log-out">log out</a></p>
+      {% else %}
+      <p><a href="/user/account/" class="account">Login &amp; registration</a></p>
+      {% end %}
+    </div>
+
+    <div id="wrap">
+
+            <div id="content_inner">
+            {% block content_inner %}
+            {% end %}
+            </div>
+
+      </div>
+
+
+      <div id="footer">
+        {{ modules.Footer(user=user) }}
+      </div>
+    </div>
+
+{{ modules.Settings(settings) }}
+
+<!-- basics needed to render the calendar -->
+{% block corejs %}
+{{ modules.Static("ext/head.load.min.js") }}
+<script type="text/javascript">
+head.js(JS_URLS.jquery, JS_URLS.fancybox, JS_URLS.base);
+</script>
+{% end %}
+
+
+{% block extrajs %}{% end %}
+
+
+    </body>
+</html>

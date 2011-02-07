@@ -1,0 +1,10 @@
+{% extends "../base.html" %}
+
+{% block title %}{{ modules.HelpPageTitle() }}{% end %}
+
+{% block sidebar %}
+<h3>See also</h3>
+<ul>
+  {{ modules.HelpSeeAlsoLinks() }}
+</ul>
+{% end %}

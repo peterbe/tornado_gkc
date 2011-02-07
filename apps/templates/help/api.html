@@ -1,0 +1,203 @@
+{% extends "help_base.html" %}
+
+{% block content_inner %}
+
+<h1>Developers' API</h1>
+
+<p>To begin with, to use the API you need to know your unique user key (also known as <code>guid</code>)</p>
+
+{% if guid %}
+  <p>
+  {% if user_name %}
+  For you, {{ user_name }},
+  {% else %}
+  For you, 
+  {% end %}
+  it's <code style="font-size:16px;font-weight:bold;">{{ guid }}</code>
+  </p>
+  {% if can_https %}
+  <p>And, because you're a <strong>premium</strong> user you can use HTTPS on all your API calls!
+  <img src="{{ modules.StaticURL("images/premium.png") }}" alt="Premium badge">
+  </p>
+  {% end %}
+{% else %}
+  <p>You will get a <code>guid</code> once you've created some events in the calendar or
+   if you have created an account and logged in.</p>
+  
+{% end %}
+
+<h3>To get your events</h3>
+
+<p><strong>URL:</strong>
+<code>/api/events[.json|.xml|.txt]?guid=$guid&amp;start=$timestamp_start&amp;end=$timstamp_end</code>
+</p>
+
+<p><strong>Example:</strong></p>
+
+<pre>$ curl "{{ base_url }}/api/events.json?guid={{ sample_guid }}&amp;start={{ sample_start_timestamp }}&amp;end={{ sample_end_timestamp }}"
+{"events": [...]}</pre>
+
+<p><strong>Note:</strong>
+The format (<code>.json</code>, <code>.xml</code> or <code>.txt</code>) is optional and defaults to <code>.json</code> if omitted.</p>
+
+<p><strong>Optional parameters:</strong></p>
+
+<ul>
+  <li><code>include_tags</code>
+   <ul>
+     <li><code>all</code> - will include a list of all your tags</li>
+     <li><code>yes</code> - will include a list of all tags matched in the interval supplied</li>
+   </ul>
+  </li>
+  <li><code>shares</code>
+   <ul>
+     <li>example <code>6e5b6de</code> - will include all non-editable events of that share key</li>
+     <li>another example <code>6e5b6de,b322n0</code> - multiple share keys comma separated</li>
+   </ul>
+  </li>  
+</ul>
+
+
+<h3>To post an event</h3>
+
+<p><strong>URL:</strong>
+<code>/api/events[.json|.xml|.txt]?guid=$guid&amp;title=$title&amp;date=$timestamp_date&amp;all_day=$bool</code>
+<br>or...<br>
+<code>/api/events[.json|.xml|.txt]?guid=$guid&amp;title=$title&amp;start=$timestamp_start&amp;end=$timestamp_end[&amp;all_day=$bool]</code>
+</p>
+
+<p><strong>Example:</strong></p>
+<pre>$ curl -X POST -d guid={{ sample_guid }} -d title="@api test" -d date={{ sample_start_timestamp }} -d all_day=true \
+ {{ base_url }}/api/events
+{"event": {"start": {{ sample_start_timestamp }},
+           "end": {{ sample_start_timestamp }},
+           "id": "4cb4f9f16da681526e000004",
+           "allDay": true},
+ "tags": ["@api"]}
+</pre>
+
+<p><strong>Note:</strong>
+The format (<code>.json</code>, <code>.xml</code> or <code>.txt</code>) is optional and defaults to <code>.json</code> if omitted.</p>
+
+<div id="rules-for-posting" style="display:none">
+<h2>About dates when posting</h2>
+<p>You can either just send the single parameter <code>date</code> or you send can send <code>start</code> and 
+<code>end</code>. If you use <code>start</code> <strong>and</strong> <code>end</code> the <code>end</code> 
+date has to greater or equal to the <code>start</code> date if it's <code>all_day=true</code> and if it's
+<code>all_day=false</code> the <code>end</code> date must be at least {{ minimum_day_minutes }} minutes apart.
+</p>
+</div>
+
+<p class="readmores">Read more: <a href="#Python">About using Python</a>, <a href="#rules-for-posting">About rules for posting</a></p>
+
+<div id="Python" style="display:none">
+<h2>Using Python</h2>
+
+<p>If you prefer you can use a simple Python package to wrap the HTTP
+calls. First you need to download and install <a
+href="http://pypi.python.org/pypi/python-donecal/">python-donecal</a>
+(<a href="http://github.com/peterbe/python-donecal">also on
+github.com</a>) or use your favorite package manager to install (e.g.
+<code>pip</code> or <code>easy_install</code>).</p>
+
+<div class="code">
+{{ modules.Syntax(code_pythondonecal_1, "python") }}
+</div>
+
+
+</div>
+
+{% end %}
+
+{% block extrajs %}
+<script type="text/javascript">
+$(function() {
+
+  $('.readmores a').click(function() {
+    if ($($(this).attr('href') + ':hidden').size()) {
+      $($(this).attr('href') + ':hidden').show();
+    } else {
+      $($(this).attr('href') + ':visible').hide();
+    }
+  });
+  
+  if (location.hash) {
+    $('.readmores a').each(function(i, e) {
+      if ($(e).attr('href') == location.hash) {
+        $(e).click();
+      }
+    });
+  }
+
+});
+</script>
+{% end %}
+
+
+{% block extra_head %}
+<style type="text/css">
+.highlight .hll { background-color: #ffffcc }
+.highlight  { background: #f8f8f8; }
+.highlight .c { color: #408080; font-style: italic } /* Comment */
+.highlight .err { border: 1px solid #FF0000 } /* Error */
+.highlight .k { color: #008000; font-weight: bold } /* Keyword */
+.highlight .o { color: #666666 } /* Operator */
+.highlight .cm { color: #408080; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #BC7A00 } /* Comment.Preproc */
+.highlight .c1 { color: #408080; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #408080; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #A00000 } /* Generic.Deleted */
+.highlight .ge { font-style: italic } /* Generic.Emph */
+.highlight .gr { color: #FF0000 } /* Generic.Error */
+.highlight .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #00A000 } /* Generic.Inserted */
+.highlight .go { color: #808080 } /* Generic.Output */
+.highlight .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.highlight .gs { font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.highlight .gt { color: #0040D0 } /* Generic.Traceback */
+.highlight .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.highlight .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.highlight .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.highlight .kp { color: #008000 } /* Keyword.Pseudo */
+.highlight .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.highlight .kt { color: #B00040 } /* Keyword.Type */
+.highlight .m { color: #666666 } /* Literal.Number */
+.highlight .s { color: #BA2121 } /* Literal.String */
+.highlight .na { color: #7D9029 } /* Name.Attribute */
+.highlight .nb { color: #008000 } /* Name.Builtin */
+.highlight .nc { color: #0000FF; font-weight: bold } /* Name.Class */
+.highlight .no { color: #880000 } /* Name.Constant */
+.highlight .nd { color: #AA22FF } /* Name.Decorator */
+.highlight .ni { color: #999999; font-weight: bold } /* Name.Entity */
+.highlight .ne { color: #D2413A; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #0000FF } /* Name.Function */
+.highlight .nl { color: #A0A000 } /* Name.Label */
+.highlight .nn { color: #0000FF; font-weight: bold } /* Name.Namespace */
+.highlight .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.highlight .nv { color: #19177C } /* Name.Variable */
+.highlight .ow { color: #AA22FF; font-weight: bold } /* Operator.Word */
+.highlight .w { color: #bbbbbb } /* Text.Whitespace */
+.highlight .mf { color: #666666 } /* Literal.Number.Float */
+.highlight .mh { color: #666666 } /* Literal.Number.Hex */
+.highlight .mi { color: #666666 } /* Literal.Number.Integer */
+.highlight .mo { color: #666666 } /* Literal.Number.Oct */
+.highlight .sb { color: #BA2121 } /* Literal.String.Backtick */
+.highlight .sc { color: #BA2121 } /* Literal.String.Char */
+.highlight .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.highlight .s2 { color: #BA2121 } /* Literal.String.Double */
+.highlight .se { color: #BB6622; font-weight: bold } /* Literal.String.Escape */
+.highlight .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.highlight .si { color: #BB6688; font-weight: bold } /* Literal.String.Interpol */
+.highlight .sx { color: #008000 } /* Literal.String.Other */
+.highlight .sr { color: #BB6688 } /* Literal.String.Regex */
+.highlight .s1 { color: #BA2121 } /* Literal.String.Single */
+.highlight .ss { color: #19177C } /* Literal.String.Symbol */
+.highlight .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.highlight .vc { color: #19177C } /* Name.Variable.Class */
+.highlight .vg { color: #19177C } /* Name.Variable.Global */
+.highlight .vi { color: #19177C } /* Name.Variable.Instance */
+.highlight .il { color: #666666 } /* Literal.Number.Integer.Long */
+
+</style>
+{% end %}

@@ -1,0 +1,62 @@
+<form action="/auth/login/" method="post" class="login standard">
+<!--<p><strong>Yes!</strong>
+I have a login.</p>-->
+<p>
+<!--<strong>No</strong>
+But I would like one.-->
+Already <strong>have an account</strong>
+</p>
+
+<div>
+<label>Email:</label>
+<input name="email" value=""><br>
+<label>Password:</label>
+<input type="password" name="password" value=""><br>
+<label>&nbsp;</label>
+<input type="submit" value="Log in">
+</div>
+{{ xsrf_form_html() }}
+</form>
+
+<p class="openid" style="float:right">
+Or just use... 
+<a style="padding-left:5px" href="/auth/openid/google/" title="Google"><img style="vertical-align:bottom" src="{{ modules.StaticURL("images/google_openid.png") }}" alt="Google OpenID"></a>
+</p>
+
+<p><!--<strong>Maybe</strong>-->
+<a href="/user/forgotten/" class="forgotten">Forgotten your password?</a></p>
+
+<form action="/user/signup/" method="post" id="signup" class="standard">
+<p>
+<!--<strong>No</strong>
+But I would like one.-->
+Create a <strong>new account</strong>
+</p>
+
+<div id="invalid-anything" style="display:none; margin-left:10px; color:red">
+  <p>There are still some errors in the form. Please have a look.</p>
+</div>
+
+<div id="invalid-email" style="display:none; margin-left:10px">
+  <p>Unfortunately that email is already used by someone else.<br>
+  You perhaps? <a href="/user/account/password/forgotten/">Click here if you forgot your password</a></p>
+</div>
+
+<div>
+<label>E-mail:</label>
+<input name="email" value=""><br>
+<label>Choose a password:</label>
+<input type="password" name="password" value=""><br>
+
+<label>First name:</label>
+<input name="first_name" value=""><br>
+
+<label>Last name:</label>
+<input name="last_name" value=""><br>
+
+<label>&nbsp;</label>
+<input type="submit" value="Create account">
+</div>
+
+{{ xsrf_form_html() }}
+</form>

@@ -1,0 +1,52 @@
+{% extends "help_base.html" %}
+
+{% block content_inner %}
+
+<h1>About</h1>
+
+<p>This app is a simple calendar. You can either use it to keep track of 
+future events or you can use it to record past events. A good use case
+is to use it as an calendar-based alternative to
+<strong>timesheets</strong>. It's
+<strong>free</strong> and all your data can be exported.</p>
+
+<p>You <strong>do not need an account</strong>. Until you have an account <strong>cookies are
+used</strong> to remember your events and if you use different computers (ie.
+different cookies) you can set up an account to save your events securely.</p>
+
+<p>You can <strong>share your calendar</strong> with other people simply by giving them
+your unique sharing URL.</p>
+
+<p>This web application was built by <a
+href="http://www.peterbe.com/">Peter Bengtsson</a> of <a
+href="http://www.fry-it.com/">Fry-IT</a>, London, England. Project
+started in September 2010.</p>
+
+<p>
+The following stack is being used to make things run:
+</p>
+
+<ul>
+  <li><a href="http://nginx.org/en/">Nginx</a> for the front web server</li>
+  <li><a href="http://www.tornadoweb.org/">Tornado</a> for the application server</li>
+  <li><a href="http://python.org/">Python</a> to run the application server</li>
+  <li><a href="http://www.mongodb.org/">MongoDB</a> for the database</li>
+  <li><a href="http://bitbucket.org/namlook/mongokit/wiki/Home">MongoKit</a> to connection Python to MongoDB</li>
+  <li><a href="http://jquery.com/">jQuery</a> for the client side rendering</li>
+  <li><a href="http://arshaw.com/fullcalendar/">FullCalendar</a> for rendering the main calendar</li>
+</ul>
+
+<p>Please please please send me feedback. Ideas, bug reports, praise, etc. <br>
+My email address is <a href="mailto:p" id="my-email-address">p</a>
+</p>
+
+{% end %}
+
+{% block extrajs %}
+<script type="text/javascript">
+$(function() {
+  var e = "mail" + "@" + "peterbe.com";
+  $('#my-email-address').attr('href', 'mailto:' + e).text(e);
+});
+</script>
+{% end %}
