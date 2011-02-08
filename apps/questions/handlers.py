@@ -11,5 +11,8 @@ class QuestionsHomeHandler(BaseHandler):
     def get(self):
         options = self.get_base_options()
         user = self.get_current_user()
-        superuser = user.email == 'peterbe@gmail.com'
+        if user:
+            superuser = user.email == 'peterbe@gmail.com'
+        else:
+            superuser = False
         self.render("questions/index.html", **options)

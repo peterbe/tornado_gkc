@@ -20,7 +20,6 @@ import tornado.web
 # app
 from utils.routes import route, route_redirect
 from models import *
-from utils.datatoxml import dict_to_xml
 from utils.send_mail import send_email
 from utils.decorators import login_required
 from utils import parse_datetime, niceboolean, \
@@ -133,7 +132,7 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
     def get_current_user(self):
         # the 'user' cookie is for securely logged in people
         user_id = self.get_secure_cookie("user")
-        if guid:
+        if user_id:
             return self.db.User.one({'_id': ObjectId(user_id)})
 
     # shortcut where the user parameter is not optional
