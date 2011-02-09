@@ -7,11 +7,9 @@ import simplejson as json
 
 from base import BaseHTTPTestCase
 from utils import encrypt_password
-#from apps.main.models import Event, User, Share
 import utils.send_mail as mail
-from apps.main.config import MINIMUM_DAY_SECONDS
 
-class ApplicationTestCase(BaseHTTPTestCase):
+class HandlersTestCase(BaseHTTPTestCase):
 
     def test_homepage(self):
         response = self.get('/')
@@ -93,45 +91,45 @@ class ApplicationTestCase(BaseHTTPTestCase):
         db = self.get_db()
 
         user = db.User()
-        user.email = u"peter@fry-it.com"
+        user.username = u"peter"
         user.first_name = u"Ptr"
         user.password = encrypt_password(u"secret")
         user.save()
 
         other_user = db.User()
-        other_user.email = u'peterbe@gmail.com'
+        other_user.username = u'peterbe'
         other_user.save()
 
-        data = dict(email=user.email, password="secret")
+        data = dict(username=user.username, password="secret")
         response = self.post('/auth/login/', data, follow_redirects=False)
         self.assertEqual(response.code, 302)
         user_cookie = self.decode_cookie_value('user', response.headers['Set-Cookie'])
         guid = base64.b64decode(user_cookie.split('|')[0])
-        self.assertEqual(user.guid, guid)
+        self.assertEqual(user.username, u'peter')
         cookie = 'user=%s;' % user_cookie
 
-        response = self.get('/user/account/', headers={'Cookie':cookie})
+        response = self.get('/user/', headers={'Cookie':cookie})
         self.assertEqual(response.code, 200)
         self.assertTrue('value="Ptr"' in response.body)
 
         # not logged in
-        response = self.post('/user/account/', {})
+        response = self.post('/user/', {})
         self.assertEqual(response.code, 403)
 
-        # no email supplied
-        response = self.post('/user/account/', {}, headers={'Cookie':cookie})
+        # no username supplied
+        response = self.post('/user/', {}, headers={'Cookie':cookie})
         self.assertEqual(response.code, 404)
 
-        data = {'email':'bob'}
-        response = self.post('/user/account/', data, headers={'Cookie':cookie})
+        data = {'username':'  '}
+        response = self.post('/user/', data, headers={'Cookie':cookie})
         self.assertEqual(response.code, 400)
 
-        data = {'email':'PETERBE@gmail.com'}
-        response = self.post('/user/account/', data, headers={'Cookie':cookie})
-        self.assertEqual(response.code, 400)
+        #data = {'email':'PETERBE@gmail.com'}
+        #response = self.post('/user/account/', data, headers={'Cookie':cookie})
+        #self.assertEqual(response.code, 400)
 
-        data = {'email':'bob@test.com', 'last_name': '  Last Name \n'}
-        response = self.post('/user/account/', data, headers={'Cookie':cookie},
+        data = {'username':'bob', 'email':'bob@test.com', 'last_name': '  Last Name \n'}
+        response = self.post('/user/', data, headers={'Cookie':cookie},
                              follow_redirects=False)
         self.assertEqual(response.code, 302)
 
@@ -164,44 +162,6 @@ class ApplicationTestCase(BaseHTTPTestCase):
         response = self.get('/help/Bookmarklet')
         self.assertEqual(response.code, 200)
         self.assertTrue('Bookmarklet' in response.body)
-
-        # API
-        response = self.get('/help/API')
-        self.assertEqual(response.code, 200)
-        self.assertTrue('API' in response.body)
-
-        # start using the app and the API page will be different
-        today = datetime.date.today()
-        data = {'title': "Foo",
-                'date': mktime(today.timetuple()),
-                'all_day': 'yes'}
-        response = self.post('/events/', data)
-        self.assertEqual(response.code, 200)
-        guid_cookie = self.decode_cookie_value('guid', response.headers['Set-Cookie'])
-        cookie = 'guid=%s;' % guid_cookie
-        guid = base64.b64decode(guid_cookie.split('|')[0])
-
-        response = self.get('/help/API', headers={'Cookie':cookie})
-        self.assertEqual(response.code, 200)
-        self.assertTrue(guid in response.body)
-        self.assertTrue(response.body.split('<body')[1].count('https://') == 0)
-
-        # now log in as a wealthy premium user
-        db = self.get_db()
-        user = db.User()
-        user.email = u"test@test.com"
-        user.premium = True
-        user.set_password('secret')
-        user.save()
-
-        data = dict(email=user.email, password="secret")
-        response = self.post('/auth/login/', data, follow_redirects=False)
-        self.assertEqual(response.code, 302)
-        user_cookie = self.decode_cookie_value('user', response.headers['Set-Cookie'])
-        cookie = 'user=%s;' % user_cookie
-        response = self.get('/help/API', headers={'Cookie':cookie})
-        self.assertEqual(response.code, 200)
-        self.assertTrue(response.body.count('https://') >= 1)
 
 
     def test_reset_password(self):

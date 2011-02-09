@@ -190,7 +190,7 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
 
     def find_user(self, username):
         return self.db.User.one(dict(username=\
-         re.compile(re.escape(username), re.I)))
+         re.compile('^%s$' % re.escape(username), re.I)))
 
     def has_user(self, username):
         return bool(self.find_user(username))
@@ -276,9 +276,10 @@ class UserSettingsHandler(BaseHandler):
     def post(self, format=None):
         user = self.get_current_user()
         if not user:
-            user = self.db.User()
-            user.save()
-            self.set_secure_cookie("guid", str(user.guid), expires_days=100)
+            raise tornado.web.HTTPError(403, "Not logged in yet")
+            #user = self.db.User()
+            #user.save()
+            #self.set_secure_cookie("user", str(user.guid), expires_days=100)
 
         user_settings = self.get_current_user_settings(user)
         if user_settings:
@@ -313,8 +314,9 @@ class UserSettingsHandler(BaseHandler):
 @route('/user/$')
 class AccountHandler(BaseHandler):
     def get(self):
-        if self.get_secure_cookie('user'):
-            user = self.db.User.one(dict(guid=self.get_secure_cookie('user')))
+        user_id = self.get_secure_cookie('user')
+        if user_id:
+            user = self.db.User.one(dict(_id=ObjectId(user_id)))
             if not user:
                 return self.write("Error. User does not exist")
             options = dict(
@@ -329,12 +331,12 @@ class AccountHandler(BaseHandler):
 
     @login_required
     def post(self):
-        email = self.get_argument('username').strip()
-        email = self.get_argument('email').strip()
+        username = self.get_argument('username').strip()
+        email = self.get_argument('email', u"").strip()
         first_name = self.get_argument('first_name', u"").strip()
         last_name = self.get_argument('last_name', u"").strip()
 
-        if not valid_email(email):
+        if email and not valid_email(email):
             raise tornado.web.HTTPError(400, "Not a valid email address")
 
         user = self.get_current_user()
@@ -343,9 +345,10 @@ class AccountHandler(BaseHandler):
         if existing_user and existing_user != user:
             raise tornado.web.HTTPError(400, "Username already used by someone else")
 
-        existing_user = self.find_user_by_email(email)
-        if existing_user and existing_user != user:
-            raise tornado.web.HTTPError(400, "Email address already used by someone else")
+        if email:
+            existing_user = self.find_user_by_email(email)
+            if existing_user and existing_user != user:
+                raise tornado.web.HTTPError(400, "Email address already used by someone else")
 
         user.username = username
         user.email = email
@@ -451,8 +454,7 @@ class RecoverForgottenPasswordHandler(ForgottenPasswordHandler):
         user.set_password(new_password)
         user.save()
 
-        #self.set_secure_cookie("guid", str(user.guid), expires_days=100)
-        self.set_secure_cookie("user", str(user.guid), expires_days=100)
+        self.set_secure_cookie("user", str(user._id), expires_days=100)
 
         self.redirect("/")
 
@@ -553,7 +555,7 @@ class SignupHandler(BaseAuthHandler):
         self.notify_about_new_user(user)
 
         #self.set_secure_cookie("guid", str(user.guid), expires_days=100)
-        self.set_secure_cookie("user", str(user.guid), expires_days=100)
+        self.set_secure_cookie("user", str(user._id), expires_days=100)
 
         self.redirect('/')
 
@@ -565,8 +567,8 @@ class CredentialsError(Exception):
 @route('/auth/login/')
 class AuthLoginHandler(BaseAuthHandler):
 
-    def check_credentials(self, email, password):
-        user = self.find_user(email)
+    def check_credentials(self, username, password):
+        user = self.find_user(username)
         if not user:
             # The reason for this sleep is that if a hacker tries every single
             # brute-force email address he can think of he would be able to
@@ -582,15 +584,15 @@ class AuthLoginHandler(BaseAuthHandler):
 
 
     def post(self):
-        email = self.get_argument('email')
+        username = self.get_argument('username')
         password = self.get_argument('password')
         try:
-            user = self.check_credentials(email, password)
+            user = self.check_credentials(username, password)
         except CredentialsError, msg:
             return self.write("Error: %s" % msg)
 
         #self.set_secure_cookie("guid", str(user.guid), expires_days=100)
-        self.set_secure_cookie("user", str(user.guid), expires_days=100)
+        self.set_secure_cookie("user", str(user._id), expires_days=100)
 
         self.redirect(self.get_next_url())
         #if self.request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -639,7 +641,7 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
 
             self.notify_about_new_user(user, extra_message="Used Google OpenID")
 
-        self.set_secure_cookie("user", str(user.guid), expires_days=100)
+        self.set_secure_cookie("user", str(user._id), expires_days=100)
 
         self.redirect(self.get_next_url())
 

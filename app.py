@@ -110,12 +110,14 @@ class Application(tornado.web.Application):
             except AttributeError:
                 # this app simply doesn't have a models.py file
                 continue
+
             for name in [x for x in dir(models) if re.findall('[A-Z]\w+', x)]:
                 thing = getattr(models, name)
-                if type(thing) != types.ClassType:
-                    continue
-                if issubclass(thing, mongokit_Document):
-                    model_classes.append(thing)
+                try:
+                    if issubclass(thing, mongokit_Document):
+                        model_classes.append(thing)
+                except TypeError:
+                    pass
 
         self.con.register(model_classes)
 
