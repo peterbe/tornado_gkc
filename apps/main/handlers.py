@@ -9,6 +9,7 @@ from collections import defaultdict
 from pymongo.objectid import InvalidId, ObjectId
 from time import mktime, sleep
 import datetime
+from urllib import quote
 import os.path
 import re
 import logging
@@ -186,11 +187,13 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
                 data[key] = mktime(value.timetuple())
         return data
 
-
-
     def find_user(self, username):
         return self.db.User.one(dict(username=\
          re.compile('^%s$' % re.escape(username), re.I)))
+
+    def find_user_by_email(self, email):
+        return self.db.User.one(dict(email=\
+         re.compile('^%s$' % re.escape(email), re.I)))
 
     def has_user(self, username):
         return bool(self.find_user(username))
@@ -336,6 +339,9 @@ class AccountHandler(BaseHandler):
         first_name = self.get_argument('first_name', u"").strip()
         last_name = self.get_argument('last_name', u"").strip()
 
+        if not username:
+            raise tornado.web.HTTPError(400, "Username invalid")
+
         if email and not valid_email(email):
             raise tornado.web.HTTPError(400, "Not a valid email address")
 
@@ -366,11 +372,13 @@ class ForgottenPasswordHandler(BaseHandler):
 
     def get(self, error=None, success=None):
         options = self.get_base_options()
-        options['error'] = error
-        options['success'] = success
+        options['error'] = error and error or \
+          self.get_argument('error', None)
+        options['success'] = success and success or \
+          self.get_argument('success', None)
         self.render("user/forgotten.html", **options)
 
-#    @tornado.web.asynchronous
+    #@tornado.web.asynchronous
     def post(self):
         email = self.get_argument('email')
         if not valid_email(email):
@@ -395,17 +403,23 @@ class ForgottenPasswordHandler(BaseHandler):
         #if not isinstance(email_body, unicode):
         #    email_body = unicode(email_body, 'utf-8')
 
-        try:
+        if 1:#try:
             assert send_email(self.application.settings['email_backend'],
                       "Password reset for on %s" % self.application.settings['title'],
                       email_body,
                       self.application.settings['webmaster'],
                       [existing_user.email])
 
-        finally:
-            self.finish()
+            self.redirect('/user/forgotten/?success=%s' %
+              quote("Password reset instructions sent to %s" % \
+              existing_user.email)
+            )
+            #self.get(success="Password reset instructions sent to %s" % \
+            #  existing_user.email)
+        #finally:
 
-        return self.get(success="Password reset instructions sent to %s" % existing_user.email)
+        #self.finish()
+
 
     ORIGIN_DATE = datetime.date(2000, 1, 1)
 
@@ -510,12 +524,9 @@ class BaseAuthHandler(BaseHandler):
 class SignupHandler(BaseAuthHandler):
 
     def get(self):
-        if self.get_argument('validate_email', None):
-            # some delay to make brute-force testing boring
-            sleep(0.5) # XXX This needs to be converted into an async call!
-
-            email = self.get_argument('validate_email').strip()
-            if self.has_user(email):
+        if self.get_argument('validate_username', None):
+            username = self.get_argument('validate_username').strip()
+            if self.has_user(username):
                 result = dict(error='taken')
             else:
                 result = dict(ok=True)
@@ -524,14 +535,15 @@ class SignupHandler(BaseAuthHandler):
             raise tornado.web.HTTPError(404, "Nothing to check")
 
     def post(self):
-        email = self.get_argument('email')
+        username = self.get_argument('username', u'').strip()
+        email = self.get_argument('email', u'').strip()
         password = self.get_argument('password')
-        first_name = self.get_argument('first_name', u'')
-        last_name = self.get_argument('last_name', u'')
+        first_name = self.get_argument('first_name', u'').strip()
+        last_name = self.get_argument('last_name', u'').strip()
 
-        if not email:
-            return self.write("Error. No email provided")
-        elif not valid_email(email):
+        if not username:
+            return self.write("Error. No username provided")
+        if email and not valid_email(email):
             raise tornado.web.HTTPError(400, "Not a valid email address")
         if not password:
             return self.write("Error. No password provided")
@@ -545,7 +557,7 @@ class SignupHandler(BaseAuthHandler):
         user = self.get_current_user()
         if not user:
             user = self.db.User()
-            user.save()
+        user.username = username
         user.email = email
         user.set_password(password)
         user.first_name = first_name
@@ -554,7 +566,6 @@ class SignupHandler(BaseAuthHandler):
 
         self.notify_about_new_user(user)
 
-        #self.set_secure_cookie("guid", str(user.guid), expires_days=100)
         self.set_secure_cookie("user", str(user._id), expires_days=100)
 
         self.redirect('/')
