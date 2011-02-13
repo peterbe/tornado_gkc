@@ -4,3 +4,4 @@ mongokit>=0.5.13-dev
 pycurl
 pymongo>=1.9
 simplejson
+wtforms

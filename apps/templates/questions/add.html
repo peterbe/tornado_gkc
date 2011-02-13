@@ -1,0 +1,34 @@
+{% extends "../base.html" %}
+
+{% block content_inner %}
+
+<h1>Add question</h1>
+
+{% if form.errors %}
+    <ul class="errors">
+        {% for field_name, field_errors in [(n,e) for (n,e) in form.errors if e] %}
+            {% for error in field_errors %}
+                <li>{{ form[field_name].label }}: {{ error }}</li>
+            {% end %}
+        {% end %}
+    </ul>
+{% end %}
+
+
+<table>
+{% for field in form %}
+  <tr>
+    <td class="label">{{ field.label }}</td>
+    <td class="input">{{ field() }}
+    {% if field.errors %}
+       <ul class="errors">{% for error in field.errors %}<li>{{ error }}</li>{% end %}</ul>
+    {% end %}
+    </td>
+  </tr>
+{% end %}
+</table>
+<div><input type="submit" value="Add question"></div>
+
+<p><a href="/questions/">Questions home page</a></p>
+
+{% end %}
