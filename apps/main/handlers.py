@@ -675,7 +675,7 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
         #    raise tornado.web.HTTPError(500, "No email provided")
         username = user.get('username')
         #locale = user.get('locale') # not sure what to do with this yet
-        first_name = user.get('first_name')
+        first_name = user.get('first_name', user.get('name'))
         last_name = user.get('last_name')
         email = user.get('email')
         access_token = user['access_token']['key']
@@ -696,6 +696,12 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
             user.save()
 
             self.notify_about_new_user(user, extra_message="Used Twitter")
+        else:
+            if first_name:
+                user.first_name = first_name
+            if last_name:
+                user.last_name = last_name
+            user.save()
 
         user_settings = self.get_user_settings(user)
         if not user_settings:
