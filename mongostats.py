@@ -34,7 +34,7 @@ function (key, values) {
 
 # set these appropriately for your connection & database
 connection = pymongo.Connection("localhost", slave_okay=True)
-database = connection.worklog
+database = connection.gkc
 
 # find all collections in the database
 collnames = database.collection_names()

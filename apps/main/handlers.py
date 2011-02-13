@@ -612,7 +612,7 @@ class AuthLoginHandler(BaseAuthHandler):
         #    self.redirect(self.get_next_url())
 
 
-@route('/auth/openid/google/')
+@route('/auth/google/')
 class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
     @tornado.web.asynchronous
     def get(self):
@@ -656,6 +656,57 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
 
         self.redirect(self.get_next_url())
 
+
+@route('/auth/twitter/')
+class GoogleAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
+    @tornado.web.asynchronous
+    def get(self):
+        if self.get_argument("oauth_token", None):
+            self.get_authenticated_user(self.async_callback(self._on_auth))
+            return
+        self.authenticate_redirect()
+
+    def _on_auth(self, user):
+        if not user:
+            raise tornado.web.HTTPError(500, "Twitter auth failed")
+        from pprint import pprint
+        pprint(user)
+        #if not user.get('email'):
+        #    raise tornado.web.HTTPError(500, "No email provided")
+        username = user.get('username')
+        #locale = user.get('locale') # not sure what to do with this yet
+        first_name = user.get('first_name')
+        last_name = user.get('last_name')
+        email = user.get('email')
+        access_token = user['access_token']['key']
+        profile_image_url = user.get('profile_image_url', None)
+
+        user = self.find_user(username)
+
+        if not user:
+            # create a new account
+            user = self.db.User()
+            user.username = username
+            user.email = email
+            if first_name:
+                user.first_name = first_name
+            if last_name:
+                user.last_name = last_name
+            user.set_password(random_string(20))
+            user.save()
+
+            self.notify_about_new_user(user, extra_message="Used Twitter")
+
+        user_settings = self.get_user_settings(user)
+        if not user_settings:
+            user_settings = self.create_user_settings(user)
+        user_settings['twitter_access_token'] = unicode(access_token)
+        if profile_image_url:
+            user_settings['twitter_profile_image_url'] = unicode(profile_image_url)
+        user_settings.save()
+
+        self.set_secure_cookie("user", str(user._id), expires_days=100)
+        self.redirect(self.get_next_url())
 
 
 @route(r'/auth/logout/')

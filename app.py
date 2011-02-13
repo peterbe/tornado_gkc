@@ -25,7 +25,7 @@ from utils.git import get_git_revision
 
 define("debug", default=False, help="run in debug mode", type=bool)
 define("port", default=8000, help="run on the given port", type=int)
-define("database_name", default="worklog", help="mongodb database name")
+define("database_name", default="gkc", help="mongodb database name")
 define("prefork", default=False, help="pre-fork across all CPUs", type=bool)
 define("showurls", default=False, help="Show all routed URLs", type=bool)
 define("dont_combine", default=False, help="Don't combine static resources", type=bool)
@@ -94,6 +94,9 @@ class Application(tornado.web.Application):
                                       "static", "yuicompressor-2.4.2.jar"),
             UNDOER_GUID=u'UNDOER', # must be a unicode string
             cdn_prefix=cdn_prefix,
+            twitter_consumer_key=settings.TWITTER_CONSUMER_KEY,
+            twitter_consumer_secret=settings.TWITTER_CONSUMER_SECRET,
+
         )
         tornado.web.Application.__init__(self, handlers, **app_settings)
 
