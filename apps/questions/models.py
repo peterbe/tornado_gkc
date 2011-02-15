@@ -11,6 +11,7 @@ class Question(BaseDocument):
       'genre': unicode,
       'spell_correct': bool,
       'published': bool,
+      'comment': unicode,
     }
 
 SUBMITTED = u"SUBMITTED"

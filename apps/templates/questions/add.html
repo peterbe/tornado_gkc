@@ -1,20 +1,28 @@
 {% extends "../base.html" %}
 
+{% block extra_head %}
+{{ modules.Static("css/question_input.css") }}
+{% end %}
+
+{% block extra_js %}
+{{ modules.Static("js/question_input.js") }}
+{% end %}
+
 {% block content_inner %}
 
 <h1>Add question</h1>
 
 {% if form.errors %}
     <ul class="errors">
-        {% for field_name, field_errors in [(n,e) for (n,e) in form.errors if e] %}
+        {% for field_name, field_errors in [(n,form.errors[n]) for n in form.errors if form.errors[n]] %}
             {% for error in field_errors %}
-                <li>{{ form[field_name].label }}: {{ error }}</li>
+                <li>{{ form[field_name].label }} {{ error }}</li>
             {% end %}
         {% end %}
     </ul>
 {% end %}
 
-
+<form action="" method="post">{{ xsrf_form_html() }}
 <table>
 {% for field in form %}
   <tr>
@@ -28,6 +36,7 @@
 {% end %}
 </table>
 <div><input type="submit" value="Add question"></div>
+</form>
 
 <p><a href="/questions/">Questions home page</a></p>
 

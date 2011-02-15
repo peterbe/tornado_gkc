@@ -27,11 +27,26 @@ class AddQuestionHandler(BaseHandler):
         if form is None:
             form = QuestionForm(alternatives='a\nb\nc')
         options['form'] = form
-        #for x in iter(form):
-        #    #print type(x)
-        #    print x.label
         self.render("questions/add.html", **options)
 
     def post(self):
-        form = QuestionForm(self.request.arguments)
-        raise Exception
+        data = djangolike_request_dict(self.request.arguments)
+        if 'alternatives' in data:
+            data['alternatives'] = ['\n'.join(data['alternatives'])]
+        form = QuestionForm(data)
+        if form.validate():
+            print "text", repr(form.text.data)
+            print "answer", repr(form.answer.data)
+            print "accept", repr(form.accept.data)
+            print "alternatives", repr(form.alternatives.data.splitlines())
+            print "genre", repr(form.genre.data)
+            print "spell_correct", repr(form.spell_correct.data)
+            print "comment", repr(form.comment.data)
+            raise Exception
+        else:
+            self.get(form=form)
+
+class djangolike_request_dict(dict):
+    def getlist(self, key):
+        value = self.get(key)
+        return self.get(key)
