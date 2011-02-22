@@ -21,13 +21,15 @@ class MultilinesWidget(object):
             values = [x.strip() for x in value.splitlines() if x.strip()]
         else:
             values = value
-            print "V", value
         #print "__call__ values", repr(values)
         for i in range(self.length):
-            try:
-                value = values[i]
-            except IndexError:
+            if values is None:
                 value = u''
+            else:
+                try:
+                    value = values[i]
+                except IndexError:
+                    value = u''
             kwargs['value'] = value
             html = '<input %s />' % html_params(name=field.name, **kwargs)
             htmls.append(html)
@@ -35,7 +37,16 @@ class MultilinesWidget(object):
                 htmls.append('<br/>')
         return '\n'.join(htmls)
 
-class QuestionForm(Form):
+class BaseForm(Form):
+    def validate(self, *args, **kwargs):
+        for name, f in self._fields.iteritems():
+            if isinstance(f.data, str):
+                f.data = unicode(f.data, 'utf-8')
+            if isinstance(f.data, basestring):
+                f.data = f.data.strip()
+        return super(BaseForm, self).validate(*args, **kwargs)
+
+class QuestionForm(BaseForm):
     text = TextField("Text", [validators.Required(),
                               validators.Length(min=5, max=100)],
                      id="id_text")
@@ -48,3 +59,6 @@ class QuestionForm(Form):
     genre = TextField("Genre", [validators.Required()])
     spell_correct = BooleanField("Spell correct", description="Whether small spelling mistakes should be accepted")
     comment = TextAreaField("Comment")
+
+class EditQuestionForm(QuestionForm):
+    pass

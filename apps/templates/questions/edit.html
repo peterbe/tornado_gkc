@@ -1,0 +1,43 @@
+{% extends "../base.html" %}
+
+{% block extra_head %}
+{{ modules.Static("css/question_input.css") }}
+{% end %}
+
+{% block extra_js %}
+{{ modules.Static("js/question_input.js") }}
+{% end %}
+
+{% block content_inner %}
+
+<h1>Edit question</h1>
+
+{% if form.errors %}
+    <ul class="errors">
+        {% for field_name, field_errors in [(n,form.errors[n]) for n in form.errors if form.errors[n]] %}
+            {% for error in field_errors %}
+                <li>{{ form[field_name].label }} {{ error }}</li>
+            {% end %}
+        {% end %}
+    </ul>
+{% end %}
+
+<form action="" method="post">{{ xsrf_form_html() }}
+<table>
+{% for field in form %}
+  <tr>
+    <td class="label">{{ field.label }}</td>
+    <td class="input">{{ field() }}
+    {% if field.errors %}
+       <ul class="errors">{% for error in field.errors %}<li>{{ error }}</li>{% end %}</ul>
+    {% end %}
+    </td>
+  </tr>
+{% end %}
+</table>
+<div><input type="submit" value="Save question"></div>
+</form>
+
+<p><a href="/questions/">Questions home page</a></p>
+
+{% end %}

@@ -1,18 +1,12 @@
 import datetime
 from apps.main.models import BaseDocument, User
 
-class Question(BaseDocument):
-    __collection__ = 'questions'
+class Genre(BaseDocument):
+    __collection__ = 'question_genres'
     structure = {
-      'text': unicode,
-      'answer': unicode,
-      'accept': [unicode],
-      'alternatives': [unicode],
-      'genre': unicode,
-      'spell_correct': bool,
-      'published': bool,
-      'comment': unicode,
+      'name': unicode,
     }
+
 
 SUBMITTED = u"SUBMITTED"
 REJECTED = u"REJECTED"
@@ -20,21 +14,27 @@ ACCEPTED = u"ACCEPTED"
 PUBLISHED = u"PUBLISHED"
 STATES = SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
 
-class QuestionWorkflow(BaseDocument):
-    __collection__ = 'question_workflow'
+
+class Question(BaseDocument):
+    __collection__ = 'questions'
     structure = {
-      'question': Question,
+      'text': unicode,
+      'answer': unicode,
+      'accept': [unicode],
+      'alternatives': [unicode],
+      'genre': Genre,
+      'spell_correct': bool,
+      'comment': unicode,
       'author': User,
       'state': unicode, # e.g. 'PUBLISHED'
       'submit_date': datetime.datetime,
       'reject_date': datetime.datetime,
+      'reject_comment': unicode,
       'accept_date': datetime.datetime,
       'publish_date': datetime.datetime,
     }
 
     indexes = [
-      {'fields': 'question',
-       'unique': True},
       {'fields': 'state'},
     ]
 
