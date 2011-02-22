@@ -11,26 +11,45 @@ class LoginError(Exception):
 
 
 class HandlersTestCase(BaseHTTPTestCase):
+    def _login(self):
+        user = self.get_db().Users.one(username='peterbe')
+        if user:
+            raise NotImplementedError
+        else:
+            data = dict(username="peterbe",
+                        email="mail@peterbe.com",
+                        password="secret",
+                        first_name="Peter",
+                        last_name="Bengtsson")
+            response = self.post('/user/signup/', data, follow_redirects=False)
+            user_cookie = self.decode_cookie_value('user', response.headers['Set-Cookie'])
+            user_id = base64.b64decode(user_cookie.split('|')[0])
+            cookie = 'user=%s;' % user_cookie
+        user = self.get_db().User.one(username='peterbe')
+        assert user
+        return cookie
+
+    def test_questions_shortcut(self):
+        cookie = self._login() # using fixtures
+
+        url = self.reverse_url('questions_shortcut')
+        response = self.get(url, follow_redirects=False,
+                            headers={'Cookie':cookie})
+        self.assertEqual(response.code, 301)
+        redirected_to = response.headers['Location']
+        url = self.reverse_url('questions')
+        self.assertTrue(redirected_to.endswith(url))
+
+
 
     def test_adding_question(self):
         # first sign up
-        data = dict(username="peter",
-                    email="peterbe@gmail.com",
-                    password="secret",
-                    first_name="Peter",
-                    last_name="Bengtsson")
-        response = self.post('/user/signup/', data, follow_redirects=False)
-        user_cookie = self.decode_cookie_value('user', response.headers['Set-Cookie'])
-        user_id = base64.b64decode(user_cookie.split('|')[0])
-        cookie = 'user=%s;' % user_cookie
-        self.assertEqual(response.code, 302)
-        user = self.get_db().User.one(username='peter')
+        cookie = self._login()
+        user = self.get_db().User.one(username='peterbe')
         assert user
-        self.assertEqual(str(user._id), user_id)
 
-        print
-        response = self.get(self._app.reverse_url("add_question"),
-                            headers={'Cookie':cookie})
+        url = self.reverse_url('add_question')
+        response = self.get(url, headers={'Cookie':cookie})
         self.assertEqual(response.code, 200)
 
         assert not self.get_db().Question.find().count()
@@ -42,7 +61,7 @@ class HandlersTestCase(BaseHTTPTestCase):
                     spell_correct='yes',
                     comment="  \nSome\nComment\t"
                     )
-        response = self.post('/questions/add/', data, follow_redirects=False,
+        response = self.post(url, data, follow_redirects=False,
                              headers={'Cookie':cookie})
         self.assertEqual(response.code, 302)
         redirected_to = response.headers['Location']
@@ -81,3 +100,11 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertTrue('value="Hyffsat"' in response.body)
         self.assertTrue('value="%s"' % question.text in response.body)
         self.assertTrue('value="%s"' % question.answer in response.body)
+
+        data = dict(data, text="\t\t")
+        response = self.post(edit_url, data, headers={'Cookie':cookie})
+        self.assertEqual(response.code, 200)
+        self.assertTrue('errors' in response.body)
+        data = dict(data, text="A new question?")
+        response = self.post(edit_url, data, headers={'Cookie':cookie})
+        self.assertEqual(response.code, 302)

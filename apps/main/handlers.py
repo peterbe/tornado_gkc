@@ -26,6 +26,7 @@ from utils.decorators import login_required
 from utils import parse_datetime, niceboolean, \
   DatetimeParseError, valid_email, random_string, \
   all_hash_tags, all_atsign_tags, generate_random_color
+import settings
 
 #from config import *
 
@@ -197,6 +198,9 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
 
     def has_user(self, username):
         return bool(self.find_user(username))
+
+    def is_admin_user(self, user):
+        return user.email in settings.ADMIN_EMAILS
 
     def get_base_options(self):
         # The templates rely on these variables

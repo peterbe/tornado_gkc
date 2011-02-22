@@ -190,7 +190,9 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertTrue('Error' in response.body)
         self.assertTrue('valid@email.com' in response.body)
 
-        response = self.post('/user/forgotten/', dict(email="PETERBE@gmail.com"))
+        response = self.post('/user/forgotten/',
+                             dict(email="PETERBE@gmail.com"),
+                             follow_redirects=True)
         self.assertEqual(response.code, 200)
         self.assertTrue('instructions sent' in response.body)
         self.assertTrue('peterbe@gmail.com' in response.body)

@@ -32,7 +32,7 @@ class BaseModelsTestCase(unittest.TestCase):
 
 class HTTPClientMixin(object):
 
-    def get(self, url, data=None, headers=None, follow_redirects=True):
+    def get(self, url, data=None, headers=None, follow_redirects=False):
         if data is not None:
             if isinstance(data, dict):
                 data = urlencode(data, True)
@@ -43,7 +43,7 @@ class HTTPClientMixin(object):
         return self._fetch(url, 'GET', headers=headers,
                            follow_redirects=follow_redirects)
 
-    def post(self, url, data, headers=None, follow_redirects=True):
+    def post(self, url, data, headers=None, follow_redirects=False):
         if data is not None:
             if isinstance(data, dict):
                 data = urlencode(data, True)

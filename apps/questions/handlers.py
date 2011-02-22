@@ -1,5 +1,6 @@
 from pymongo.objectid import InvalidId, ObjectId
 import re
+from pprint import pprint
 import tornado.web
 from utils.decorators import login_required
 from apps.main.handlers import BaseHandler
@@ -18,7 +19,7 @@ class QuestionsBaseHandler(BaseHandler):
         return self.db.Question.one({'_id': question_id})
 
 
-route_redirect('/questions$', '/questions/')
+route_redirect('/questions$', '/questions/', name="questions_shortcut")
 @route('/questions/$', name="questions")
 class QuestionsHomeHandler(QuestionsBaseHandler):
     DEFAULT_BATCH_SIZE = 100
@@ -76,6 +77,7 @@ class AddQuestionHandler(QuestionsBaseHandler):
             question.genre = genre
             question.spell_correct = form.spell_correct.data
             question.comment = form.comment.data
+            question.author = self.get_current_user()
             question.save()
             edit_url = self.reverse_url('edit_question', str(question._id))
             #self.redirect('/questions/%s/edit/' % question._id)
@@ -100,6 +102,8 @@ class EditQuestionHandler(QuestionsBaseHandler):
         question = self.find_question(question_id)
         if not question:
             raise tornado.web.HTTPError(404, "Question can't be found")
+        if question.author != user and not self.is_admin_user(user):
+            raise tornado.web.HTTPError(404, "Not your question")
 
         options['question'] = question
         if form is None:
@@ -109,3 +113,41 @@ class EditQuestionHandler(QuestionsBaseHandler):
             form = QuestionForm(**initial)
         options['form'] = form
         self.render('questions/edit.html', **options)
+
+    @tornado.web.authenticated
+    def post(self, question_id):
+        user = self.get_current_user()
+        question = self.find_question(question_id)
+        if not question:
+            raise tornado.web.HTTPError(404, "Question can't be found")
+        if question.author != user or self.is_admin_user(user):
+            raise tornado.web.HTTPError(404, "Not your question")
+        data = djangolike_request_dict(self.request.arguments)
+        if 'alternatives' in data:
+            data['alternatives'] = ['\n'.join(data['alternatives'])]
+        form = QuestionForm(data)
+        if form.validate():
+            question.test = form.text.data
+            question.answer = form.answer.data
+            question.accept = [form.accept.data]
+            question.alternatives = [x for x in form.alternatives.data.splitlines()]
+            assert question.answer in question.alternatives, "answer not in alternatives"
+            genre = self.db.Genre.one(dict(name=form.genre.data))
+            if not genre:
+                genre = self.db.Genre.one(dict(name=\
+                  re.compile('^%s$' % re.escape(form.genre.data), re.I|re.U)))
+            if not genre:
+                genre = self.db.Genre()
+                genre.name = form.genre.data
+                genre.save()
+            question.genre = genre
+            question.spell_correct = form.spell_correct.data
+            question.comment = form.comment.data
+            question.save()
+            edit_url = self.reverse_url('edit_question', str(question._id))
+            #self.redirect('/questions/%s/edit/' % question._id)
+            # flash message
+            self.redirect(edit_url+'?msg=EDITED')
+
+        else:
+            self.get(question_id, form=form)
