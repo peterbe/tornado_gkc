@@ -205,7 +205,8 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
     def get_base_options(self):
         # The templates rely on these variables
         options = dict(user=None,
-                       user_name=None)
+                       user_name=None,
+                       is_admin_user=False)
 
         # default settings
         settings = dict(
@@ -218,6 +219,7 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         if user:
             if self.get_secure_cookie('user'):
                 options['user'] = user
+                options['is_admin_user'] = self.is_admin_user(user)
                 if user.first_name:
                     user_name = user.first_name
                 elif user.email:
@@ -637,7 +639,10 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
         locale = user.get('locale') # not sure what to do with this yet
         first_name = user.get('first_name')
         last_name = user.get('last_name')
+        username = user.get('username')
         email = user['email']
+        if not username:
+            username = email.split('@')[0]
 
         user = self.db.User.one(dict(email=email))
         if user is None:
@@ -646,6 +651,7 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
         if not user:
             # create a new account
             user = self.db.User()
+            user.username = username
             user.email = email
             if first_name:
                 user.first_name = first_name
@@ -662,7 +668,7 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
 
 
 @route('/auth/twitter/')
-class GoogleAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
+class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
     @tornado.web.asynchronous
     def get(self):
         if self.get_argument("oauth_token", None):

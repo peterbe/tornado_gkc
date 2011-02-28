@@ -1,10 +1,64 @@
-{% extends "../base.html" %}
+{% extends "base.html" %}
 
 {% block content_inner %}
 
-<h1>Questions, questions, questions</h1>
 
+<p><a href="{{ reverse_url('add_question') }}">Add a new question</a> |
+{% if accepted_questions.count() %}
+There are {{ accepted_questions.count() }} accepted questions that needs
+<a href="{{ reverse_url('review_random') }}" title="click to review a random accepted question">reviewing</a></a>
+{% end %}
+</p>
 
-<p><a href="/questions/add/">Add question</a></p>
+<div id="draft_questions">
+  <h4>Draft Questions ({{ draft_questions.count() }})</h4>
+  {% for question in draft_questions %}
+  <div id="{{ question._id }}" class="question">
+    <h4><a href="{{ reverse_url('edit_question', question._id ) }}">{{ question.text }}</a></h4>
+    <p>Genre: {{ question.genre.name }}<br>
+    Added {{ modules.TimeSince(question.add_date) }} ago
+    </p>
+  </div>
+  {% end %}
+  {% if not draft_questions.count() %}
+  <div>
+    <p><em>None at the moment</em></p>
+    <p><a href="{{ reverse_url('add_question') }}">Add one now</a></p>
+  </div>
+  {% end %}
+</div>
+
+{% if rejected_questions.count() %}
+<div id="rejected_questions">
+  <h4>Rejected Questions ({{ rejected_questions.count() }})</h4>
+  {% for question in rejected_questions %}
+  <div id="{{ question._id }}" class="question">
+    <h4><a href="{{ reverse_url('view_question', question._id ) }}">{{ question.text }}</a></h4>
+    Comment: <em>{{ question.reject_comment }}</em><br>
+    Genre: {{ question.genre.name }}<br>
+    Rejected {{ modules.TimeSince(question.reject_date) }} ago
+    </p>
+  </div>
+  {% end %}
+</div>
+{% end %}
+
+<div id="submitted_questions">
+  <h4>Submitted Questions ({{ submitted_questions.count() }})</h4>
+  {% for question in submitted_questions %}
+  <div id="{{ question._id }}" class="question">
+    <h4><a href="{{ reverse_url('view_question', question._id ) }}">{{ question.text }}</a></h4>
+    <p>{% if is_admin_user %}By: {{ modules.ShowUser(question.author) }}<br>{% end %}
+    Genre: {{ question.genre.name }}<br>
+    Submitted {{ modules.TimeSince(question.submit_date) }} ago
+    </p>
+  </div>
+  {% end %}
+  {% if not submitted_questions.count() %}
+  <div>
+    <p><em>None at the moment</em></p>
+  </div>
+  {% end %}
+</div>
 
 {% end %}

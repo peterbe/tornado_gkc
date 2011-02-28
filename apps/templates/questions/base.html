@@ -1,0 +1,41 @@
+{% extends "../base.html" %}
+
+{% block extra_head %}
+<style type="text/css">
+#content_inner .question h4 {
+  border-bottom:0px solid white;
+  font-size:17px;
+}
+#question_info {
+  width:45%;
+}
+#question_actions {
+  float:right;
+  width:45%;
+}
+</style>
+{% end %}
+
+{% block title %}
+{% if page_title %}
+  {{ page_title }}
+  {% else %}
+  Questions, questions, questions
+  {% end %}
+{% end %}
+
+{% block content_outer %}
+  <div id="content_inner">
+  <h1>{% if page_title %}
+  {{ page_title }}
+  {% else %}
+  Questions, questions, questions
+  {% end %}
+  </h1>
+      {% block content_inner %}
+      {% end %}
+
+      <p><a href="/questions/">Questions home page</a></p>
+  </div>
+
+{% end %}

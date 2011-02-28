@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block extra_js %}
+{{ modules.Static("js/question_actions.js") }}
+{% end %}
+
+{% block content_inner %}
+
+<div id="question_actions">
+{% if is_admin_user %}
+<h4>Admin actions</h4>
+<form action="{{ reverse_url('reject_question', question._id) }}" method="post" id="reject">
+{{ xsrf_form_html() }}
+<div id="reject_comment" style="display:none">Comment:<br>
+<textarea name="reject_comment" cols="30" rows="3"></textarea>
+</div>
+<div><input type="submit" value="Reject"></div>
+</form>
+{% if question.accept_date %}
+<form action="{{ reverse_url('publish_question', question._id) }}" method="post" id="publish">
+{{ xsrf_form_html() }}
+<div><input type="submit" value="Publish!"></div>
+</form>
+{% else %}
+<form action="{{ reverse_url('accept_question', question._id) }}" method="post" id="accept">
+{{ xsrf_form_html() }}
+<div><input type="submit" value="Accept"></div>
+</form>
+{% end %}
+
+{% end %}
+</div>
+
+<div id="question_info">
+<p>
+<strong>Question:</strong>
+<span>{{ question.text }}</span>
+<br>
+<strong>Answer:</strong>
+<span>{{ question.answer }}</span>
+({% if question.spell_correct %}spell correct{% else %}no spell correction{% end %})
+<br>
+<strong>Also accept:</strong>
+{% if question.accept %}
+<span>{{ ', '.join(question.accept) }}</span>
+{% else %}
+<em>none</em>
+{% end %}
+<br>
+<strong>Alternatives:</strong>
+<span>{{ ', '.join(question.alternatives) }}</span>
+<br>
+<strong>Comments:</strong>
+{% if question.comment %}
+<span>{{ question.comment }}</span>
+{% else %}
+<em>none</em>
+{% end %}
+</p>
+</div>
+
+<div id="question_metadata">
+<p>
+<strong>By:</strong>
+<span>{{ modules.ShowUser(question.author) }}</span>
+<br>
+<strong>Submitted:</strong>
+<span>{{ modules.TimeSince(question.submit_date) }} ago</span>
+<br>
+{% if question.reject_date %}
+<strong>Rejected:</strong>
+<span>{{ modules.TimeSince(question.reject_date) }} ago</span>
+<span><em>{{ question.reject_comment }}</em></span>
+<br>
+{% end %}
+{% if question.accept_date %}
+<strong>Accepted:</strong>
+<span>{{ modules.TimeSince(question.accept_date) }} ago</span>
+<br>
+{% end %}
+{% if question.publish_date %}
+<strong>Published:</strong>
+<span>{{ modules.TimeSince(question.publish_date) }} ago</span>
+<br>
+{% end %}
+</p>
+</div>
+
+{% end %}

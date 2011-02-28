@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content_inner %}
+
+<p>
+<strong>Question:</strong>
+<span>{{ question.text }}</span>
+<br>
+<strong>Answer:</strong>
+<span>{{ question.answer }}</span>
+({% if question.spell_correct %}spell correct{% else %}no spell correction{% end %})
+<br>
+<strong>Also accept:</strong>
+{% if question.accept %}
+<span>{{ ', '.join(question.accept) }}</span>
+{% else %}
+<em>none</em>
+{% end %}
+<br>
+<strong>Alternatives:</strong>
+<span>{{ ', '.join(question.alternatives) }}</span>
+<br>
+<strong>Comments:</strong>
+{% if question.comment %}
+<span>{{ question.comment }}</span>
+{% else %}
+<em>none</em>
+{% end %}
+
+</p>
+
+<form action="" method="post">{{ xsrf_form_html() }}
+<div><input type="submit" value="Submit question">
+or go back to <a href="{{ reverse_url('edit_question', question._id) }}">Edit the question</a>
+</div>
+</form>
+
+
+
+{% end %}

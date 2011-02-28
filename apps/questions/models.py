@@ -8,11 +8,12 @@ class Genre(BaseDocument):
     }
 
 
+DRAFT = u"DRAFT"
 SUBMITTED = u"SUBMITTED"
 REJECTED = u"REJECTED"
 ACCEPTED = u"ACCEPTED"
 PUBLISHED = u"PUBLISHED"
-STATES = SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
+STATES = DRAFT, SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
 
 
 class Question(BaseDocument):
@@ -43,11 +44,13 @@ class Question(BaseDocument):
     }
 
 
-OK = u"OK"
+#OK = u"OK"
 VERIFIED = u"VERIFIED"
 UNSURE = u"UNSURE"
 WRONG = u"WRONG"
-VERDICTS = OK, VERIFIED, UNSURE, WRONG
+TOO_EASY = u"TOO EASY"
+TOO_HARD = u"TOO HARD"
+VERDICTS = VERIFIED, UNSURE, WRONG, TOO_EASY, TOO_HARD
 
 class QuestionReview(BaseDocument):
     __collection__ = 'question_reviews'

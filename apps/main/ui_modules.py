@@ -395,10 +395,13 @@ class HelpSeeAlsoLinks(tornado.web.UIModule):
 
 class ShowUserName(tornado.web.UIModule):
     def render(self, user, first_name_only=False, anonymize_email=False):
-        if first_name_only:
+        if first_name_only and user.first_name:
             name = user.first_name
         else:
-            name = u'%s %s' % (user.first_name, user.last_name)
+            # because they might be None
+            first_name = user.first_name and user.first_name or u''
+            last_name = user.last_name and user.last_name or u''
+            name = u'%s %s' % (first_name, last_name)
             name = name.strip()
 
         if not name:
@@ -408,3 +411,7 @@ class ShowUserName(tornado.web.UIModule):
             elif anonymize_email:
                 name = name[:3] + '...@...' + name.split('@')[1][3:]
         return name
+
+class ShowUser(ShowUserName):
+    """one day make this with an image"""
+    pass

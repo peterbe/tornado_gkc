@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block extra_js %}
+{{ modules.Static("js/question_actions.js") }}
+{% end %}
+
+{% block content_inner %}
+
+<p>We're sorry. There are currently no questions available to review.</p>
+
+<p>In the meantime, why don't you <a href="{{ reverse_url('add_question') }}">add some of your own</a></p>
+
+{% end %}

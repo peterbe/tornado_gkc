@@ -31,7 +31,8 @@ class MultilinesWidget(object):
                 except IndexError:
                     value = u''
             kwargs['value'] = value
-            html = '<input %s />' % html_params(name=field.name, **kwargs)
+            kwargs_copy = dict(kwargs, id='%s_%s' % (kwargs['id'], i))
+            html = '<input %s />' % html_params(name=field.name, **kwargs_copy)
             htmls.append(html)
             if self.vertical:
                 htmls.append('<br/>')

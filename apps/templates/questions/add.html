@@ -1,7 +1,7 @@
-{% extends "../base.html" %}
+{% extends "base.html" %}
 
 {% block extra_head %}
-{{ modules.Static("css/question_input.css") }}
+{{ modules.Static("css/question_input.css","css/ext/jquery.autocomplete.css") }}
 {% end %}
 
 {% block extra_js %}
@@ -10,7 +10,6 @@
 
 {% block content_inner %}
 
-<h1>Add question</h1>
 
 {% if form.errors %}
     <ul class="errors">
@@ -37,7 +36,5 @@
 </table>
 <div><input type="submit" value="Add question"></div>
 </form>
-
-<p><a href="/questions/">Questions home page</a></p>
 
 {% end %}

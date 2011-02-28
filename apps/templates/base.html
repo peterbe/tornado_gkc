@@ -30,6 +30,7 @@
     <div id="login" class="topnav">
       {% if user %}
       <p><a href="/user/" class="account">Hi {{ user_name }}</a>
+      {% if is_admin_user %}(admin){% end %}
       <a href="/auth/logout/" class="log-out">log out</a></p>
       {% else %}
       <p><a href="/user/" class="account">Login &amp; registration</a></p>
@@ -38,10 +39,12 @@
 
     <div id="wrap">
 
+      {% block content_outer %}
       <div id="content_inner">
       {% block content_inner %}
       {% end %}
       </div>
+      {% end %}
 
       <div id="footer">
       {{ modules.Footer(user=user) }}

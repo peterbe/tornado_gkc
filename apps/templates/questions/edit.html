@@ -1,4 +1,4 @@
-{% extends "../base.html" %}
+{% extends "base.html" %}
 
 {% block extra_head %}
 {{ modules.Static("css/question_input.css") }}
@@ -10,7 +10,13 @@
 
 {% block content_inner %}
 
-<h1>Edit question</h1>
+{% if can_submit %}
+<div id="ready_to_submit">
+  <p>Question is ready to be submitted:
+  <a href="{{ reverse_url('submit_question', question._id) }}">Submit question</a>
+  </p>
+</div>
+{% end %}
 
 {% if form.errors %}
     <ul class="errors">
@@ -37,7 +43,5 @@
 </table>
 <div><input type="submit" value="Save question"></div>
 </form>
-
-<p><a href="/questions/">Questions home page</a></p>
 
 {% end %}
