@@ -13,6 +13,8 @@
   float:right;
   width:45%;
 }
+button.bold { font-weight:bold; }
+#questions_score { float:right; }
 </style>
 {% end %}
 
@@ -32,6 +34,15 @@
   Questions, questions, questions
   {% end %}
   </h1>
+      <div id="questions_score">
+      <p>
+        <strong>Your score</strong>
+        <br>
+        published: {{ questions_score['published'] }}
+        accepted: {{ questions_score['accepted'] }}
+        reviewed: {{ questions_score['reviewed'] }}
+      </p>
+      </div>
       {% block content_inner %}
       {% end %}
 

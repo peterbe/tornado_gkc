@@ -16,9 +16,9 @@ class BaseModelsTestCase(unittest.TestCase):
         if not self._once:
             self._once = True
             from mongokit import Connection
-            con = Connection()
-            con.register([User, UserSettings])
-            self.db = con.test
+            self.con = Connection()
+            self.con.register([User, UserSettings])
+            self.db = self.con.test
             self._emptyCollections()
 
     def _emptyCollections(self):
@@ -28,7 +28,6 @@ class BaseModelsTestCase(unittest.TestCase):
 
     def tearDown(self):
         self._emptyCollections()
-
 
 class HTTPClientMixin(object):
 
@@ -115,13 +114,18 @@ class BaseHTTPTestCase(AsyncHTTPTestCase, LogTrapTestCase, HTTPClientMixin):
         self._app.settings['email_exceptions'] = False
 
     def _emptyCollections(self):
-        db = self.get_db()
+        db = self.db
         [db.drop_collection(x) for x
          in db.collection_names()
          if x not in ('system.indexes',)]
 
-    def get_db(self):
+    @property
+    def db(self):
         return self._app.con[self._app.database_name]
+
+    def get_db(self):
+        return self.db
+        #return self._app.con[self._app.database_name]
 
     def get_app(self):
         return app.Application(database_name='test',

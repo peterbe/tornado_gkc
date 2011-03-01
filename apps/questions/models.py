@@ -43,6 +43,11 @@ class Question(BaseDocument):
       'state': lambda x: x in STATES
     }
 
+    default_values = {
+      'state': STATES[0],
+    }
+
+
 
 #OK = u"OK"
 VERIFIED = u"VERIFIED"
@@ -58,7 +63,7 @@ class QuestionReview(BaseDocument):
       'question': Question,
       'user': User,
       'verdict': unicode,
-      'likes': int,
+      'rating': int,
       'comment': unicode,
     }
 

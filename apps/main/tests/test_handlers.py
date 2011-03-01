@@ -39,9 +39,8 @@ class HandlersTestCase(BaseHTTPTestCase):
         guid_cookie = self.decode_cookie_value('guid', response.headers['Set-Cookie'])
         guid = base64.b64decode(guid_cookie.split('|')[0])
 
-        db = self.get_db()
-        user = db.User.one(dict(guid=guid))
-        user_settings = db.UserSettings.one({
+        user = self.db.User.one(dict(guid=guid))
+        user_settings = self.db.UserSettings.one({
           'user.$id': user._id
         })
         self.assertTrue(user_settings.hide_weekend)
@@ -61,7 +60,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         struct = json.loads(response.body)
         self.assertEqual(struct, dict(ok=True))
 
-        user = self.get_db().users.User()
+        user = self.db.users.User()
         user.username = u"PETERBE"
         user.save()
 
@@ -80,7 +79,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(response.code, 302)
 
         data.pop('password')
-        user = self.get_db().users.User.one(data)
+        user = self.db.users.User.one(data)
         self.assertTrue(user)
 
         # a secure cookie would have been set containing the user id
@@ -89,15 +88,14 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(str(user._id), user_id)
 
     def test_change_account(self):
-        db = self.get_db()
 
-        user = db.User()
+        user = self.db.User()
         user.username = u"peter"
         user.first_name = u"Ptr"
         user.password = encrypt_password(u"secret")
         user.save()
 
-        other_user = db.User()
+        other_user = self.db.User()
         other_user.username = u'peterbe'
         other_user.save()
 
@@ -134,9 +132,9 @@ class HandlersTestCase(BaseHTTPTestCase):
                              follow_redirects=False)
         self.assertEqual(response.code, 302)
 
-        user = db.User.one(dict(email='bob@test.com'))
+        user = self.db.User.one(dict(email='bob@test.com'))
         self.assertEqual(user.last_name, data['last_name'].strip())
-        user = db.User.one(dict(username='bob'))
+        user = self.db.User.one(dict(username='bob'))
         self.assertEqual(user.last_name, data['last_name'].strip())
         self.assertEqual(user.first_name, u'')
 
@@ -175,7 +173,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(response.code, 302)
 
         data.pop('password')
-        user = self.get_db().users.User.one(data)
+        user = self.db.users.User.one(data)
         self.assertTrue(user)
 
 
@@ -228,7 +226,7 @@ class HandlersTestCase(BaseHTTPTestCase):
     def test_change_settings_without_logging_in(self):
         return # no sure whether we're going to allow this
         # without even posting something, change your settings
-        db = self.get_db()
+        db = self.db
         assert not db.UserSettings.find().count()
 
         data = dict(disable_sound=True, monday_first=True)

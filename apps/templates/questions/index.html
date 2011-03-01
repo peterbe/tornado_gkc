@@ -5,8 +5,12 @@
 
 <p><a href="{{ reverse_url('add_question') }}">Add a new question</a> |
 {% if accepted_questions.count() %}
-There are {{ accepted_questions.count() }} accepted questions that needs
-<a href="{{ reverse_url('review_random') }}" title="click to review a random accepted question">reviewing</a></a>
+  There are {{ accepted_questions.count() }} accepted questions that needs
+  <a href="{{ reverse_url('review_random') }}" title="click to review a random accepted question">reviewing</a>
+  {% if is_admin_user %}
+    |
+    <a href="{{ reverse_url('review_accepted') }}" title="click to review accepted question">accepted</a> (admin only)
+  {% end %}
 {% end %}
 </p>
 

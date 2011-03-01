@@ -16,6 +16,8 @@ class QuestionsBaseHandler(BaseHandler):
     def get_base_options(self):
         options = super(QuestionsBaseHandler, self).get_base_options()
         options['page_title'] = options.get('page_title')
+        if options['user']:
+            options['questions_score'] = self.get_questions_score(options['user'])
         return options
 
     def find_question(self, question_id):
@@ -35,10 +37,25 @@ class QuestionsBaseHandler(BaseHandler):
         return question
 
     def can_submit_question(self, question):
+        if question.state != DRAFT:
+            return False
         if question.text and question.answer:
             if question.alternatives and len(question.alternatives) >= 4:
                 return True
         return False
+
+    def get_questions_score(self, user):
+        F = lambda x:self.db.Question.find(x).count()
+        R = lambda x:self.db.QuestionReview.find(x).count()
+        author_search = {'author.$id': user._id}
+        user_search = {'user.$id': user._id}
+        data = {
+          'published': F(dict(author_search, state=PUBLISHED)),
+          'accepted': F(dict(author_search, state=ACCEPTED)),
+          'reviewed': R(dict(user_search)),
+        }
+        return data
+
 
 @route('/questions/genre_names.json$')
 class QuestionsGenreNamesHandler(QuestionsBaseHandler):
@@ -158,6 +175,11 @@ class EditQuestionHandler(QuestionsBaseHandler):
     def get(self, question_id, form=None):
         options = self.get_base_options()
         question = self.must_find_question(question_id, options['user'])
+        if question.state != DRAFT:
+            if question.author == options['user']:
+                return self.redirect(self.reverse_url('view_question', question._id))
+            elif not self.is_admin_user(options['user']):
+                raise HTTPError(403, "Not your question")
         options['question'] = question
         if form is None:
             initial = dict(question)
@@ -175,6 +197,11 @@ class EditQuestionHandler(QuestionsBaseHandler):
     def post(self, question_id):
         user = self.get_current_user()
         question = self.must_find_question(question_id, user)
+        if question.state != DRAFT:
+            if question.author == user:
+                return self.redirect(self.reverse_url('view_question', question._id))
+            elif not self.is_admin_user(user):
+                raise HTTPError(403, "Not your question")
         data = djangolike_request_dict(self.request.arguments)
         if 'alternatives' in data:
             data['alternatives'] = ['\n'.join(data['alternatives'])]
@@ -186,6 +213,14 @@ class EditQuestionHandler(QuestionsBaseHandler):
             question.answer = form.answer.data
             question.accept = [x for x in form.accept.data.splitlines()]
             question.alternatives = [x for x in form.alternatives.data.splitlines()]
+            if question.answer not in question.alternatives:
+                alts = []
+                for each in question.alternatives:
+                    if each.lower() == form.answer.data.lower():
+                        alts.append(form.answer.data)
+                    else:
+                        alts.append(each)
+                question.alternatives = alts
             assert question.answer in question.alternatives, "answer not in alternatives"
             genre = self.db.Genre.one(dict(name=form.genre.data))
             if not genre:
@@ -215,7 +250,13 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
     def get(self, question_id):
         options = self.get_base_options()
         #user = self.get_current_user()
-        options['question'] = self.must_find_question(question_id, options['user'])
+        question = self.must_find_question(question_id, options['user'])
+        options['question'] = question
+        if question.state != DRAFT:
+            if question.author == options['user']:
+                return self.redirect(self.reverse_url('view_question', question._id))
+            elif not self.is_admin_user(options['user']):
+                raise HTTPError(403, "Not your question")
         options['page_title'] = "Submit question"
         self.render('questions/submit.html', **options)
 
@@ -223,6 +264,11 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
     def post(self, question_id):
         user = self.get_current_user()
         question = self.must_find_question(question_id, user)
+        if question.state != DRAFT:
+            if question.author == user:
+                return self.redirect(self.reverse_url('view_question', question._id))
+            elif not self.is_admin_user(user):
+                raise HTTPError(403, "Not your question")
         if not self.can_submit_question(question):
             self.write("You can't submit this question. Go back to edit")
             return
@@ -284,7 +330,7 @@ class PublishQuestionHandler(QuestionsBaseHandler):
         url += '?published=%s' % question._id
         self.redirect(url)
 
-@route('/questions/random/review/$', name="review_random")
+@route('/questions/review/random/$', name="review_random")
 class RandomReviewQuestionHandler(QuestionsBaseHandler):
 
     @tornado.web.authenticated
@@ -292,6 +338,7 @@ class RandomReviewQuestionHandler(QuestionsBaseHandler):
         options = self.get_base_options()
         user = self.get_current_user()
         had_question_ids = self.get_cookie('reviewed_questions','').split('|')
+        had_question_ids = [x.strip() for x in had_question_ids if x.strip()]
         question_id = self.get_argument('question_id', None)
         question = None
         if question_id:
@@ -301,22 +348,33 @@ class RandomReviewQuestionHandler(QuestionsBaseHandler):
             if question.state != ACCEPTED:
                 raise HTTPError(404, "question not accepted")
         else:
-            questions = self.db.Question.find({
-                'author.$id':{'$ne':user._id},
-                'state':ACCEPTED}
-            )
+            accept_search = {'author.$id':{'$ne':user._id},
+                             'state':ACCEPTED}
+            questions = self.db.Question.find(accept_search)
             questions_count = questions.count()
-            r = randint(0, questions_count - 1)
-            for this_question in questions.sort('accept_date').limit(1).skip(r):
-                #if str(this_question._id) in had_question_ids:
-                #    continue
-                if not self.db.QuestionReview.find({
-                  'question.$id':this_question._id,
-                  'user.$id':user._id,
-                }).count():
-                    question = this_question
-                    had_question_ids.insert(0, str(question._id))
-                    break
+            if questions_count > 1:
+                count_rejections = 0
+                previous_rs = set()
+                while True:
+                    r = randint(0, questions_count - 1)
+                    while r in previous_rs:
+                        r = randint(0, questions_count - 1)
+                    questions = self.db.Question.find(accept_search)
+                    previous_rs.add(r)
+                    for this_question in questions.sort('accept_date').limit(1).skip(r):
+                        #if str(this_question._id) in had_question_ids:
+                        #    continue
+                        if self.db.QuestionReview.find({
+                          'question.$id':this_question._id,
+                          'user.$id':user._id,
+                        }).count():
+                            count_rejections += 1
+                        else:
+                            question = this_question
+                            had_question_ids.insert(0, str(question._id))
+                            break
+                    if count_rejections >= questions_count or question:
+                        break
 
         options['buttons'] = (
           dict(name=VERIFIED, value="OK, verified"),
@@ -356,4 +414,48 @@ class ReviewQuestionHandler(QuestionsBaseHandler):
             'question.$id': question._id}):
             raise HTTPError(400, "Already reviewed")
 
-        raise NotImplementedError
+        rating = self.get_argument('rating')
+        rating_to_int = {'Bad':-1, 'OK':1, 'Good':2}
+        if rating not in rating_to_int:
+            raise HTTPError(404, "Invalid rating")
+        rating = rating_to_int[rating]
+        comment = self.get_argument('comment', u'').strip()
+        verdict = self.get_argument('verdict')
+        if verdict not in VERDICTS:
+            raise HTTPError(404, "Invalid verdict")
+
+        review = self.db.QuestionReview()
+        review.question = question
+        review.user = user
+        review.verdict = verdict
+        review.rating = rating
+        review.comment = comment
+        review.save()
+
+        url = self.reverse_url('review_random')
+        url += '?reviewed=%s' % question._id
+        self.redirect(url)
+
+
+@route('/questions/review/accepted/$', name="review_accepted")
+class AcceptedReviewQuestionHandler(QuestionsBaseHandler):
+
+    @tornado.web.authenticated
+    def get(self):
+        options = self.get_base_options()
+        user = self.get_current_user()
+        if not self.is_admin_user(user):
+            raise HTTPError(403)
+
+        skip = self.get_argument('skip', 0)
+        questions = self.db.Question.find({'state': ACCEPTED})\
+          .skip(skip).limit(1).sort('accept_date', -1)
+        question = None
+        for question in questions:
+            options['question'] = question
+
+        if question:
+            options['page_title'] = "Review accepted question"
+            self.render("questions/view.html", **options)
+        else:
+            raise NotImplementedError

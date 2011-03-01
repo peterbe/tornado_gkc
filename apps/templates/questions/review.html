@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
+
 {% block extra_js %}
-{{ modules.Static("js/question_actions.js") }}
+{{ modules.Static("js/question_review.js") }}
 {% end %}
 
 {% block content_inner %}
@@ -9,11 +10,22 @@
 <div id="question_actions">
 <form action="{{ reverse_url('review_question', question._id) }}" method="post">
 {{ xsrf_form_html() }}
-<label for="id_comment">Comment:</label>
+<label for="id_rating">1) Rating:</label><br>
+<div id="rating_buttons">
+<input type="hidden" name="rating" value="" id="id_rating">
+<button name="rating_button" value="Bad" type="button">Bad</button>
+<button name="rating_button" value="OK" type="button">OK</button>
+<button name="rating_button" value="Good" type="button">Good</button>
+</div>
+<br>
+<label for="id_comment">2) Comment:</label>
 <textarea id="id_comment" name="comment" cols="25" rows="3"></textarea><br>
-<div id="action_buttons">
+<label for="id_comment">3) Verdict:</label>
+<div id="verdict_buttons">
+<input type="hidden" name="verdict" value="" id="id_verdict">
 {% for button in buttons %}
-<button name="{{ button['name'] }}" value="{{ button['value'] }}" type="submit">{{ button['value'] }}</button>
+<button name="verdict_button" class="verdict"
+  value="{{ button['name'] }}" type="submit">{{ button['value'] }}</button>
 {% end %}
 </div>
 

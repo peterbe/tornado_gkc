@@ -10,13 +10,8 @@ class MultilinesWidget(object):
     def __call__(self, field, **kwargs):
         kwargs.setdefault('id', field.id)
         htmls = []
-        #print dir(field)
 
         value = field.data
-        #print "kwargs", kwargs
-        #print "data", repr(field.data)
-        #print "__call__ value", repr(value)
-        print "VALUE", value
         if isinstance(value, basestring):
             values = [x.strip() for x in value.splitlines() if x.strip()]
         else:
@@ -60,6 +55,15 @@ class QuestionForm(BaseForm):
     genre = TextField("Genre", [validators.Required()])
     spell_correct = BooleanField("Spell correct", description="Whether small spelling mistakes should be accepted")
     comment = TextAreaField("Comment")
+
+    def validate(self, *args, **kwargs):
+        success = super(QuestionForm, self).validate(*args, **kwargs)
+        if success:
+            # check invariants
+            if self.data['answer'].lower() not in self.data['alternatives'].lower():
+                self._fields['alternatives'].errors.append("Answer not in alternatives")
+                success = False
+        return success
 
 class EditQuestionForm(QuestionForm):
     pass
