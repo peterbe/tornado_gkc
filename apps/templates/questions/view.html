@@ -17,6 +17,13 @@
 <div><input type="submit" value="Reject"></div>
 </form>
 {% if question.accept_date %}
+{% if skip is not None %}
+<form action="{{ reverse_url('review_accepted') }}" method="post" id="skip">
+{{ xsrf_form_html() }}
+<div><input type="hidden" name="skip" value="{{ skip }}">
+<input type="submit" value="Skip"></div>
+</form>
+{% end %}
 <form action="{{ reverse_url('publish_question', question._id) }}" method="post" id="publish">
 {{ xsrf_form_html() }}
 <div><input type="submit" value="Publish!"></div>
@@ -29,6 +36,30 @@
 {% end %}
 
 <h4>Reviews</h4>
+<div id="reviews">
+{% for review in reviews %}
+<div class="review">
+  <div class="rating">
+    <p>{{ review.rating }}</p>
+  </div>
+  <div class="verdict_and_comment">
+    <p class="verdict"><strong>{{ review.verdict }}</strong>
+    {{ modules.ShowUser(review.user) }}
+    </p>
+    {% if review.comment %}
+    {{ modules.RenderText(review.comment) }}
+    {% end %}
+  </div>
+</div>
+{% end %}
+{% if rating_total %}
+  <div class="review">
+    <div class="rating">
+      <p>TOTAL: {{ rating_total }}</p>
+    </div>
+  </div>
+{% end %}
+</div>
 
 {% end %}
 </div>
@@ -72,8 +103,12 @@
 {% if question.reject_date %}
 <strong>Rejected:</strong>
 <span>{{ modules.TimeSince(question.reject_date) }} ago</span>
+<br>
+{% if question.reject_comment %}
+<strong>Rejection comment:</strong>
 <span><em>{{ question.reject_comment }}</em></span>
 <br>
+{% end %}
 {% end %}
 {% if question.accept_date %}
 <strong>Accepted:</strong>

@@ -1,21 +1,7 @@
 {% extends "../base.html" %}
 
 {% block extra_head %}
-<style type="text/css">
-#content_inner .question h4 {
-  border-bottom:0px solid white;
-  font-size:17px;
-}
-#question_info {
-  width:45%;
-}
-#question_actions {
-  float:right;
-  width:45%;
-}
-button.bold { font-weight:bold; }
-#questions_score { float:right; }
-</style>
+{{ modules.Static("css/questions.css", "css/question_input.css","css/ext/jquery.autocomplete.css") }}
 {% end %}
 
 {% block title %}
@@ -46,7 +32,7 @@ button.bold { font-weight:bold; }
       {% block content_inner %}
       {% end %}
 
-      <p><a href="/questions/">Questions home page</a></p>
+    <p><a href="/questions/">Questions home page</a></p>
   </div>
 
 {% end %}

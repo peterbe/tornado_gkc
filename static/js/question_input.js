@@ -68,11 +68,13 @@ head.ready(function() {
       if (alternatives.length >= 4) {
          if (-1 == alternatives.indexOf(answer)) {
             alert("One of the alternatives must be the answer");
+            return false;
          }
       } else {
          alert("Please fill in 4 alternatives");
+         return false;
       }
-      return false;
+      return true;
    });
    $('input[name="alternatives"]').change(function() {
       if ($(this).val().length && Form.has_all_alternatives() && !$('.shuffler').size()) {

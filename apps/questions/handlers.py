@@ -165,6 +165,9 @@ class ViewQuestionHandler(QuestionsBaseHandler):
         options['question'] = self.must_find_question(question_id, options['user'])
         options['page_title'] = "View question"
         options['your_question'] = options['question'].author == options['user']
+        options['reviews'] = []
+        options['rating_total'] = None
+        options['skip'] = None
         self.render('questions/view.html', **options)
 
 
@@ -289,9 +292,10 @@ class RejectQuestionHandler(QuestionsBaseHandler):
         if not self.is_admin_user(user):
             raise HTTPError(403, "Not admin user")
         question = self.must_find_question(question_id, user)
-        reject_comment = self.get_argument('reject_comment').strip()
+        reject_comment = self.get_argument('reject_comment', u'').strip()
         question.reject_comment = reject_comment
         question.reject_date = datetime.datetime.now()
+        question.state = REJECTED
         question.save()
         url = self.reverse_url('questions')
         url += '?rejected=%s' % question._id
@@ -447,7 +451,8 @@ class AcceptedReviewQuestionHandler(QuestionsBaseHandler):
         if not self.is_admin_user(user):
             raise HTTPError(403)
 
-        skip = self.get_argument('skip', 0)
+        skip = int(self.get_argument('skip', 0))
+        options['skip'] = skip
         questions = self.db.Question.find({'state': ACCEPTED})\
           .skip(skip).limit(1).sort('accept_date', -1)
         question = None
@@ -455,7 +460,20 @@ class AcceptedReviewQuestionHandler(QuestionsBaseHandler):
             options['question'] = question
 
         if question:
+            options['reviews'] = self.db.QuestionReview.find({'question.$id':question._id}).sort('add_date', 1)
+            ratings = [x.rating for x in options['reviews']]
+            options['reviews'].rewind()
+            if ratings:
+                options['rating_total'] = str(sum(ratings))
+            else:
+                options['rating_total'] = '0'
             options['page_title'] = "Review accepted question"
             self.render("questions/view.html", **options)
         else:
-            raise NotImplementedError
+            options['page_title'] = "No questions to review"
+            self.render("questions/nothing_to_review.html", **options)
+
+    @tornado.web.authenticated
+    def post(self):
+        skip = int(self.get_argument('skip'))
+        self.redirect(self.reverse_url('review_accepted') + "?skip=%d" % (skip + 1))
