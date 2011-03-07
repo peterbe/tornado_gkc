@@ -37,7 +37,12 @@
   </tr>
 {% end %}
 </table>
-<div><input type="submit" value="Save question"></div>
+<div>
+  <input type="submit" value="Save question">
+  {% if can_submit %}
+  <input type="submit" name="submit_question" value="Save and Submit question">
+  {% end %}
+  </div>
 </form>
 
 {% end %}

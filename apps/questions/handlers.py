@@ -238,10 +238,21 @@ class EditQuestionHandler(QuestionsBaseHandler):
             question.comment = form.comment.data
             question.state = DRAFT
             question.save()
-            edit_url = self.reverse_url('edit_question', str(question._id))
-            #self.redirect('/questions/%s/edit/' % question._id)
-            # flash message
-            self.redirect(edit_url+'?msg=EDITED')
+
+            if self.get_argument('submit_question', False):
+                assert self.can_submit_question(question), "can't submit question"
+                question.state = SUBMITTED
+                question.submit_date = datetime.datetime.now()
+                question.save()
+
+                url = self.reverse_url('questions')
+                url += '?submitted=%s' % question._id
+                self.redirect(url)
+            else:
+                edit_url = self.reverse_url('edit_question', str(question._id))
+                #self.redirect('/questions/%s/edit/' % question._id)
+                # flash message
+                self.redirect(edit_url+'?msg=EDITED')
 
         else:
             self.get(question_id, form=form)

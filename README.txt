@@ -39,20 +39,20 @@ It will cancel the report if the tests don't pass.
 Getting a copy of the live database
 -----------------------------------
 
-First log in to the server:
-
-        $ ssh tornado@donecal.fry-it.com
+#First log in to the server:
+#
+#        $ ssh tornado@donecal.fry-it.com
 	
 and run mongodump anywhere:
 
 	$ cd /tmp/
 	$ rm -fr dump
-	$ mongodump -d worklog
+	$ mongodump -d gkc
 	
-Then copy those files to the local server:
-
-        $ cd /tmp
-        $ jan_rsync donecal.fry-it.com:/tmp/dump .
+#Then copy those files to the local server:
+#
+#        $ cd /tmp
+#        $ jan_rsync donecal.fry-it.com:/tmp/dump .
 	
 Now you need to create a new database and start mongodb.
 

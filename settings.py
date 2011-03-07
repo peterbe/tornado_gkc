@@ -2,9 +2,11 @@ TITLE = u"GKC"
 APPS = (
   'main',
   'questions',
+  'play',
 )
 
 LOGIN_URL = "/auth/login/"
+NODE_URL = "http://%(host)s:8888/battle"
 
 COOKIE_SECRET = "12orTzK2XQAGUYdkL5gmueJIFuY37EQn92XsTo1v/Vo="
 

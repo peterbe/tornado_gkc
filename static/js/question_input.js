@@ -92,4 +92,9 @@ head.ready(function() {
          });
       }
    });
+   
+   // on the Edit question page
+   $('input[name="submit_question"]').click(function() {
+      return confirm("Are you sure?\nQuestion can not be edited after this.");
+   });
 });
