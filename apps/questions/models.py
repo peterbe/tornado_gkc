@@ -15,6 +15,10 @@ ACCEPTED = u"ACCEPTED"
 PUBLISHED = u"PUBLISHED"
 STATES = DRAFT, SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
 
+EASY = u"EASY"
+MEDIUM = u"MEDIUM"
+HARD = u"HARD"
+DIFFICULTIES = EASY, MEDIUM, HARD
 
 class Question(BaseDocument):
     __collection__ = 'questions'
@@ -25,6 +29,8 @@ class Question(BaseDocument):
       'alternatives': [unicode],
       'genre': Genre,
       'spell_correct': bool,
+      'difficulty': unicode,
+      'language': unicode,
       'comment': unicode,
       'author': User,
       'state': unicode, # e.g. 'PUBLISHED'
@@ -40,13 +46,15 @@ class Question(BaseDocument):
     ]
 
     validators = {
-      'state': lambda x: x in STATES
+      'state': lambda x: x in STATES,
+      'difficulty': lambda x: x in DIFFICULTIES,
     }
 
     default_values = {
       'state': STATES[0],
+      'difficulty': MEDIUM,
+      'language': u'en-gb',
     }
-
 
 
 #OK = u"OK"

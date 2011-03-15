@@ -17,7 +17,7 @@ var Form = (function() {
          return count >= 4;
       },
       shuffle_alternatives: function(animate) {
-         animate = animate != null ? animate : 20;
+         animate = animate != null ? animate : 15;
          var alts = [];
          $('input[name="alternatives"]').each(function(i,e) {
             alts.push($(this).val());

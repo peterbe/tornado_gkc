@@ -415,3 +415,16 @@ class ShowUserName(tornado.web.UIModule):
 class ShowUser(ShowUserName):
     """one day make this with an image"""
     pass
+
+class HelpPageTitle(tornado.web.UIModule):
+    def render(self):
+        links = []
+        current_path = self.request.path
+        for each in self.handler.get_see_also_links():
+            link = each['link']
+            if not link.startswith('/help'):
+                link = '/help' + link
+            if link == current_path:
+                return each['label']
+
+        return "Help on GKC"
