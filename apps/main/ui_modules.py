@@ -442,4 +442,7 @@ class FlashMessages(tornado.web.UIModule):
                              text=message.text))
             message.read = True
             message.save()
+        print "MSGS"
+        print msgs
+        print "\n"
         return Messages(msgs)

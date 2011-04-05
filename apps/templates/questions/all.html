@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content_inner %}
+
+<table>
+  <thead>
+    <tr>
+      <th>State</th>
+      {% if 0 %}<th>Question</th>{% end %}
+      <th>Category</th>
+      <th>By</th>
+      <th>Age</th>
+      <th>&nbsp;</th>
+    </tr>
+  <thead>
+  {% for question in all_questions %}
+  <tbody>
+    <tr>
+      <td>{{ question.state }}</td>
+      {% if 0 %}<td>{{ question.text }}</td>{% end %}
+      <td>{{ question.genre.name }}</td>
+      <td>{{ modules.ShowUser(question.author) }}</td>
+      <td>{{ modules.TimeSince(question.add_date) }}</td>
+      <td>
+        <a href="{{ reverse_url('view_question', question._id) }}">view</a>
+        <a href="{{ reverse_url('edit_question', question._id) }}">edit</a>
+      </td>
+    </tr>
+  </tbody>
+  {% end %}
+</table>
+
+
+{% end %}

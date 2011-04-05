@@ -7,10 +7,12 @@
 
 {% block content_inner %}
 
+<div style="float:right;width:45%">
+
 <div id="question_actions">
 <form action="{{ reverse_url('review_question', question._id) }}" method="post">
 {{ xsrf_form_html() }}
-<label for="id_rating">1) Rating:</label><br>
+<label for="id_rating">1) Rating</label><br>
 <div id="rating_buttons">
 <input type="hidden" name="rating" value="" id="id_rating">
 <button name="rating_button" value="Bad" type="button">Bad</button>
@@ -18,9 +20,21 @@
 <button name="rating_button" value="Good" type="button">Good</button>
 </div>
 <br>
-<label for="id_comment">2) Comment:</label>
-<textarea id="id_comment" name="comment" cols="25" rows="3"></textarea><br>
-<label for="id_comment">3) Verdict:</label>
+
+<label for="id_difficulty">2) Difficulty (optional)</label><br>
+<div id="difficulty_buttons">
+<input type="hidden" name="difficulty" value="" id="id_difficulty">
+<button name="difficulty_button" value="0" type="button">About right</button>
+<button name="difficulty_button" value="1" type="button">Easy</button>
+<button name="difficulty_button" value="-1" type="button">Hard</button>
+</div>
+<br>
+
+<label for="id_comment">3) Comment (optional)</label><br>
+<div><textarea id="id_comment" name="comment" cols="45" rows="3"></textarea></div>
+<br>
+
+<label for="id_comment">4) Final verdict</label>
 <div id="verdict_buttons">
 <input type="hidden" name="verdict" value="" id="id_verdict">
 {% for button in buttons %}
@@ -30,6 +44,8 @@
 </div>
 
 </form>
+</div>
+
 </div>
 
 <div id="question_info">
@@ -74,5 +90,8 @@
 {% end %}
 </p>
 </div>
+
+<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
+
 
 {% end %}

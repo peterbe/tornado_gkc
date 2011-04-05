@@ -6,62 +6,78 @@
 
 {% block content_inner %}
 
-<div id="question_actions">
+<div style="float:right;width:45%">
+
 {% if is_admin_user %}
-<h4>Admin actions</h4>
-<form action="{{ reverse_url('reject_question', question._id) }}" method="post" id="reject">
-{{ xsrf_form_html() }}
-<div id="reject_comment" style="display:none">Comment:<br>
-<textarea name="reject_comment" cols="30" rows="3"></textarea>
-</div>
-<div><input type="submit" value="Reject"></div>
-</form>
-{% if question.accept_date %}
-{% if skip is not None %}
-<form action="{{ reverse_url('review_accepted') }}" method="post" id="skip">
-{{ xsrf_form_html() }}
-<div><input type="hidden" name="skip" value="{{ skip }}">
-<input type="submit" value="Skip"></div>
-</form>
-{% end %}
-<form action="{{ reverse_url('publish_question', question._id) }}" method="post" id="publish">
-{{ xsrf_form_html() }}
-<div><input type="submit" value="Publish!"></div>
-</form>
-{% else %}
-<form action="{{ reverse_url('accept_question', question._id) }}" method="post" id="accept">
-{{ xsrf_form_html() }}
-<div><input type="submit" value="Accept"></div>
-</form>
-{% end %}
-
-<h4>Reviews</h4>
-<div id="reviews">
-{% for review in reviews %}
-<div class="review">
-  <div class="rating">
-    <p>{{ review.rating }}</p>
-  </div>
-  <div class="verdict_and_comment">
-    <p class="verdict"><strong>{{ review.verdict }}</strong>
-    {{ modules.ShowUser(review.user) }}
-    </p>
-    {% if review.comment %}
-    {{ modules.RenderText(review.comment) }}
-    {% end %}
-  </div>
-</div>
-{% end %}
-{% if rating_total %}
-  <div class="review">
-    <div class="rating">
-      <p>TOTAL: {{ rating_total }}</p>
+<div id="question_actions">
+  <h3>Admin actions</h3>
+  {% if question.submit_date %}
+  <form action="{{ reverse_url('reject_question', question._id) }}" method="post" id="reject">
+    {{ xsrf_form_html() }}
+    <div id="reject_comment" style="display:none">Comment:<br>
+    <textarea name="reject_comment" cols="30" rows="3"></textarea>
     </div>
-  </div>
+    <div><input type="submit" value="Reject"></div>
+  </form>
+  {% if question.accept_date %}
+    {% if skip is not None %}
+      <form action="{{ reverse_url('review_accepted') }}" method="post" id="skip">
+        {{ xsrf_form_html() }}
+        <div><input type="hidden" name="skip" value="{{ skip }}">
+        <input type="submit" value="Skip"></div>
+      </form>
+    {% end %}
+
+    <form action="{{ reverse_url('publish_question', question._id) }}" method="post" id="publish">
+      {{ xsrf_form_html() }}
+      <div><input type="submit" value="Publish!"></div>
+    </form>
+
+  {% else %}
+    <form action="{{ reverse_url('accept_question', question._id) }}" method="post" id="accept">
+      {{ xsrf_form_html() }}
+      <div><input type="submit" value="Accept"></div>
+    </form>
+  {% end %}
+  {% else %}
+  <p><em>Question not submitted yet</em></p>
+  {% end %}
+</div>
 {% end %}
+
+<div id="question_reviews">
+<h3>Reviews</h3>
+<table style="width:100%">
+  <thead>
+  <tr>
+    <td>Verdict</td>
+    <td>Reviewer</td>
+    <td>Difficulty</td>
+    <td>Rating</td>
+  </tr>
+  </thead>
+  {% if rating_total %}
+  <tfoot>
+  <tr>
+    <td colspan="2">TOTALS:</td>
+    <td>{{ difficulty_total }}</td>
+    <td>{{ rating_total }}</td>
+  </tr>
+  </tfoot>
+  {% end %}
+  {% for review in reviews %}
+  <tbody class="review">
+    <tr>
+      <td><strong>{{ review.verdict }}</strong></td>
+      <td>{{ modules.ShowUser(review.user) }}</td>
+      <td>{{ review.difficulty }}</td>
+      <td>{{ review.rating }}</td>
+    </tr>
+  </tbody>
+  {% end %}
+</table>
 </div>
 
-{% end %}
 </div>
 
 <div id="question_info">
@@ -97,9 +113,11 @@
 <strong>By:</strong>
 <span>{{ modules.ShowUser(question.author) }}</span>
 <br>
+{% if question.submit_date %}
 <strong>Submitted:</strong>
 <span>{{ modules.TimeSince(question.submit_date) }} ago</span>
 <br>
+{% end %}
 {% if question.reject_date %}
 <strong>Rejected:</strong>
 <span>{{ modules.TimeSince(question.reject_date) }} ago</span>
@@ -122,5 +140,9 @@
 {% end %}
 </p>
 </div>
+
+<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
+
+
 
 {% end %}

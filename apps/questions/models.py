@@ -71,6 +71,7 @@ class QuestionReview(BaseDocument):
       'question': Question,
       'user': User,
       'verdict': unicode,
+      'difficulty': int,
       'rating': int,
       'comment': unicode,
     }

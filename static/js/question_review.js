@@ -4,6 +4,11 @@ head.ready(function() {
       $(this).addClass('bold');
       $('#id_rating').val($(this).val());
    });
+   $('button[name="difficulty_button"]').click(function() {
+      $('button.bold', '#difficulty_buttons').removeClass('bold');
+      $(this).addClass('bold');
+      $('#id_difficulty').val($(this).val());
+   });
    $('button[name="verdict_button"]').click(function() {
       $('button.bold', '#verdict_buttons').removeClass('bold');
       $(this).addClass('bold');
@@ -17,6 +22,14 @@ head.ready(function() {
 	 }
       });
    }
+   
+   if ($('#id_difficulty').val().length) {
+      $('#difficulty_buttons button').each(function() {
+	 if ($(this).val() == $('#id_difficulty').val()) {
+	    $(this).click();
+	 }
+      });
+   }   
    
    if ($('#id_verdict').val().length) {
       $('#verdict_buttons button').each(function() {

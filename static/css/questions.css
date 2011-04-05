@@ -5,10 +5,6 @@
 #question_info {
   width:45%;
 }
-#question_actions {
-  float:right;
-  width:45%;
-}
 button.bold { font-weight:bold; }
 #questions_score { float:right; }
 
@@ -37,3 +33,5 @@ p.question_metadata {
   margin-left:20px;
   margin-top:0.1em;
 }
+
+th { text-align: left; }

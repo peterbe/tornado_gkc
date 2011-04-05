@@ -169,7 +169,10 @@ class ViewQuestionHandler(QuestionsBaseHandler):
         options['page_title'] = "View question"
         options['your_question'] = options['question'].author == options['user']
         options['reviews'] = []
+
+        # to avoid NameErrors
         options['rating_total'] = None
+        options['difficulty_total'] = None
         options['skip'] = None
         self.render('questions/view.html', **options)
 
@@ -394,7 +397,7 @@ class RandomReviewQuestionHandler(QuestionsBaseHandler):
                              'state':ACCEPTED}
             questions = self.db.Question.find(accept_search)
             questions_count = questions.count()
-            if questions_count > 1:
+            if questions_count >= 1:
                 count_rejections = 0
                 previous_rs = set()
                 while True:
@@ -419,11 +422,9 @@ class RandomReviewQuestionHandler(QuestionsBaseHandler):
                         break
 
         options['buttons'] = (
-          dict(name=VERIFIED, value="OK, verified"),
-          dict(name=UNSURE, value="OK but unsure"),
+          dict(name=VERIFIED, value="Answer verified"),
+          dict(name=UNSURE, value="Unsure about answer"),
           dict(name=WRONG, value="Wrong"),
-          dict(name=TOO_EASY, value="Too easy"),
-          dict(name=TOO_HARD, value="Too hard"),
         )
 
         options['question'] = question
@@ -456,11 +457,14 @@ class ReviewQuestionHandler(QuestionsBaseHandler):
             'question.$id': question._id}):
             raise HTTPError(400, "Already reviewed")
 
-        rating = self.get_argument('rating')
+        rating = self.get_argument('rating', 'OK')
         rating_to_int = {'Bad':-1, 'OK':1, 'Good':2}
         if rating not in rating_to_int:
             raise HTTPError(404, "Invalid rating")
         rating = rating_to_int[rating]
+        difficulty = int(self.get_argument('difficulty', 0))
+        if difficulty not in (-1, 0, 1):
+            raise HTTPError(400, "Invalid difficulty")
         comment = self.get_argument('comment', u'').strip()
         verdict = self.get_argument('verdict')
         if verdict not in VERDICTS:
@@ -471,6 +475,7 @@ class ReviewQuestionHandler(QuestionsBaseHandler):
         review.user = user
         review.verdict = verdict
         review.rating = rating
+        review.difficulty = difficulty
         review.comment = comment
         review.save()
 
@@ -502,11 +507,23 @@ class AcceptedReviewQuestionHandler(QuestionsBaseHandler):
         if question:
             options['reviews'] = self.db.QuestionReview.find({'question.$id':question._id}).sort('add_date', 1)
             ratings = [x.rating for x in options['reviews']]
+            for e in options['reviews'].rewind():
+                print (e.verdict, e.difficulty, e.rating)
+                print
+            options['reviews'].rewind()
+            difficulties = [x.difficulty for x in options['reviews'] if x.difficulty is not None]
             options['reviews'].rewind()
             if ratings:
                 options['rating_total'] = str(sum(ratings))
             else:
-                options['rating_total'] = '0'
+                options['rating_total'] = '-'
+            print "ratings", ratings
+            print "difficulties", difficulties
+
+            if difficulties:
+                options['difficulty_total'] = str(sum(difficulties))
+            else:
+                options['difficulty_total'] = '-'
             options['page_title'] = "Review accepted question"
             self.render("questions/view.html", **options)
         else:
@@ -517,3 +534,15 @@ class AcceptedReviewQuestionHandler(QuestionsBaseHandler):
     def post(self):
         skip = int(self.get_argument('skip'))
         self.redirect(self.reverse_url('review_accepted') + "?skip=%d" % (skip + 1))
+
+
+route_redirect('/questions/all$', '/questions/all/', name="all_questions_shortcut")
+@route('/questions/all/$', name="all_questions")
+class AllQuestionsHomeHandler(QuestionsBaseHandler):
+
+    @tornado.web.authenticated
+    def get(self):
+        options = self.get_base_options()
+        print self.is_admin_user(options['user'])
+        options['all_questions'] = self.db.Question.find().sort('add_date', 1)
+        self.render("questions/all.html", **options)
