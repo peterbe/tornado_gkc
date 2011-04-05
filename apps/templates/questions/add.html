@@ -6,9 +6,10 @@
 
 {% block content_inner %}
 
+<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
 
 {% if form.errors %}
-    <ul class="errors">
+    <ul class="errors general-errors">
         {% for field_name, field_errors in [(n,form.errors[n]) for n in form.errors if form.errors[n]] %}
             {% for error in field_errors %}
                 <li>{{ form[field_name].label }} {{ error }}</li>
@@ -17,20 +18,18 @@
     </ul>
 {% end %}
 
-<form action="" method="post">{{ xsrf_form_html() }}
-<table>
+<form action="" class="question" method="post">{{ xsrf_form_html() }}
+
 {% for field in form %}
-  <tr>
-    <td class="label">{{ field.label }}</td>
-    <td class="input">{{ field() }}
+  <p class="field">
+    {{ field.label }}
+    {{ modules.RenderField(field) }}
     {% if field.errors %}
        <ul class="errors">{% for error in field.errors %}<li>{{ error }}</li>{% end %}</ul>
     {% end %}
-    </td>
-  </tr>
+  </p>
 {% end %}
-</table>
-<div><input type="submit" value="Add question"></div>
+<div><input type="submit" value="Add question" title="You can edit the question before you submit it"></div>
 </form>
 
 {% end %}

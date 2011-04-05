@@ -17,6 +17,7 @@ class MultilinesWidget(object):
         else:
             values = value
         #print "__call__ values", repr(values)
+        _removed_title = False
         for i in range(self.length):
             if values is None:
                 value = u''
@@ -28,6 +29,10 @@ class MultilinesWidget(object):
             kwargs['value'] = value
             kwargs_copy = dict(kwargs, id='%s_%s' % (kwargs['id'], i))
             html = '<input %s />' % html_params(name=field.name, **kwargs_copy)
+            if not _removed_title:
+                if 'title' in kwargs:
+                    kwargs.pop('title')
+                _removed_title = True
             htmls.append(html)
             if self.vertical:
                 htmls.append('<br/>')
@@ -45,16 +50,22 @@ class BaseForm(Form):
 class QuestionForm(BaseForm):
     text = TextField("Text", [validators.Required(),
                               validators.Length(min=5, max=100)],
+                     description="Make sure the question ends with a ?",
                      id="id_text")
     answer = TextField("Answer", [validators.Required(),
                                   validators.Length(min=1, max=25)],
+                      description="Make it reasonably short and easy to type",
                       id="id_answer")
-    accept = TextAreaField("Also accept", widget=MultilinesWidget(length=3, vertical=True))
+    accept = TextAreaField("Also accept", widget=MultilinesWidget(length=3, vertical=True),
+                           description="Other answers that are also correct")
     alternatives = TextAreaField("Alternatives (exactly 4)", [validators.Required()],
+                                 description="The answer has to be one of the alternatives",
                                  widget=MultilinesWidget(length=4))
-    genre = TextField("Genre", [validators.Required()])
+    genre = TextField("Category", [validators.Required()],
+                      description='Try to use big groups like "Geography" instead of "European capitals"')
     spell_correct = BooleanField("Spell correct", description="Whether small spelling mistakes should be accepted")
-    comment = TextAreaField("Comment")
+    comment = TextAreaField("Comment",
+                            description="Any references or links to strengthen your answer")
 
     def validate(self, *args, **kwargs):
         success = super(QuestionForm, self).validate(*args, **kwargs)
@@ -64,6 +75,7 @@ class QuestionForm(BaseForm):
                 self._fields['alternatives'].errors.append("Answer not in alternatives")
                 success = False
         return success
+
 
 class EditQuestionForm(QuestionForm):
     pass

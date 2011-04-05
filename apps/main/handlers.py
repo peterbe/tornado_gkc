@@ -206,10 +206,13 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         # The templates rely on these variables
         options = dict(user=None,
                        user_name=None,
-                       is_admin_user=False)
+                       is_admin_user=False,
+                       page_title=settings.PROJECT_TITLE,
+                       total_points=0,
+                       )
 
         # default settings
-        settings = dict(
+        settings_ = dict(
                         disable_sound=False,
                         )
 
@@ -230,15 +233,46 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
 
             # override possible settings
             user_settings = self.get_current_user_settings(user)
-            if user_settings:
-                settings['disable_sound'] = user_settings.disable_sound
+            options['total_points'] = self.get_total_points(user)
 
-        options['settings'] = settings
+        options['settings'] = settings_
 
         options['git_revision'] = self.application.settings['git_revision']
         options['debug'] = self.application.settings['debug']
 
         return options
+
+    def push_flash_message(self, title, text='', user=None):
+        if user is None:
+            user = self.get_current_user()
+            if not user:
+                return
+        if not text:
+            raise ValueError("AT the moment we can't accept blank texts on flash "\
+                             "messages because gritter won't be able to show it")
+        for msg in self.db.FlashMessage.collection.find({'user.$id':user._id})\
+          .sort('add_date', -1):
+            if msg['title'] == title and msg['text'] == text:
+                return
+        msg = self.db.FlashMessage()
+        msg.user = user
+        msg.title = unicode(title)
+        msg.text = unicode(text)
+        msg.save()
+
+    def pull_flash_messages(self, unread=True, user=None):
+        if user is None:
+            user = self.get_current_user()
+            if not user:
+                return []
+        _search = {'user.$id':user._id}
+        if unread:
+            _search['read'] = False
+        return self.db.FlashMessage.find(_search).sort('add_date', 1)
+
+    def get_total_points(self, user):
+        return 0
+
 
 
 @route('/')
@@ -704,7 +738,7 @@ class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
                 user.last_name = last_name
             user.set_password(random_string(20))
             user.save()
-
+            self.push_flash_message("Welcome!", "You username is %s" % user.username)
             self.notify_about_new_user(user, extra_message="Used Twitter")
         else:
             if first_name:
@@ -712,6 +746,7 @@ class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
             if last_name:
                 user.last_name = last_name
             user.save()
+            self.push_flash_message("Logged in", "You username is %s" % user.username)
 
         user_settings = self.get_user_settings(user)
         if not user_settings:

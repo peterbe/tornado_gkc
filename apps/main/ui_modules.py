@@ -14,8 +14,6 @@ from subprocess import Popen, PIPE
 from utils import mkdir, format_time_ampm
 from utils.truncate import truncate_words
 
-
-
 class Footer(tornado.web.UIModule):
     def render(self, user=None):
         return self.render_string("modules/footer.html",
@@ -428,3 +426,20 @@ class HelpPageTitle(tornado.web.UIModule):
                 return each['label']
 
         return "Help on GKC"
+
+
+class Messages(object):
+    def __init__(self, msgs):
+        self.msgs = msgs
+    def as_list(self):
+        return tornado.escape.json_encode(self.msgs)
+
+class FlashMessages(tornado.web.UIModule):
+    def render(self):
+        msgs = []
+        for message in self.handler.pull_flash_messages():
+            msgs.append(dict(title=message.title,
+                             text=message.text))
+            message.read = True
+            message.save()
+        return Messages(msgs)

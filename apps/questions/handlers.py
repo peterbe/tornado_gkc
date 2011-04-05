@@ -71,6 +71,7 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
     @tornado.web.authenticated
     def get(self):
         options = self.get_base_options()
+        options['page_title'] = "Questions dashboard"
         user = self.get_current_user()
         _user_search = {'author.$id': user._id}
         options['accepted_questions'] = \
@@ -145,6 +146,8 @@ class AddQuestionHandler(QuestionsBaseHandler):
             question.save()
             edit_url = self.reverse_url('edit_question', str(question._id))
             #self.redirect('/questions/%s/edit/' % question._id)
+            self.push_flash_message("Question added",
+              "Your question has been added and can now be edited")
             self.redirect(edit_url)
 
         else:
@@ -245,14 +248,26 @@ class EditQuestionHandler(QuestionsBaseHandler):
                 question.submit_date = datetime.datetime.now()
                 question.save()
 
+                self.push_flash_message("Question submitted!",
+                  "Your question has now been submitted and awaits to be accepted for review.")
+
                 url = self.reverse_url('questions')
                 url += '?submitted=%s' % question._id
                 self.redirect(url)
             else:
                 edit_url = self.reverse_url('edit_question', str(question._id))
                 #self.redirect('/questions/%s/edit/' % question._id)
+
+                if self.can_submit_question(question):
+                    self.push_flash_message("Question edited!",
+                     "Question is ready to be submitted")
+                else:
+                    self.push_flash_message("Question edited!",
+                     "Question is not yet ready to be submitted")
+
+
                 # flash message
-                self.redirect(edit_url+'?msg=EDITED')
+                self.redirect(edit_url)
 
         else:
             self.get(question_id, form=form)
@@ -290,8 +305,10 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
         question.submit_date = datetime.datetime.now()
         question.save()
 
+        self.push_flash_message("Question submitted!",
+            "Your question has now been submitted and awaits to be accepted for review.")
+
         url = self.reverse_url('questions')
-        url += '?submitted=%s' % question._id
         self.redirect(url)
 
 @route('/questions/(\w{24})/reject/$', name="reject_question")
@@ -308,8 +325,12 @@ class RejectQuestionHandler(QuestionsBaseHandler):
         question.reject_date = datetime.datetime.now()
         question.state = REJECTED
         question.save()
+
+        # XXX Need ability here to send an email to the question owner!!
+        self.push_flash_message("Question rejected!",
+            "Question owner needs to amend the question.")
+
         url = self.reverse_url('questions')
-        url += '?rejected=%s' % question._id
         self.redirect(url)
 
 
@@ -325,8 +346,11 @@ class AcceptQuestionHandler(QuestionsBaseHandler):
         question.state = ACCEPTED
         question.accept_date = datetime.datetime.now()
         question.save()
+
+        self.push_flash_message("Question accepted!",
+            "Question is now ready to be peer reviewed")
+
         url = self.reverse_url('view_question', question._id)
-        url += '?accepted=%s' % question._id
         self.redirect(url)
 
 @route('/questions/(\w{24})/publish/$', name="publish_question")
@@ -341,8 +365,11 @@ class PublishQuestionHandler(QuestionsBaseHandler):
         question.state = PUBLISHED
         question.publish_date = datetime.datetime.now()
         question.save()
+
+        self.push_flash_message("Question published!",
+            "Question is now ready for game play!")
+
         url = self.reverse_url('questions')
-        url += '?published=%s' % question._id
         self.redirect(url)
 
 @route('/questions/review/random/$', name="review_random")
@@ -447,8 +474,10 @@ class ReviewQuestionHandler(QuestionsBaseHandler):
         review.comment = comment
         review.save()
 
+        self.push_flash_message("Question reviewed!",
+            "Thank you for adding your review")
+
         url = self.reverse_url('review_random')
-        url += '?reviewed=%s' % question._id
         self.redirect(url)
 
 

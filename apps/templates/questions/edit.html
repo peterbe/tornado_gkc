@@ -6,16 +6,19 @@
 
 {% block content_inner %}
 
+<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
+
+
 {% if can_submit %}
 <div id="ready_to_submit">
   <p>Question is ready to be submitted:
-  <a href="{{ reverse_url('submit_question', question._id) }}">Submit question</a>
+  <a href="{{ reverse_url('submit_question', question._id) }}" class="btn">Submit question &rarr;</a>
   </p>
 </div>
 {% end %}
 
 {% if form.errors %}
-    <ul class="errors">
+    <ul class="errors general-errors">
         {% for field_name, field_errors in [(n,form.errors[n]) for n in form.errors if form.errors[n]] %}
             {% for error in field_errors %}
                 <li>{{ form[field_name].label }} {{ error }}</li>
@@ -24,23 +27,22 @@
     </ul>
 {% end %}
 
-<form action="" method="post">{{ xsrf_form_html() }}
-<table>
+<form action="" class="question" method="post">{{ xsrf_form_html() }}
 {% for field in form %}
-  <tr>
-    <td class="label">{{ field.label }}</td>
-    <td class="input">{{ field() }}
+  <p class="field">
+    {{ field.label }}
+    {{ modules.RenderField(field) }}
     {% if field.errors %}
        <ul class="errors">{% for error in field.errors %}<li>{{ error }}</li>{% end %}</ul>
     {% end %}
-    </td>
-  </tr>
+  </p>
 {% end %}
-</table>
+
 <div>
   <input type="submit" value="Save question">
   {% if can_submit %}
-  <input type="submit" name="submit_question" value="Save and Submit question">
+  <input type="submit" name="submit_question" value="Save and Submit question"
+         title="Once submitted you can not edit it">
   {% end %}
   </div>
 </form>

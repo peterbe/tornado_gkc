@@ -7,9 +7,11 @@ label:after {
   width:600px;
 }
 
-#id_answer {
+#id_answer, #genre {
   font-size:140%;
   width:300px;
 }
 
 .errors li { color:red; font-weight:bold;}
+
+.shuffler { font-size:90%; padding-left:4px; }

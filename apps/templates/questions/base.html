@@ -1,7 +1,7 @@
 {% extends "../base.html" %}
 
 {% block extra_head %}
-{{ modules.Static("css/questions.css", "css/question_input.css","css/ext/jquery.autocomplete.css") }}
+{{ modules.Static("css/questions.css", "css/question_input.css","css/ext/jquery.autocomplete.css", "css/ext/tipsy.css") }}
 {% end %}
 
 {% block title %}
@@ -12,14 +12,7 @@
   {% end %}
 {% end %}
 
-{% block content_outer %}
-  <div id="content_inner">
-  <h1>{% if page_title %}
-  {{ page_title }}
-  {% else %}
-  Questions, questions, questions
-  {% end %}
-  </h1>
+{% block extra_login %}
       <div id="questions_score">
       <p>
         <strong>Your score</strong>
@@ -29,10 +22,21 @@
         reviewed: {{ questions_score['reviewed'] }}
       </p>
       </div>
+
+{% end %}
+
+{% block content_outer %}
+  <div id="content_inner">
+  <h2>{% if page_title %}
+  {{ page_title }}
+  {% else %}
+  Questions, questions, questions
+  {% end %}
+  </h2>
       {% block content_inner %}
       {% end %}
 
-    <p><a href="/questions/">Questions home page</a></p>
+    <!--<p><a href="/questions/">Questions home page</a></p>-->
   </div>
 
 {% end %}

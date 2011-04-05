@@ -83,3 +83,23 @@ class UserSettings(BaseDocument):
         return [key for (key, value)
                 in UserSettings.structure.items()
                 if value is bool]
+
+
+class FlashMessage(BaseDocument):
+    __collection__ = 'flash_messages'
+    structure = {
+      'user': User,
+      'title': unicode,
+      'text': unicode,
+      'read': bool,
+    }
+    default_values = {
+      'read': False,
+      'text': u'',
+    }
+    required_fields = ['user', 'title']
+    indexes = [
+      {'fields': 'user.$id',
+       'check': False},
+      {'fields': 'read'},
+    ]

@@ -24,3 +24,16 @@ button.bold { font-weight:bold; }
 p.verdict strong {
     padding-right:10px;
 }
+
+div.question {
+  margin-left:20px;
+}
+p.question_text {
+  font-weight: bold;
+  margin-bottom:0.1em;
+}
+p.question_metadata {
+  font-size: 0.9em;
+  margin-left:20px;
+  margin-top:0.1em;
+}

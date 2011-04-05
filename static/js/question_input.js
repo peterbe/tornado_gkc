@@ -33,7 +33,7 @@ var Form = (function() {
          }
       },
       add_shuffler: function() {
-         $('<a>', {href:'#', text:'shuffle'})
+         $('<a>', {href:'#', text:'shuffle!'})
            .addClass('shuffler')
              .click(function() {
                 if (Form.has_all_alternatives) {
@@ -51,6 +51,16 @@ head.js(JS_URLS.jquery_autocomplete, function() {
    $.getJSON('/questions/genre_names.json', function(r) {
       $('input[name="genre"]').autocomplete(r.names);
    });
+});
+
+head.js(JS_URLS.jquery_tipsy, function() {
+   $('textarea').tipsy({trigger: 'focus', gravity: 'sw', fade: true});
+   $('input[title]')
+     .not('#spell_correct')
+       .not('input[type="submit"]')
+       .tipsy({trigger: 'focus', gravity: 'ne', fade: true});
+   $('#spell_correct').tipsy({trigger: 'hover', gravity: 'w', fade: true});
+   $('input[type="submit"]').tipsy({trigger: 'hover', gravity: 'w', fade: true});
 });
 
 head.ready(function() {
@@ -97,4 +107,6 @@ head.ready(function() {
    $('input[name="submit_question"]').click(function() {
       return confirm("Are you sure?\nQuestion can not be edited after this.");
    });
+   
+   
 });

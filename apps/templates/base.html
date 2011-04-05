@@ -2,12 +2,11 @@
 <html>
     <head>
         <!-- revision: {{ git_revision }} -->
-        <title>{% block title %}GKC{% end %}</title>
+        <title>{% block title %}{{ page_title }}{% end %}</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <meta name="description" content="">
         <meta name="keywords" content="">
-	<!--<link rel="Shortcut Icon" href="{{ modules.StaticURL("images/favicon.ico") }}" type="image/x-icon">-->
-        {{ modules.Static("css/style.css", "css/ext/fancybox/jquery.fancybox-1.3.4.css") }}
+        {{ modules.Static("css/style.css", "css/ext/fancybox/jquery.fancybox-1.3.4.css", "css/ext/jquery.gritter.css") }}
         {% block extra_head_outer %}
         {% block extra_head %}{% end %}
         {% end %}
@@ -21,21 +20,30 @@
 
     </head>
     <body>
+    <img src="{{ static_url('images/black-background.png') }}" alt="" id="bg" />
+
+    <div id="body">
+
+    <div id="header">
+      <h1><a href="/">Kwissle</a></h1>
+
+      <div id="login" class="topnav">
+        {% if user %}
+        <p><a href="/user/" class="account">Hi {{ user_name }}</a>
+        {% if is_admin_user %}(admin){% end %}
+        <a href="/auth/logout/" class="log-out">log out</a></p>
+        {% else %}
+        <p><a href="/user/" class="account">Login &amp; registration</a></p>
+        {% end %}
+        {% block extra_login %}
+        {% end %}
+      </div>
+      <div class="clearer">&nbsp;</div>
+    </div>
 
     {% block content %}
 
-    {% block h1 %}{% end %}
-
-
-    <div id="login" class="topnav">
-      {% if user %}
-      <p><a href="/user/" class="account">Hi {{ user_name }}</a>
-      {% if is_admin_user %}(admin){% end %}
-      <a href="/auth/logout/" class="log-out">log out</a></p>
-      {% else %}
-      <p><a href="/user/" class="account">Login &amp; registration</a></p>
-      {% end %}
-    </div>
+    {% block h2 %}{% end %}
 
     <div id="wrap">
 
@@ -49,9 +57,10 @@
       <div id="footer">
       {{ modules.Footer(user=user) }}
       </div>
-    </div>
 
+    </div>
     {% end %}
+    </div>
 
 {{ modules.Settings(settings) }}
 
@@ -59,7 +68,14 @@
 {% block corejs %}
 {{ modules.Static("js/ext/head.load.min.js") }}
 <script type="text/javascript">
-head.js(JS_URLS.jquery, JS_URLS.fancybox, JS_URLS.base);
+head.js(JS_URLS.jquery, JS_URLS.fancybox, JS_URLS.gritter, JS_URLS.base, function() {
+  var messages = {{ modules.FlashMessages().as_list() }};
+  $.each(messages, function(i, msg) {
+    $.gritter.add({title: msg.title,
+                   text: msg.text});
+  });
+});
+
 </script>
 {% end %}
 

@@ -1,4 +1,4 @@
-TITLE = u"GKC"
+PROJECT_TITLE = u"Kwissle"
 APPS = (
   'main',
   'questions',
