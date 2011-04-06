@@ -543,6 +543,6 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler):
     @tornado.web.authenticated
     def get(self):
         options = self.get_base_options()
-        print self.is_admin_user(options['user'])
         options['all_questions'] = self.db.Question.find().sort('add_date', 1)
+        options['page_title'] = "All questions (admin eyes only)"
         self.render("questions/all.html", **options)

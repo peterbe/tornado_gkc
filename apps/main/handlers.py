@@ -243,7 +243,6 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         return options
 
     def push_flash_message(self, title, text='', user=None):
-        print "About to save flash message..."
         if user is None:
             user = self.get_current_user()
             if not user:
@@ -252,7 +251,7 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
             raise ValueError("AT the moment we can't accept blank texts on flash "\
                              "messages because gritter won't be able to show it")
         for msg in self.db.FlashMessage.collection.find({'user.$id':user._id})\
-          .sort('add_date', -1):
+          .sort('add_date', -1).limit(1):
             if msg['title'] == title and msg['text'] == text:
                 return
         msg = self.db.FlashMessage()
@@ -260,8 +259,6 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         msg.title = unicode(title)
         msg.text = unicode(text)
         msg.save()
-        print "Saving flashmessage"
-        print msg
 
     def pull_flash_messages(self, unread=True, user=None):
         if user is None:
