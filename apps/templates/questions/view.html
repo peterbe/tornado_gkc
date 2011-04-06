@@ -45,6 +45,7 @@
 </div>
 {% end %}
 
+{% if question.accept_date %}
 <div id="question_reviews">
 <h3>Reviews</h3>
 <table style="width:100%">
@@ -77,6 +78,9 @@
   {% end %}
 </table>
 </div>
+{% else %}
+<p>No reviews at the moment because the question isn't accepted yet.</p>
+{% end %}
 
 </div>
 

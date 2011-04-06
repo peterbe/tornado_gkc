@@ -40,6 +40,7 @@ class Settings(tornado.web.UIModule):
 
 class TimeSince(tornado.web.UIModule):
     def render(self, date, date2=None):
+        assert date
         return smartertimesince(date, date2)
 
 

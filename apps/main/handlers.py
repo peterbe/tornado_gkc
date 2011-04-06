@@ -448,20 +448,21 @@ class ForgottenPasswordHandler(BaseHandler):
         #if not isinstance(email_body, unicode):
         #    email_body = unicode(email_body, 'utf-8')
 
-        if 1:#try:
+        try:
             assert send_email(self.application.settings['email_backend'],
                       "Password reset for on %s" % self.application.settings['title'],
                       email_body,
                       self.application.settings['webmaster'],
                       [existing_user.email])
 
-            self.redirect('/user/forgotten/?success=%s' %
-              quote("Password reset instructions sent to %s" % \
-              existing_user.email)
-            )
             #self.get(success="Password reset instructions sent to %s" % \
             #  existing_user.email)
-        #finally:
+        except:
+            raise
+        self.redirect('/user/forgotten/?success=%s' %
+              quote("Password reset instructions sent to %s" % \
+              existing_user.email)
+        )
 
         #self.finish()
 
@@ -533,6 +534,7 @@ class BaseAuthHandler(BaseHandler):
         #return # temporarily commented out
         if self.application.settings['debug']:
             return
+
         try:
             self._notify_about_new_user(user, extra_message=extra_message)
         except:
@@ -561,7 +563,8 @@ class BaseAuthHandler(BaseHandler):
                    subject,
                    email_body,
                    self.application.settings['webmaster'],
-                   self.application.settings['admin_emails'])
+                   self.application.settings['admin_emails'],
+                   )
 
 
 

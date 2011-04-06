@@ -1,6 +1,7 @@
 from pymongo.objectid import InvalidId, ObjectId
 import re
 import datetime
+import logging
 from random import randint
 from pprint import pprint
 import tornado.web
@@ -8,7 +9,8 @@ from tornado.web import HTTPError
 from utils.decorators import login_required
 from apps.main.handlers import BaseHandler
 from utils.routes import route, route_redirect
-#import constants
+from utils.send_mail import send_email
+import settings
 
 from models import STATES, DRAFT, SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
 
@@ -256,8 +258,22 @@ class EditQuestionHandler(QuestionsBaseHandler):
                 self.push_flash_message("Question submitted!",
                   "Your question has now been submitted and awaits to be accepted for review.")
 
+                question_url = 'http://%s%s' % \
+                  (self.request.host, self.reverse_url('view_question', question._id))
+                try:
+                    email_body = "New question submitted:\n%s\n\n--\n%s\n" % \
+                      (question_url, settings.PROJECT_TITLE)
+                    send_email(self.application.settings['email_backend'],
+                               "%s has submitted a question" % user.username,
+                               email_body,
+                               self.application.settings['webmaster'],
+                               self.application.settings['admin_emails'],
+                    )
+                except:
+                    logging.error("Unable to send email about submitted question %s"\
+                      % question_url, exc_info=True)
+
                 url = self.reverse_url('questions')
-                url += '?submitted=%s' % question._id
                 self.redirect(url)
             else:
                 edit_url = self.reverse_url('edit_question', str(question._id))
@@ -269,7 +285,6 @@ class EditQuestionHandler(QuestionsBaseHandler):
                 else:
                     self.push_flash_message("Question edited!",
                      "Question is not yet ready to be submitted")
-
 
                 # flash message
                 self.redirect(edit_url)
@@ -313,6 +328,19 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
         self.push_flash_message("Question submitted!",
             "Your question has now been submitted and awaits to be accepted for review.")
 
+
+        try:
+            email_body = "New question submitted:\n%s\n\n--\n%s\n" % \
+              (question_url, settings.PROJECT_TITLE)
+            send_email(self.application.settings['email_backend'],
+                       "%s has submitted a question" % user.username,
+                       email_body,
+                       self.application.settings['webmaster'],
+                       self.application.settings['admin_emails'],
+            )
+        except:
+            logging.error("Unable to send email about submitted question %s"\
+              % question_url, exc_info=True)
         url = self.reverse_url('questions')
         self.redirect(url)
 
@@ -334,6 +362,26 @@ class RejectQuestionHandler(QuestionsBaseHandler):
         # XXX Need ability here to send an email to the question owner!!
         self.push_flash_message("Question rejected!",
             "Question owner needs to amend the question.")
+
+        edit_question_url = 'http://%s%s' % \
+          (self.request.host, self.reverse_url('edit_question', question._id))
+        try:
+            email_body = 'Sorry but the question you added ("%s") had to '\
+                         'be rejected.\n' % question.text
+            if reject_comment:
+                email_body += 'Comment: %s\n\n' % reject_comment
+            email_body += "To edit the question again go to:\n%s\n" %\
+              edit_question_url
+            email_body += "\n--\n%s\n" % settings.PROJECT_TITLE
+            send_email(self.application.settings['email_backend'],
+                       "%s has submitted a question" % user.username,
+                       email_body,
+                       self.application.settings['webmaster'],
+                       self.application.settings['admin_emails'],
+            )
+        except:
+            logging.error("Unable to send email about rejected question %s"\
+              % question_url, exc_info=True)
 
         url = self.reverse_url('questions')
         self.redirect(url)

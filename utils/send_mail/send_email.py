@@ -45,7 +45,7 @@ def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
     else:
         return s
 
-    
+
 def make_msgid(idstring=None):
     """Returns a string suitable for RFC 2822 compliant Message-ID, e.g:
 
@@ -94,12 +94,12 @@ def forbid_multi_line_headers(name, val, encoding):
     return name, val
 
 class SafeMIMEText(MIMEText):
-    
+
     def __init__(self, text, subtype, charset):
         self.encoding = charset
         MIMEText.__init__(self, text, subtype, charset)
-    
-    def __setitem__(self, name, val):    
+
+    def __setitem__(self, name, val):
         name, val = forbid_multi_line_headers(name, val, self.encoding)
         MIMEText.__setitem__(self, name, val)
 
@@ -147,7 +147,7 @@ class EmailMessage(object):
 
     def message(self):
         encoding = self.encoding or 'utf-8'
-        
+
         msg = SafeMIMEText(smart_str(self.body, encoding),
                            self.content_subtype, encoding)
         msg = self._create_message(msg)
@@ -280,7 +280,7 @@ def send_email(backend, subject, message, from_email, recipient_list,
     Note: The API for this method is frozen. New code wanting to extend the
     functionality should use the EmailMessage class directly.
     """
-    connection = connection or get_connection(backend, 
+    connection = connection or get_connection(backend,
                                     username=auth_user,
                                     password=auth_password,
                                     fail_silently=fail_silently)
