@@ -366,19 +366,20 @@ class RejectQuestionHandler(QuestionsBaseHandler):
         edit_question_url = 'http://%s%s' % \
           (self.request.host, self.reverse_url('edit_question', question._id))
         try:
-            email_body = 'Sorry but the question you added ("%s") had to '\
-                         'be rejected.\n' % question.text
-            if reject_comment:
-                email_body += 'Comment: %s\n\n' % reject_comment
-            email_body += "To edit the question again go to:\n%s\n" %\
-              edit_question_url
-            email_body += "\n--\n%s\n" % settings.PROJECT_TITLE
-            send_email(self.application.settings['email_backend'],
-                       "%s has submitted a question" % user.username,
-                       email_body,
-                       self.application.settings['webmaster'],
-                       self.application.settings['admin_emails'],
-            )
+            if question.author.email:
+                email_body = 'Sorry but the question you added ("%s") had to '\
+                             'be rejected.\n' % question.text
+                if reject_comment:
+                    email_body += 'Comment: %s\n\n' % reject_comment
+                email_body += "To edit the question again go to:\n%s\n" %\
+                  edit_question_url
+                email_body += "\n--\n%s\n" % settings.PROJECT_TITLE
+                send_email(self.application.settings['email_backend'],
+                           "%s has submitted a question" % user.username,
+                           email_body,
+                           self.application.settings['webmaster'],
+                           [question.author.email],
+                )
         except:
             logging.error("Unable to send email about rejected question %s"\
               % question_url, exc_info=True)
