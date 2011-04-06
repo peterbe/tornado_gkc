@@ -256,7 +256,9 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         for msg in self.db.FlashMessage.collection.find({'user.$id':user._id})\
           .sort('add_date', -1).limit(1):
             if msg['title'] == title and msg['text'] == text:
-                return
+                # but was it several seconds ago?
+                if (datetime.datetime.now() - msg['add_date']).seconds < 3:
+                    return
         msg = self.db.FlashMessage()
         msg.user = user
         msg.title = unicode(title)
