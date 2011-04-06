@@ -374,7 +374,10 @@ class PublishQuestionHandler(QuestionsBaseHandler):
         self.push_flash_message("Question published!",
             "Question is now ready for game play!")
 
-        url = self.reverse_url('questions')
+        if 1:
+            url = self.reverse_url('review_accepted')
+        else:
+            url = self.reverse_url('questions')
         self.redirect(url)
 
 @route('/questions/review/random/$', name="review_random")
