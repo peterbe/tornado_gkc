@@ -9,7 +9,8 @@ from apps.main.handlers import BaseHandler
 from utils.routes import route, route_redirect
 #import constants
 
-from models import *
+from models import STATES, DRAFT, SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
+
 from forms import QuestionForm
 
 class QuestionsBaseHandler(BaseHandler):
@@ -545,4 +546,25 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler):
         options = self.get_base_options()
         options['all_questions'] = self.db.Question.find().sort('add_date', 1)
         options['page_title'] = "All questions (admin eyes only)"
+
+        state_counts = []
+        for state in STATES:
+            c = self.db.Question.find({'state':state}).count()
+            state_counts.append((state, c))
+        _total = sum(x[1] for x in state_counts)
+        state_counts = [(state, count, round(100.0*count/_total,0))
+          for (state, count) in state_counts]
+        options['state_counts'] = state_counts
+
+        try:
+            from pygooglechart import PieChart2D
+            print PieChart2D.BACKGROUND, PieChart2D.ALPHA
+            chart = PieChart2D(400, 250)
+            chart.fill_solid(PieChart2D.BACKGROUND, '000000')
+            chart.add_data([x[1] for x in state_counts])
+            chart.set_pie_labels([x[0] for x in state_counts])
+            options['state_counts_pie'] = chart.get_url()
+        except ImportError:
+            options['state_counts_pie'] = None
+
         self.render("questions/all.html", **options)
