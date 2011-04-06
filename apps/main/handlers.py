@@ -119,13 +119,16 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
 
         print >>out, "\nHEADERS:"
         pprint(dict(self.request.headers), out)
-
-        send_email(self.application.settings['email_backend'],
+        try:
+            send_email(self.application.settings['email_backend'],
                    subject,
                    out.getvalue(),
                    self.application.settings['webmaster'],
                    self.application.settings['admin_emails'],
                    )
+        except:
+            logging.error("Failed to send email",
+                          exc_info=True)
 
     @property
     def db(self):
