@@ -13,6 +13,7 @@ from utils.send_mail import send_email
 import settings
 
 from models import STATES, DRAFT, SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
+from models import VERDICTS, VERIFIED, UNSURE, WRONG, TOO_EASY, TOO_HARD
 
 from forms import QuestionForm
 

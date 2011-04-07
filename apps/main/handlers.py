@@ -546,18 +546,17 @@ class BaseAuthHandler(BaseHandler):
         subject = "New user!"
         email_body = "%s %s\n" % (user.first_name, user.last_name)
         email_body += "%s\n" % user.email
-        email_body += "%s events\n" % \
-          self.db.Event.find({'user.$id': user._id}).count()
         if extra_message:
             email_body += '%s\n' % extra_message
-        user_settings = self.get_current_user_settings(user)
-        if user_settings:
-            bits = []
-            for key, value in UserSettings.structure.items():
-                if value == bool:
-                    yes_or_no = getattr(user_settings, key, False)
-                    bits.append('%s: %s' % (key, yes_or_no and 'Yes' or 'No'))
-            email_body += "User settings:\n\t%s\n" % ', '.join(bits)
+
+        #user_settings = self.get_current_user_settings(user)
+        #if user_settings:
+        #    bits = []
+        #    for key, value in UserSettings.structure.items():
+        #        if value == bool:
+        #            yes_or_no = getattr(user_settings, key, False)
+        #            bits.append('%s: %s' % (key, yes_or_no and 'Yes' or 'No'))
+        #    email_body += "User settings:\n\t%s\n" % ', '.join(bits)
 
         send_email(self.application.settings['email_backend'],
                    subject,
