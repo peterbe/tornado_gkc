@@ -5,13 +5,15 @@
 
 <p style="text-align:center">Kwissle is all about playing general knowledge quiz battles against other people.</p>
 
+{% if user %}
 <p>
 <a href="{{ reverse_url('questions') }}">Questions</a>
 </p>
 
 <p>
-<a href="/play">Play!</a>
+<a href="{{ reverse_url('play') }}">Play!</a>
 </p>
+{% end %}
 
 <p>You currently have <strong>{{ total_points }}</strong> kwissle points</p>
 

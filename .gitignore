@@ -25,3 +25,4 @@ twitter_consumer_secret
 *.old
 gkc.pem
 elastic_smtp.json
+local_settings.py

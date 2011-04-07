@@ -328,7 +328,8 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
         self.push_flash_message("Question submitted!",
             "Your question has now been submitted and awaits to be accepted for review.")
 
-
+        question_url = 'http://%s%s' % \
+                  (self.request.host, self.reverse_url('view_question', question._id))
         try:
             email_body = "New question submitted:\n%s\n\n--\n%s\n" % \
               (question_url, settings.PROJECT_TITLE)
