@@ -27,11 +27,11 @@ def parse_datetime(datestr):
 def datetime_to_date(dt):
     return datetime.date(dt.year, dt.month, dt.day)
 
-def encrypt_password(raw_password, log_rounds=10): 
+def encrypt_password(raw_password, log_rounds=10):
     salt = bcrypt.gensalt(log_rounds=log_rounds)
     hsh = bcrypt.hashpw(raw_password, salt)
     algo = 'bcrypt'
-    return u'%s$bcrypt$%s' % (algo, hsh)   
+    return u'%s$bcrypt$%s' % (algo, hsh)
 
 
 def niceboolean(value):
@@ -67,12 +67,11 @@ def mkdir(newdir):
             _mkdir(head)
         if tail:
             os.mkdir(newdir)
-            
+
 from random import choice
 from string import letters
 def random_string(length):
     return ''.join(choice(letters) for i in xrange(length))
-
 
 
 def all_hash_tags(tags, title):
@@ -115,8 +114,8 @@ def format_time_ampm(time_or_datetime):
             return "%s%s" % (h, ampm)
     else:
         raise ValueError("Wrong parameter to this function")
-    
-    
+
+
 def generate_random_color():
     def dec2hex(d):
         return "%02X" % d

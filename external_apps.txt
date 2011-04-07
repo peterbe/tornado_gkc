@@ -1,7 +1,7 @@
 coverage
-mongokit>=0.5.13-dev
+mongokit
 pycurl
-pymongo>=1.9
 simplejson
 wtforms
 py-bcrypt
+cssmin

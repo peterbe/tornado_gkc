@@ -3,7 +3,7 @@ html, body {
   margin: 0;
   padding: 0;
   background-color:black;
-  background-image:url(/static/images/black-background.png);
+  background-image:url(../images/black-background.png);
 }
 #bg {position:fixed; top:0; left:0; width:100%; height:100%;}
 #body {
@@ -15,7 +15,7 @@ html, body {
   /*font-family: Arial,Helvetica,sans-serif;*/
   font-family: "Droid Sans",Arial,Helvetica,sans-serif;
 }
-h1,h2,h3,h4 { 
+h1,h2,h3,h4 {
   font-family: "Droid Sans",Arial,Helvetica,sans-serif;
   color:#ffea00;
 }
@@ -42,7 +42,7 @@ div.clearer {clear: both; line-height: 0; height: 0;}
     -moz-border-left-colors: none;
     -moz-border-right-colors: none;
     -moz-border-top-colors: none;
-    background: url("/static/images/btn.jpg") repeat-x scroll 0 0 #DEE0E1;
+    background: url(../images/btn.jpg) repeat-x scroll 0 0 #DEE0E1;
     border-color: #CED0D1 #CED0D1 #B1B2B3;
     border-style: solid;
     border-width: 1px;
