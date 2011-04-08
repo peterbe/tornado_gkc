@@ -1,3 +1,15 @@
+"""
+tornado_static is a module for displaying static resources in a Tornado web
+application.
+
+It can take care of merging, compressing and giving URLs ideal renamings
+suitable for aggressive HTTP caching.
+
+(c) mail@peterbe.com
+"""
+
+__version__ = '1.1'
+
 import os
 import cPickle
 import re
@@ -48,7 +60,7 @@ def _delete_old_static_name_conversion():
     conversion should be invalidated since there are now potentially new static
     resources so it needs to have different static names.
 
-    So delete the file it's older than a small amount of time in a human
+    So delete the file if it's older than a small amount of time in a human
     sense.
     """
     if os.path.isfile(out_file):
@@ -103,53 +115,60 @@ class StaticURL(tornado.web.UIModule):
         n, ext = os.path.splitext(new_name)
         new_name = "%s.%s%s" % (n, youngest, ext)
 
-        destination = file(new_name, 'w')
+        if os.path.isfile(new_name):
+            # conversion and preparation has already been done!
+            # No point doing it again, so just exit here
+            pass
+        else:
+            destination = file(new_name, 'w')
 
-        do_optimize_static_content = self.handler.settings\
-          .get('optimize_static_content', True)
+            do_optimize_static_content = self.handler.settings\
+              .get('optimize_static_content', True)
 
-        if do_optimize_static_content:
-            closure_location = self.handler\
-              .settings.get('CLOSURE_LOCATION')
-            yui_location = self.handler\
-              .settings.get('YUI_LOCATION')
+            if do_optimize_static_content:
+                closure_location = self.handler\
+                  .settings.get('CLOSURE_LOCATION')
+                yui_location = self.handler\
+                  .settings.get('YUI_LOCATION')
+                #print "* ", closure_location, os.path.isfile(closure_location) and "Exists" or "Doesn't exist"
+                #print "* ", yui_location, os.path.isfile(yui_location) and "Exists" or "Doesn't exist"
 
-        for full_path in full_paths:
-            f = open(full_path)
-            code = f.read()
-            if full_path.endswith('.js'):
-                if len(full_paths) > 1:
-                    destination.write('/* %s */\n' % os.path.basename(full_path))
-                if do_optimize_static_content and not self._already_optimized_filename(full_path):
-                    if closure_location:
-                        code = run_closure_compiler(code, closure_location,
-                      verbose=self.handler.settings.get('debug', False))
-                    elif yui_location:
-                        code = run_yui_compressor(code, 'js', yui_location,
-                      verbose=self.handler.settings.get('debug', False))
-            elif full_path.endswith('.css'):
-                if len(full_paths) > 1:
-                    destination.write('/* %s */\n' % os.path.basename(full_path))
-                if do_optimize_static_content and not self._already_optimized_filename(full_path):
-                    if cssmin is not None:
-                        code = cssmin.cssmin(code)
-                    elif yui_location:
-                        code = run_yui_compressor(code, 'css', yui_location,
+            for full_path in full_paths:
+                f = open(full_path)
+                code = f.read()
+                if full_path.endswith('.js'):
+                    if len(full_paths) > 1:
+                        destination.write('/* %s */\n' % os.path.basename(full_path))
+                    if do_optimize_static_content and not self._already_optimized_filename(full_path):
+                        if closure_location:
+                            code = run_closure_compiler(code, closure_location,
                           verbose=self.handler.settings.get('debug', False))
-                # do run this after the run_yui_compressor() has been used so that
-                # code that is commented out doesn't affect
-                code = self._replace_css_images_with_static_urls(
-                  code,
-                  os.path.dirname(old_paths[full_path])
-                  )
-            else:
-                # this just copies the file
-                pass
-                #raise ValueError("Unknown extension %s" % full_path)
-            destination.write(code)
-            destination.write("\n")
+                        elif yui_location:
+                            code = run_yui_compressor(code, 'js', yui_location,
+                          verbose=self.handler.settings.get('debug', False))
+                elif full_path.endswith('.css'):
+                    if len(full_paths) > 1:
+                        destination.write('/* %s */\n' % os.path.basename(full_path))
+                    if do_optimize_static_content and not self._already_optimized_filename(full_path):
+                        if cssmin is not None:
+                            code = cssmin.cssmin(code)
+                        elif yui_location:
+                            code = run_yui_compressor(code, 'css', yui_location,
+                              verbose=self.handler.settings.get('debug', False))
+                    # do run this after the run_yui_compressor() has been used so that
+                    # code that is commented out doesn't affect
+                    code = self._replace_css_images_with_static_urls(
+                      code,
+                      os.path.dirname(old_paths[full_path])
+                      )
+                else:
+                    # this just copies the file
+                    pass
+                    #raise ValueError("Unknown extension %s" % full_path)
+                destination.write(code)
+                destination.write("\n")
 
-        destination.close()
+            destination.close()
         prefix = self.handler.settings.get('combined_static_url_prefix', '/combined/')
         new_name = os.path.join(prefix, os.path.basename(new_name))
         _name_conversion[basic_name] = new_name
