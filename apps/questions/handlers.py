@@ -38,16 +38,11 @@ class QuestionsBaseHandler(BaseHandler):
         if not question:
             raise HTTPError(404, "Question can't be found")
         if question.author != user and not self.is_admin_user(user):
-            raise HTTPError(404, "Not your question")
+            raise HTTPError(403, "Not your question")
         return question
 
     def can_submit_question(self, question):
-        if question.state != DRAFT:
-            return False
-        if question.text and question.answer:
-            if question.alternatives and len(question.alternatives) >= 4:
-                return True
-        return False
+        return question.can_submit()
 
     def get_questions_score(self, user):
         F = lambda x:self.db.Question.find(x).count()
@@ -61,8 +56,7 @@ class QuestionsBaseHandler(BaseHandler):
         }
         return data
 
-
-@route('/questions/genre_names.json$')
+@route('/questions/genre_names.json$', name="genre_names_json")
 class QuestionsGenreNamesHandler(QuestionsBaseHandler):
     def get(self):
         names = [x.name for x in self.db.Genre.find().sort('name')]
@@ -71,7 +65,7 @@ class QuestionsGenreNamesHandler(QuestionsBaseHandler):
 route_redirect('/questions$', '/questions/', name="questions_shortcut")
 @route('/questions/$', name="questions")
 class QuestionsHomeHandler(QuestionsBaseHandler):
-    DEFAULT_BATCH_SIZE = 100
+    DEFAULT_BATCH_SIZE = 20
 
     @tornado.web.authenticated
     def get(self):
@@ -80,10 +74,10 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
         user = self.get_current_user()
         _user_search = {'author.$id': user._id}
         options['accepted_questions'] = \
-        self.db.Question.find({
+          self.db.Question.find({
             'author.$id': {'$ne': user._id},
             'state': ACCEPTED
-        })
+          })
 
         options['draft_questions'] = \
         self.db.Question.find(
@@ -185,15 +179,21 @@ class ViewQuestionHandler(QuestionsBaseHandler):
 @route('/questions/(\w{24})/edit/$', name="edit_question")
 class EditQuestionHandler(QuestionsBaseHandler):
 
+    def can_edit_question(self, question, user):
+        if question.state in (DRAFT, REJECTED):
+            if question.author == user:
+                return True
+            elif self.is_admin_user(user):
+                return True
+        return False
+
     @tornado.web.authenticated
     def get(self, question_id, form=None):
         options = self.get_base_options()
         question = self.must_find_question(question_id, options['user'])
-        if question.state != DRAFT:
-            if question.author == options['user']:
-                return self.redirect(self.reverse_url('view_question', question._id))
-            elif not self.is_admin_user(options['user']):
-                raise HTTPError(403, "Not your question")
+        if not self.can_edit_question(question, options['user']):
+            print options['user'].username, "can't edit", question.text, question.state
+            raise HTTPError(403, "Can't edit this question")
         options['question'] = question
         if form is None:
             initial = dict(question)
@@ -211,11 +211,8 @@ class EditQuestionHandler(QuestionsBaseHandler):
     def post(self, question_id):
         user = self.get_current_user()
         question = self.must_find_question(question_id, user)
-        if question.state != DRAFT:
-            if question.author == user:
-                return self.redirect(self.reverse_url('view_question', question._id))
-            elif not self.is_admin_user(user):
-                raise HTTPError(403, "Not your question")
+        if not self.can_edit_question(question, user):
+            raise HTTPError(403, "Can't edit this question")
         data = djangolike_request_dict(self.request.arguments)
         if 'alternatives' in data:
             data['alternatives'] = ['\n'.join(data['alternatives'])]
@@ -280,7 +277,7 @@ class EditQuestionHandler(QuestionsBaseHandler):
                 edit_url = self.reverse_url('edit_question', str(question._id))
                 #self.redirect('/questions/%s/edit/' % question._id)
 
-                if self.can_submit_question(question):
+                if question.can_submit():
                     self.push_flash_message("Question edited!",
                      "Question is ready to be submitted")
                 else:
@@ -299,12 +296,11 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
     @tornado.web.authenticated
     def get(self, question_id):
         options = self.get_base_options()
-        #user = self.get_current_user()
         question = self.must_find_question(question_id, options['user'])
         options['question'] = question
-        if question.state != DRAFT:
+        if question.state not in (DRAFT, REJECTED):
             if question.author == options['user']:
-                return self.redirect(self.reverse_url('view_question', question._id))
+                raise HTTPError(403, "Not your question")
             elif not self.is_admin_user(options['user']):
                 raise HTTPError(403, "Not your question")
         options['page_title'] = "Submit question"
@@ -314,14 +310,13 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
     def post(self, question_id):
         user = self.get_current_user()
         question = self.must_find_question(question_id, user)
-        if question.state != DRAFT:
+        if question.state not in (DRAFT, REJECTED):
             if question.author == user:
                 return self.redirect(self.reverse_url('view_question', question._id))
             elif not self.is_admin_user(user):
                 raise HTTPError(403, "Not your question")
-        if not self.can_submit_question(question):
-            self.write("You can't submit this question. Go back to edit")
-            return
+        if not question.can_submit():
+            raise HTTPError(400, "You can't submit this question. Go back to edit")
         question.state = SUBMITTED
         question.submit_date = datetime.datetime.now()
         question.save()
@@ -514,7 +509,7 @@ class ReviewQuestionHandler(QuestionsBaseHandler):
             raise HTTPError(400, "Already reviewed")
 
         rating = self.get_argument('rating', 'OK')
-        rating_to_int = {'Bad':-1, 'OK':1, 'Good':2}
+        rating_to_int = {'Bad':-1, 'OK':0, 'Good':1}
         if rating not in rating_to_int:
             raise HTTPError(404, "Invalid rating")
         rating = rating_to_int[rating]
@@ -594,7 +589,7 @@ class AcceptedReviewQuestionHandler(QuestionsBaseHandler):
 
 route_redirect('/questions/all$', '/questions/all/', name="all_questions_shortcut")
 @route('/questions/all/$', name="all_questions")
-class AllQuestionsHomeHandler(QuestionsBaseHandler):
+class AllQuestionsHomeHandler(QuestionsBaseHandler): # pragma: no cover
 
     @tornado.web.authenticated
     def get(self):
@@ -613,7 +608,6 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler):
 
         try:
             from pygooglechart import PieChart2D
-            print PieChart2D.BACKGROUND, PieChart2D.ALPHA
             chart = PieChart2D(400, 250)
             chart.fill_solid(PieChart2D.BACKGROUND, '000000')
             chart.add_data([x[1] for x in state_counts])

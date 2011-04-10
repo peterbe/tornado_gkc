@@ -56,6 +56,14 @@ class Question(BaseDocument):
       'language': u'en-gb',
     }
 
+    def can_submit(self):
+        if self.state not in (DRAFT, REJECTED):
+            return False
+        if self.text and self.answer:
+            if self.alternatives and len(self.alternatives) >= 4:
+                return True
+        return False
+
 
 #OK = u"OK"
 VERIFIED = u"VERIFIED"

@@ -1,40 +1,44 @@
 import base64
+import json
 import re
 from time import mktime
 import datetime
 from apps.main.tests.base import BaseHTTPTestCase, TestClient
 from utils import format_time_ampm
 import utils.send_mail as mail
+from utils.http_test_client import TestClient
 from apps.questions.models import *
+
+import settings
+
 class LoginError(Exception):
     pass
 
 
 class HandlersTestCase(BaseHTTPTestCase):
-    def _login(self):
-        user = self.db.Users.one(dict(username=u'peterbe'))
+    def _login(self, username=u'peterbe', email='mail@peterbe.com',
+               client=None):
+        user = self.db.Users.one(dict(username=username))
         if user:
             raise NotImplementedError
         else:
-            data = dict(username="peterbe",
-                        email="mail@peterbe.com",
+            data = dict(username=username,
+                        email=email,
                         password="secret",
                         first_name="Peter",
                         last_name="Bengtsson")
-            response = self.post('/user/signup/', data, follow_redirects=False)
-            user_cookie = self.decode_cookie_value('user', response.headers['Set-Cookie'])
-            user_id = base64.b64decode(user_cookie.split('|')[0])
-            cookie = 'user=%s;' % user_cookie
-        user = self.db.User.one(dict(username=u'peterbe'))
+            if client is None:
+                client = self.client
+            response = client.post('/user/signup/', data)
+        user = self.db.User.one(dict(username=username))
         assert user
-        return cookie
+        return user
 
     def test_questions_shortcut(self):
         cookie = self._login() # using fixtures
 
         url = self.reverse_url('questions_shortcut')
-        response = self.get(url, follow_redirects=False,
-                            headers={'Cookie':cookie})
+        response = self.client.get(url)
         self.assertEqual(response.code, 301)
         redirected_to = response.headers['Location']
         url = self.reverse_url('questions')
@@ -42,13 +46,16 @@ class HandlersTestCase(BaseHTTPTestCase):
 
 
     def test_adding_question(self):
-        # first sign up
-        cookie = self._login()
+        url = self.reverse_url('add_question')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 302)
+
+        self._login()
         user = self.db.User.one(username='peterbe')
         assert user
 
         url = self.reverse_url('add_question')
-        response = self.get(url, headers={'Cookie':cookie})
+        response = self.client.get(url)
         self.assertEqual(response.code, 200)
 
         assert not self.db.Question.find().count()
@@ -60,8 +67,7 @@ class HandlersTestCase(BaseHTTPTestCase):
                     spell_correct='yes',
                     comment="  \nSome\nComment\t"
                     )
-        response = self.post(url, data, follow_redirects=False,
-                             headers={'Cookie':cookie})
+        response = self.client.post(url, data)
         self.assertEqual(response.code, 302)
         redirected_to = response.headers['Location']
         assert self.db.Question.find().count()
@@ -78,16 +84,16 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(question.spell_correct, True)
 
         junk_edit_url = self.reverse_url('edit_question', '_'*24)
-        response = self.get(junk_edit_url, headers={'Cookie':cookie})
+        response = self.client.get(junk_edit_url)
         self.assertEqual(response.code, 404)
 
         junk_edit_url = self.reverse_url('edit_question',
           str(question._id).replace('0','1'))
-        response = self.get(junk_edit_url, headers={'Cookie':cookie})
+        response = self.client.get(junk_edit_url)
         self.assertEqual(response.code, 404)
 
-        edit_url = self.reverse_url('edit_question', str(question._id))
-        response = self.get(edit_url, headers={'Cookie':cookie})
+        edit_url = self.reverse_url('edit_question', question._id)
+        response = self.client.get(edit_url)
         self.assertEqual(response.code, 200)
         self.assertTrue('>Some\nComment</textarea>' in response.body)
         point = response.body.find('name="spell_correct"'); assert point > -1
@@ -101,11 +107,11 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertTrue('value="%s"' % question.answer in response.body)
 
         data = dict(data, text="\t\t")
-        response = self.post(edit_url, data, headers={'Cookie':cookie})
+        response = self.client.post(edit_url, data)
         self.assertEqual(response.code, 200)
         self.assertTrue('errors' in response.body)
         data = dict(data, text="A new question?")
-        response = self.post(edit_url, data, headers={'Cookie':cookie})
+        response = self.client.post(edit_url, data)
         self.assertEqual(response.code, 302)
 
     def test_edit_and_submit(self):
@@ -129,7 +135,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         question.save()
 
         url = self.reverse_url('edit_question', question._id)
-        response = self.get(url, headers={'Cookie':cookie})
+        response = self.client.get(url)
         self.assertEqual(response.code, 200)
 
         self.assertTrue('value="%s"' % question.text in response.body)
@@ -146,11 +152,11 @@ class HandlersTestCase(BaseHTTPTestCase):
                     comment="\tchanged\n",
                     genre='lit',
                     )
-        response = self.post(url, data, headers={'Cookie':cookie})
+        response = self.client.post(url, data, headers={'Cookie':cookie})
         self.assertEqual(response.code, 200)
         self.assertTrue('errors' in response.body)
         data['alternatives'] = ['wilde','Dickens','Shake','Spere']
-        response = self.post(url, data, headers={'Cookie':cookie})
+        response = self.client.post(url, data)
 
         self.assertEqual(response.code, 302)
         question = self.db.Question.one({'answer':u"Wilde"})
@@ -161,12 +167,12 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(question.comment, data['comment'].strip())
 
         submit_url = self.reverse_url('submit_question', question._id)
-        response = self.get(url, headers={'Cookie':cookie})
+        response = self.client.get(url)
         self.assertTrue(submit_url in response.body)
 
-        response = self.get(submit_url, headers={'Cookie':cookie})
+        response = self.client.get(submit_url)
         self.assertEqual(response.code, 200)
-        response = self.post(submit_url, {}, headers={'Cookie':cookie})
+        response = self.client.post(submit_url, {})
         self.assertEqual(response.code, 302)
         question = self.db.Question.one({'answer':u"Wilde"})
         self.assertTrue(question.submit_date)
@@ -175,17 +181,17 @@ class HandlersTestCase(BaseHTTPTestCase):
         view_url = self.reverse_url('view_question', question._id)
 
         # now that it's submitted you can't edit it
-        response = self.get(url, headers={'Cookie':cookie})
+        response = self.client.get(url)
         self.assertEqual(response.code, 302)
         self.assertTrue(view_url in response.headers['Location'])
-        response = self.post(url, data, headers={'Cookie':cookie})
+        response = self.client.post(url, data)
         self.assertEqual(response.code, 302)
         self.assertTrue(view_url in response.headers['Location'])
         # same thing happens if you try to submit it again
-        response = self.get(submit_url, headers={'Cookie':cookie})
-        self.assertEqual(response.code, 302)
-        self.assertTrue(view_url in response.headers['Location'])
-        response = self.post(submit_url, {}, headers={'Cookie':cookie})
+        response = self.client.get(submit_url)
+        self.assertEqual(response.code, 403)
+
+        response = self.client.post(submit_url, {})
         self.assertEqual(response.code, 302)
         self.assertTrue(view_url in response.headers['Location'])
 
@@ -229,23 +235,290 @@ class HandlersTestCase(BaseHTTPTestCase):
         review_urls = [self.reverse_url('review_question', x._id) for x
                        in self.db.Question.find({'author.$id':{'$ne':user._id}})]
         self.assertEqual(len(review_urls), 2)
-        response = self.get(url, headers={'Cookie':cookie})
+        response = self.client.get(url)
 
         # dislike the first one
         data = dict(verdict=WRONG,
                     comment="Not right",
                     rating="Bad")
-        response = self.post(review_urls[0], data, headers={'Cookie':cookie})
+        response = self.client.post(review_urls[0], data)
         self.assertEqual(response.code, 302)
         self.assertTrue(url in response.headers['Location'])
-        response = self.get(url, headers={'Cookie':cookie})
+        response = self.client.get(url)
         self.assertEqual(response.code, 200)
         #print response.body
         self.assertTrue(review_urls[1] in response.body)
         # dislike the first one
         data = dict(verdict=VERIFIED,
                     rating="OK")
-        response = self.post(review_urls[1], data, headers={'Cookie':cookie})
+        response = self.client.post(review_urls[1], data)
         self.assertEqual(response.code, 302)
-        response = self.get(url, headers={'Cookie':cookie})
+        response = self.client.get(url)
         self.assertTrue('No questions to review' in response.body)
+
+    def test_editing_someone_elses_question(self):
+
+        url = self.reverse_url('add_question')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 302)
+
+        self._login()
+        user = self.db.User.one(username='peterbe')
+        assert user
+
+        url = self.reverse_url('add_question')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+
+        assert not self.db.Question.find().count()
+        data = dict(text=u"H\ex3r mar dU? ",
+                    answer="Bra   ",
+                    accept="Hyffsat",
+                    alternatives=" Bra\nOk\nFine\nIlla",
+                    genre="Life ",
+                    spell_correct='yes',
+                    comment="  \nSome\nComment\t"
+                    )
+        response = self.client.post(url, data)
+        self.assertEqual(response.code, 302)
+        redirected_to = response.headers['Location']
+        assert self.db.Question.find().count()
+
+        question = self.db.Question.one()
+        ashley = self.db.User()
+        ashley.username = u'ashley'
+        ashley.save()
+        question.author = ashley
+        question.save()
+
+        url = self.reverse_url('edit_question', question._id)
+        response = self.client.get(url)
+        self.assertEqual(response.code, 403)
+
+        response = self.client.post(url, data)
+        self.assertEqual(response.code, 403)
+
+    def test_genre_names_json(self):
+        url = self.reverse_url('genre_names_json')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        struct = json.loads(response.body)
+        self.assertTrue(not struct['names'])
+
+        ashley = self.db.User()
+        ashley.username = u'ashley'
+        ashley.save()
+
+        geography = self.db.Genre()
+        geography.name = u'Geo'
+        geography.save()
+
+        question = self.db.Question()
+        question.text = u"??"
+        question.answer = u"!"
+        question.author = ashley
+        question.genre = geography
+        question.save()
+
+        maths = self.db.Genre()
+        maths.name = u'Maths'
+        maths.save()
+
+        question = self.db.Question()
+        question.text = u"??2"
+        question.answer = u"!2"
+        question.author = ashley
+        question.genre = maths
+        question.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        struct = json.loads(response.body)
+        self.assertEqual(struct['names'], ['Geo', 'Maths'])
+
+    def test_question_lifecycle(self):
+        url = self.reverse_url('questions')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 302)
+        self.assertTrue('/login/' in response.headers['Location'])
+
+        user = self._login()
+        assert user
+
+        # add a draft question
+        add_url = self.reverse_url('add_question')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        self.assertTrue(add_url in response.body)
+
+        maths = self.db.Genre()
+        maths.name = u'Maths'
+        maths.save()
+
+        question = self.db.Question()
+        question.text = u'Who likes milk?'
+        question.answer = u'cats'
+        question.author = user
+        question.state = DRAFT
+        question.genre = maths
+        question.save()
+
+        question.add_date -= datetime.timedelta(minutes=1)
+        edit_question_url = self.reverse_url('edit_question', question._id)
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        self.assertTrue(edit_question_url in response.body)
+        self.assertTrue('draft questions (1)' in response.body.lower())
+
+        response = self.client.get(edit_question_url)
+        self.assertEqual(response.code, 200)
+        submit_question_url = self.reverse_url('submit_question', question._id)
+        assert not question.can_submit()
+        response = self.client.post(submit_question_url, {})
+        self.assertEqual(response.code, 400)
+
+        self.assertTrue(submit_question_url not in response.body)
+        question.alternatives = [u'1', u'2', u'3', u'4']
+        question.save()
+        assert question.can_submit()
+        response = self.client.get(edit_question_url)
+        self.assertTrue(submit_question_url in response.body)
+
+        response = self.client.get(submit_question_url)
+        self.assertEqual(response.code, 200)
+
+        admin = TestClient(self)
+        self._login('admin',
+                    email=settings.ADMIN_EMAILS[0],
+                    client=admin)
+
+        response = admin.get(submit_question_url)
+        self.assertEqual(response.code, 200)
+
+        dude = TestClient(self)
+        self._login('greg', client=dude)
+
+        response = dude.get(submit_question_url)
+        self.assertEqual(response.code, 403)
+        response = dude.post(submit_question_url, {})
+        self.assertEqual(response.code, 403)
+
+        response = self.client.post(submit_question_url, {})
+        self.assertEqual(response.code, 302)
+        self.assertEqual(url, response.headers['location'])
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+
+        self.assertTrue('submitted questions (1)' in response.body.lower())
+        self.assertTrue(edit_question_url not in response.body)
+        view_question_url = self.reverse_url('view_question', question._id)
+        self.assertTrue(view_question_url in response.body)
+
+        # if you view it, observe that you're not allowed to review it
+        response = self.client.get(view_question_url)
+        self.assertEqual(response.code, 200)
+        self.assertTrue(question.text in response.body)
+        self.assertTrue('Submitted:' in response.body)
+
+        response = dude.get(view_question_url)
+        self.assertEqual(response.code, 403) # not accepted yet
+
+        response = admin.get(view_question_url)
+        self.assertEqual(response.code, 200)
+        self.assertTrue('Admin actions' in response.body)
+
+        # reject it first
+        reject_question_url = self.reverse_url('reject_question', question._id)
+        data = {'reject_comment': 'Too long'}
+        response = self.client.post(reject_question_url, data)
+        self.assertEqual(response.code, 403) # not an admin
+        response = dude.post(reject_question_url, data)
+        self.assertEqual(response.code, 403) # not an admin
+        response = admin.post(reject_question_url, data)
+        self.assertEqual(response.code, 302)
+        question = self.db.Question.one({'_id':question._id})
+        assert question.state == REJECTED
+
+        response = self.client.get(url)
+        self.assertTrue('rejected questions (1)' in response.body.lower())
+
+        response = self.client.get(edit_question_url)
+        self.assertEqual(response.code, 200)
+        response = admin.get(edit_question_url)
+        self.assertEqual(response.code, 200)
+
+        data = dict(answer=question.answer,
+                    text="Short?",
+                    accept='',
+                    alternatives=[question.answer,'Dickens','Shake','Spere'],
+                    comment="\tchanged\n",
+                    genre="Geography",
+                    )
+        response = self.client.post(edit_question_url, data)
+        self.assertEqual(response.code, 302)
+        question = self.db.Question.one({'_id':question._id})
+        assert question.text == "Short?"
+        assert self.db.Genre.one({'name':'Geography'})
+
+        # admin is allowed to do this too
+        response = admin.post(edit_question_url, data)
+        self.assertEqual(response.code, 302)
+
+        question = self.db.Question.one({'_id':question._id})
+        assert question.state == DRAFT
+
+        # this time, use the "Save and submit" instead
+        data['submit_question'] = 'yes'
+        response = self.client.post(edit_question_url, data)
+        self.assertEqual(response.code, 302)
+        question = self.db.Question.one({'_id':question._id})
+        assert question.state == SUBMITTED
+        # as admin, accept it now
+        accept_question_url = self.reverse_url('accept_question', question._id)
+        response = admin.post(accept_question_url, {})
+        question = self.db.Question.one({'_id':question._id})
+        assert question.state == ACCEPTED
+
+        response = self.client.get(url)
+        self.assertTrue('submitted questions (0)' in response.body.lower())
+
+        # this other dude should be able to review the question
+        response = dude.get(url)
+        review_random_url = self.reverse_url('review_random')
+        self.assertTrue(review_random_url in response.body)
+
+        response = dude.get(review_random_url)
+        self.assertEqual(response.code, 200)
+        review_question_url = self.reverse_url('review_question', question._id)
+
+        data = {'rating':'Good',
+                'difficulty': '-1',
+                'comment': 'No comment',
+                'verdict': 'VERIFIED',
+                }
+        response = self.client.post(review_question_url, data)
+        self.assertEqual(response.code, 400) # can't review your own
+        response = dude.post(review_question_url, data)
+        self.assertEqual(response.code, 302)
+
+        review = self.db.QuestionReview.one({'question.$id':question._id})
+        assert review
+        self.assertEqual(review.comment, data['comment'])
+        self.assertEqual(review.rating, 1)
+        self.assertEqual(review.difficulty, int(data['difficulty']))
+        self.assertEqual(review.verdict, data['verdict'])
+        assert review.user.username == 'greg'
+
+        response = admin.get(view_question_url)
+        publish_question_url = self.reverse_url('publish_question', question._id)
+        self.assertEqual(response.code, 200)
+        self.assertTrue(publish_question_url in response.body)
+
+        response = self.client.post(publish_question_url, {})
+        self.assertEqual(response.code, 403) # not admin
+
+        response = admin.post(publish_question_url, {})
+        self.assertEqual(response.code, 302)
+
+        question = self.db.Question.one({'_id':question._id})
+        assert question.state == PUBLISHED
