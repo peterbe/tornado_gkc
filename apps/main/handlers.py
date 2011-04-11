@@ -210,6 +210,7 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         options = dict(user=None,
                        user_name=None,
                        is_admin_user=False,
+                       PROJECT_TITLE=settings.PROJECT_TITLE,
                        page_title=settings.PROJECT_TITLE,
                        total_points=0,
                        )

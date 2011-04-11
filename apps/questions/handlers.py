@@ -42,7 +42,20 @@ class QuestionsBaseHandler(BaseHandler):
         return question
 
     def can_submit_question(self, question):
-        return question.can_submit()
+        if question.state not in (DRAFT, REJECTED):
+            return False
+        if question.text and question.answer:
+            if question.alternatives and len(question.alternatives) >= 4:
+                return True
+        return False
+
+    def can_edit_question(self, question, user):
+        if question.state in (DRAFT, REJECTED):
+            if question.author == user:
+                return True
+            elif self.is_admin_user(user):
+                return True
+        return False
 
     def get_questions_score(self, user):
         F = lambda x:self.db.Question.find(x).count()
@@ -164,19 +177,17 @@ class ViewQuestionHandler(QuestionsBaseHandler):
         options['rating_total'] = None
         options['difficulty_total'] = None
         options['skip'] = None
+        options['can_edit'] = False
+
+        if self.can_edit_question(options['question'], options['user']):
+            options['can_edit'] = True
+
         self.render('questions/view.html', **options)
 
 
 @route('/questions/(\w{24})/edit/$', name="edit_question")
 class EditQuestionHandler(QuestionsBaseHandler):
 
-    def can_edit_question(self, question, user):
-        if question.state in (DRAFT, REJECTED):
-            if question.author == user:
-                return True
-            elif self.is_admin_user(user):
-                return True
-        return False
 
     @tornado.web.authenticated
     def get(self, question_id, form=None):
@@ -267,7 +278,7 @@ class EditQuestionHandler(QuestionsBaseHandler):
                 edit_url = self.reverse_url('edit_question', str(question._id))
                 #self.redirect('/questions/%s/edit/' % question._id)
 
-                if question.can_submit():
+                if self.can_submit_question(question):
                     self.push_flash_message("Question edited!",
                      "Question is ready to be submitted")
                 else:
@@ -305,7 +316,7 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
                 return self.redirect(self.reverse_url('view_question', question._id))
             elif not self.is_admin_user(user):
                 raise HTTPError(403, "Not your question")
-        if not question.can_submit():
+        if not self.can_submit_question(question):
             raise HTTPError(400, "You can't submit this question. Go back to edit")
         question.state = SUBMITTED
         question.submit_date = datetime.datetime.now()
@@ -561,6 +572,8 @@ class AcceptedReviewQuestionHandler(QuestionsBaseHandler):
             else:
                 options['difficulty_total'] = '-'
             options['page_title'] = "Review accepted question"
+            options['can_edit'] = self.can_edit_question(question, options['user'])
+
             self.render("questions/view.html", **options)
         else:
             options['page_title'] = "No questions to review"
