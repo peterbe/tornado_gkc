@@ -182,11 +182,9 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         # now that it's submitted you can't edit it
         response = self.client.get(url)
-        self.assertEqual(response.code, 302)
-        self.assertTrue(view_url in response.headers['Location'])
+        self.assertEqual(response.code, 403)
         response = self.client.post(url, data)
-        self.assertEqual(response.code, 302)
-        self.assertTrue(view_url in response.headers['Location'])
+        self.assertEqual(response.code, 403)
         # same thing happens if you try to submit it again
         response = self.client.get(submit_url)
         self.assertEqual(response.code, 403)
@@ -246,7 +244,6 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertTrue(url in response.headers['Location'])
         response = self.client.get(url)
         self.assertEqual(response.code, 200)
-        #print response.body
         self.assertTrue(review_urls[1] in response.body)
         # dislike the first one
         data = dict(verdict=VERIFIED,

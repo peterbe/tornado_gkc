@@ -114,15 +114,6 @@ class AddQuestionHandler(QuestionsBaseHandler):
             data['alternatives'] = ['\n'.join(data['alternatives'])]
         form = QuestionForm(data)
         if form.validate():
-            #print "AFTER VALIDATE()"
-            #print "text", repr(form.text.data)
-            #print "answer", repr(form.answer.data)
-            #print "accept", repr(form.accept.data)
-            #print "alternatives", repr(form.alternatives.data.splitlines())
-            #print "genre", repr(form.genre.data)
-            #print "spell_correct", repr(form.spell_correct.data)
-            #print "comment", repr(form.comment.data)
-            #print "\n"
             question = self.db.Question()
             question.text = form.text.data
             question.answer = form.answer.data
@@ -192,7 +183,6 @@ class EditQuestionHandler(QuestionsBaseHandler):
         options = self.get_base_options()
         question = self.must_find_question(question_id, options['user'])
         if not self.can_edit_question(question, options['user']):
-            print options['user'].username, "can't edit", question.text, question.state
             raise HTTPError(403, "Can't edit this question")
         options['question'] = question
         if form is None:
@@ -558,9 +548,6 @@ class AcceptedReviewQuestionHandler(QuestionsBaseHandler):
         if question:
             options['reviews'] = self.db.QuestionReview.find({'question.$id':question._id}).sort('add_date', 1)
             ratings = [x.rating for x in options['reviews']]
-            for e in options['reviews'].rewind():
-                print (e.verdict, e.difficulty, e.rating)
-                print
             options['reviews'].rewind()
             difficulties = [x.difficulty for x in options['reviews'] if x.difficulty is not None]
             options['reviews'].rewind()
@@ -568,8 +555,6 @@ class AcceptedReviewQuestionHandler(QuestionsBaseHandler):
                 options['rating_total'] = str(sum(ratings))
             else:
                 options['rating_total'] = '-'
-            print "ratings", ratings
-            print "difficulties", difficulties
 
             if difficulties:
                 options['difficulty_total'] = str(sum(difficulties))
