@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block extra_head %}
+<style type="text/css">
+table { width:70%; }
+thead td { border-bottom:1px solid white; }
+thead td { font-weight:bold; font-size:120% }
+tfoot td {border-top:1px solid white; }
+td.count, td.points, td.value { text-align:right; padding-right:20px; }
+td.count { font-size:130%; }
+td.points { font-size:150%; text-align:right; }
+tfoot td.total { font-size:150%; }
+</style>
+{% end %}
+{% block content_inner %}
+
+<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
+
+<table>
+  <thead>
+    <tr>
+      <td>Questions</td>
+      <td>Count</td>
+      <td>Value</td>
+      <td>Points</td>
+    </tr>
+  </thead>
+  <tfoot>
+    <tr>
+      <td colspan="3" class="total">TOTAL</td>
+      <td class="points">{{ total_points }}</td>
+    </tr>
+  </tfoot>
+  <tbody>
+  <tr>
+    <td>Published</td>
+    <td class="count">{{ published }}</td>
+    <td class="value">&times; {{ published_value }}</td>
+    <td class="points">{{ published_points }}</td>
+  </tr>
+  <tr>
+    <td>Accepted</td>
+    <td class="count">{{ accepted }}</td>
+    <td class="value">&times; {{ accepted_value }}</td>
+    <td class="points">{{ accepted_points }}</td>
+  </tr>
+  <tr>
+    <td>Reviewed</td>
+    <td class="count">{{ reviewed }}</td>
+    <td class="value">&times; {{ reviewed_value }}</td>
+    <td class="points">{{ reviewed_points }}</td>
+  </tr>
+  </tbody>
+</table>
+
+{% end %}

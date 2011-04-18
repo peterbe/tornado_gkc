@@ -15,6 +15,13 @@
 
 {% block content_inner %}
 
+{% if user %}
+<p>You're already logged in as <code>{{ user.username }}</code>.
+Do you want to
+<a href="{{ reverse_url('logout') }}">log out</a>
+or perhaps <a href="{{ reverse_url('settings') }}">change your settings</a>?
+
+{% else %}
 <h3>Choose your weapon soldier!</h3>
 
 <div id="authenticators">
@@ -28,7 +35,6 @@
 </div>
 
 <div class="clearer">&nbsp;</div>
-
-
+{% end %}
 
 {% end %}

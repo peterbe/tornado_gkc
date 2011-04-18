@@ -6,7 +6,7 @@ from random import randint
 from pprint import pprint
 import tornado.web
 from tornado.web import HTTPError
-from utils.decorators import login_required
+from utils.decorators import login_required, login_redirect
 from apps.main.handlers import BaseHandler
 from utils.routes import route, route_redirect
 from utils.send_mail import send_email
@@ -20,9 +20,12 @@ from forms import QuestionForm
 class QuestionsBaseHandler(BaseHandler):
     def get_base_options(self):
         options = super(QuestionsBaseHandler, self).get_base_options()
+
         options['page_title'] = options.get('page_title')
         if options['user']:
-            options['questions_score'] = self.get_questions_score(options['user'])
+            options['total_question_points'] = self.get_total_questions_points(options['user'])
+        else:
+            options['total_question_points'] = 0
         return options
 
     def find_question(self, question_id):
@@ -57,7 +60,7 @@ class QuestionsBaseHandler(BaseHandler):
                 return True
         return False
 
-    def get_questions_score(self, user):
+    def get_questions_counts(self, user):
         F = lambda x:self.db.Question.find(x).count()
         R = lambda x:self.db.QuestionReview.find(x).count()
         author_search = {'author.$id': user._id}
@@ -68,6 +71,43 @@ class QuestionsBaseHandler(BaseHandler):
           'reviewed': R(dict(user_search)),
         }
         return data
+
+    QUESTION_VALUES = {
+      'published': 10,
+      'accepted': 5,
+      'reviewed': 1,
+    }
+
+    def get_total_questions_points(self, user):
+        total_points = 0
+        for key, count in self.get_questions_counts(user).items():
+            value = self.QUESTION_VALUES[key]
+            points = value * count
+            total_points += points
+        return total_points
+
+@route('/questions/points/', name='question_points')
+class QuestionPointsHandler(QuestionsBaseHandler):
+
+    @login_redirect
+    def get(self):
+        options = self.get_base_options()
+
+        data = self.get_questions_counts(options['user'])
+        total_points = 0
+
+        for key in data:
+            value = self.QUESTION_VALUES[key]
+            points = value * data[key]
+            options[key] = data[key]
+            options['%s_value' % key] = value
+            options['%s_points' % key] = points
+            total_points += points
+        options['total_points'] = total_points
+
+        options['page_title'] = "Breakdown of your Question Points"
+        self.render('questions/points.html', **options)
+
 
 @route('/questions/genre_names.json$', name="genre_names_json")
 class QuestionsGenreNamesHandler(QuestionsBaseHandler):

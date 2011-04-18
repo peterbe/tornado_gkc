@@ -2,6 +2,8 @@ from wtforms import Form, BooleanField, TextField, TextAreaField, validators
 from wtforms.widgets import html_params, escape, TextInput
 from cgi import escape
 
+from apps.main.forms import BaseForm
+
 class MultilinesWidget(object):
     def __init__(self, length=4, vertical=False):
         self.length = length
@@ -38,14 +40,6 @@ class MultilinesWidget(object):
                 htmls.append('<br/>')
         return '\n'.join(htmls)
 
-class BaseForm(Form):
-    def validate(self, *args, **kwargs):
-        for name, f in self._fields.iteritems():
-            if isinstance(f.data, str):
-                f.data = unicode(f.data, 'utf-8')
-            if isinstance(f.data, basestring):
-                f.data = f.data.strip()
-        return super(BaseForm, self).validate(*args, **kwargs)
 
 class QuestionForm(BaseForm):
     text = TextField("Text", [validators.Required(),

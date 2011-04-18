@@ -16,23 +16,6 @@ class LoginError(Exception):
 
 
 class HandlersTestCase(BaseHTTPTestCase):
-    def _login(self, username=u'peterbe', email='mail@peterbe.com',
-               client=None):
-        user = self.db.Users.one(dict(username=username))
-        if user:
-            raise NotImplementedError
-        else:
-            data = dict(username=username,
-                        email=email,
-                        password="secret",
-                        first_name="Peter",
-                        last_name="Bengtsson")
-            if client is None:
-                client = self.client
-            response = client.post('/user/signup/', data)
-        user = self.db.User.one(dict(username=username))
-        assert user
-        return user
 
     def test_questions_shortcut(self):
         cookie = self._login() # using fixtures

@@ -29,11 +29,11 @@
 
       <div id="login" class="topnav">
         {% if user %}
-        <p><a href="/user/" class="account">Hi {{ user_name }}</a>
+        <p><a href="{{ reverse_url('settings') }}" class="account">Hi {{ user_name }}</a>
         {% if is_admin_user %}(admin){% end %}
-        <a href="/auth/logout/" class="log-out">log out</a></p>
+        <a href="{{ reverse_url('logout') }}" class="log-out">log out</a></p>
         {% else %}
-        <p><a href="/user/" class="account">Login &amp; registration</a></p>
+        <p><a href="{{ reverse_url('login') }}" class="account">Login &amp; sign-up</a></p>
         {% end %}
         {% block extra_login %}
         {% end %}
@@ -69,7 +69,7 @@
 {% block corejs %}
 {{ modules.Static("js/ext/head.load.min.js") }}
 <script type="text/javascript">
-head.js(JS_URLS.jquery, JS_URLS.fancybox, JS_URLS.gritter, JS_URLS.base, function() {
+head.js(JS_URLS.jquery, JS_URLS.gritter, JS_URLS.base, function() {
   var messages = {{ modules.FlashMessages().as_list() }};
   $.each(messages, function(i, msg) {
     $.gritter.add({title: msg.title,
@@ -85,4 +85,5 @@ head.js(JS_URLS.jquery, JS_URLS.fancybox, JS_URLS.gritter, JS_URLS.base, functio
 
 
     </body>
+<!-- Wow! this page only took {{ request.request_time() }} seconds to render -->
 </html>

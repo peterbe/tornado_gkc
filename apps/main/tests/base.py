@@ -1,4 +1,8 @@
+import base64
+import time
 import re
+import hmac
+import hashlib
 import unittest
 from urllib import urlencode
 from cStringIO import StringIO
@@ -73,3 +77,49 @@ class BaseHTTPTestCase(AsyncHTTPTestCase, LogTrapTestCase, HTTPClientMixin):
 
     def reverse_url(self, *args, **kwargs):
         return self._app.reverse_url(*args, **kwargs)
+
+    def _login(self, username=u'peterbe', email='mail@peterbe.com',
+               client=None):
+        user = self.db.User.one(dict(username=username))
+        if user:
+            raise NotImplementedError
+        else:
+            data = dict(username=username,
+                        email=email,
+                        first_name="Peter",
+                        last_name="Bengtsson")
+            user = self.db.User()
+            user.username = unicode(username)
+            user.email = unicode(email)
+            user.first_name = u"Peter"
+            user.last_name = u"Bengtsson"
+            user.save()
+            if client is None:
+                client = self.client
+            client.cookies['user'] = \
+              self.create_signed_value('user', str(user._id))
+        user = self.db.User.one(dict(username=username))
+        assert user
+        return user
+
+    ## these two are shamelessly copied from tornado.web.RequestHandler
+    ## because in the _login() we have no access to a request and
+    ## we need to be able to set a cookie
+    def create_signed_value(self, name, value):
+        """Signs and timestamps a string so it cannot be forged.
+
+        Normally used via set_secure_cookie, but provided as a separate
+        method for non-cookie uses.  To decode a value not stored
+        as a cookie use the optional value argument to get_secure_cookie.
+        """
+        timestamp = str(int(time.time()))
+        value = base64.b64encode(value)
+        signature = self._cookie_signature(name, value, timestamp)
+        value = "|".join([value, timestamp, signature])
+        return value
+
+    def _cookie_signature(self, *parts):
+        hash = hmac.new(self._app.settings["cookie_secret"],
+                        digestmod=hashlib.sha1)
+        for part in parts: hash.update(part)
+        return hash.hexdigest()

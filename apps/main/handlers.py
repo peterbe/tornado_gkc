@@ -17,16 +17,19 @@ import logging
 # tornado
 import tornado.auth
 import tornado.web
+from tornado.web import HTTPError
 
 # app
 from utils.routes import route, route_redirect
 from models import *
 from utils.send_mail import send_email
-from utils.decorators import login_required
+from utils.decorators import login_required, login_redirect
 from utils import parse_datetime, niceboolean, \
   DatetimeParseError, valid_email, random_string, \
   all_hash_tags, all_atsign_tags, generate_random_color
+from forms import SettingsForm
 import settings
+
 
 #from config import *
 
@@ -49,7 +52,7 @@ class HTTPSMixin(object):
 
 class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
     def _handle_request_exception(self, exception):
-        if not isinstance(exception, tornado.web.HTTPError) and \
+        if not isinstance(exception, HTTPError) and \
           not self.application.settings['debug']:
             # ie. a 500 error
             try:
@@ -212,7 +215,8 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
                        is_admin_user=False,
                        PROJECT_TITLE=settings.PROJECT_TITLE,
                        page_title=settings.PROJECT_TITLE,
-                       total_points=0,
+                       #total_question_points=0,
+                       total_battle_points=0,
                        )
 
         # default settings
@@ -237,7 +241,10 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
 
             # override possible settings
             user_settings = self.get_current_user_settings(user)
-            options['total_points'] = self.get_total_points(user)
+            #options['total_question_points'] = \
+            #  self.get_total_question_points(user)
+            options['total_battle_points'] = \
+              self.get_total_battle_points(user)
 
         options['settings'] = settings_
 
@@ -276,7 +283,8 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
             _search['read'] = False
         return self.db.FlashMessage.find(_search).sort('add_date', 1)
 
-    def get_total_points(self, user):
+
+    def get_total_battle_points(self, user):
         return 0
 
 
@@ -288,237 +296,52 @@ class HomeHandler(BaseHandler):
         # default settings
         options = self.get_base_options()
         user = options['user']
+        options['count_published_questions'] = \
+          self.db.Question.find({'state': 'PUBLISHED'}).count()
         self.render("home.html", **options)
 
 
-@route('/user/settings(\.js|/)$')
-class UserSettingsHandler(BaseHandler):
-    def get(self, format=None):
-        # default initials
-        default = dict()
-        setting_keys = list()
-
-        for key in UserSettings.get_bool_keys():
-            default[key] = False
-            setting_keys.append(key)
-        default['first_hour'] = 8
-
-        user = self.get_current_user()
-        if user:
-            user_settings = self.get_current_user_settings(user)
-            if user_settings:
-                for key in setting_keys:
-                    default[key] = getattr(user_settings, key, False)
-                default['first_hour'] = getattr(user_settings, 'first_hour', 8)
-            else:
-                user_settings = self.db.UserSettings()
-                user_settings.user = user
-                user_settings.save()
-
-        if format == '.js':
-            self.set_header("Content-Type", "text/javascript; charset=UTF-8")
-            self.set_header("Cache-Control", "public,max-age=0")
-            self.write('var SETTINGS=%s;' % tornado.escape.json_encode(default))
-        else:
-            self.render("user/settings.html", **dict(default, user=user))
-
-    def post(self, format=None):
-        user = self.get_current_user()
-        if not user:
-            raise tornado.web.HTTPError(403, "Not logged in yet")
-            #user = self.db.User()
-            #user.save()
-            #self.set_secure_cookie("user", str(user.guid), expires_days=100)
-
-        user_settings = self.get_current_user_settings(user)
-        if user_settings:
-            hide_weekend = user_settings.hide_weekend
-            monday_first = user_settings.monday_first
-            disable_sound = user_settings.disable_sound
-            offline_mode = getattr(user_settings, 'offline_mode', False)
-        else:
-            user_settings = self.db.UserSettings()
-            user_settings.user = user
-            user_settings.save()
-
-        for key in ('monday_first', 'hide_weekend', 'disable_sound',
-                    'offline_mode', 'ampm_format'):
-            user_settings[key] = bool(self.get_argument(key, None))
-
-        if self.get_argument('first_hour', None) is not None:
-            first_hour = int(self.get_argument('first_hour'))
-            user_settings['first_hour'] = first_hour
-
-        user_settings.save()
-        url = "/"
-        if self.get_argument('anchor', None):
-            if self.get_argument('anchor').startswith('#'):
-                url += self.get_argument('anchor')
-            else:
-                url += '#%s' % self.get_argument('anchor')
-
-        self.redirect(url)
-
-
-@route('/user/$')
-class AccountHandler(BaseHandler):
+route_redirect('/settings$', '/settings/', name='settings_shortcut')
+@route('/settings/$', name='settings')
+class SettingsHandler(BaseHandler):
+    """Currently all this does is changing your name and email but it might
+    change in the future.
+    """
+    @login_redirect
     def get(self):
-        user_id = self.get_secure_cookie('user')
-        if user_id:
-            user = self.db.User.one(dict(_id=ObjectId(user_id)))
-            if not user:
-                return self.write("Error. User does not exist")
-            options = dict(
-              email=user.email,
-              first_name=user.first_name,
-              last_name=user.last_name,
-            )
+        options = self.get_base_options()
+        initial = dict(email=options['user'].email,
+                       first_name=options['user'].first_name,
+                       last_name=options['user'].last_name,
+                       )
+        options['form'] = SettingsForm(**initial)
+        options['page_title'] = "Settings"
+        self.render("user/settings.html", **options)
 
-            self.render("user/change-account.html", **options)
-        else:
-            self.render("user/account.html")
-
-    @login_required
+    @login_redirect
     def post(self):
-        username = self.get_argument('username').strip()
-        email = self.get_argument('email', u"").strip()
-        first_name = self.get_argument('first_name', u"").strip()
-        last_name = self.get_argument('last_name', u"").strip()
-
-        if not username:
-            raise tornado.web.HTTPError(400, "Username invalid")
+        email = self.get_argument('email', u'').strip()
+        first_name = self.get_argument('first_name', u'').strip()
+        last_name = self.get_argument('last_name', u'').strip()
 
         if email and not valid_email(email):
-            raise tornado.web.HTTPError(400, "Not a valid email address")
+            raise HTTPError(400, "Not a valid email address")
 
         user = self.get_current_user()
-
-        existing_user = self.find_user(username)
-        if existing_user and existing_user != user:
-            raise tornado.web.HTTPError(400, "Username already used by someone else")
 
         if email:
             existing_user = self.find_user_by_email(email)
             if existing_user and existing_user != user:
-                raise tornado.web.HTTPError(400, "Email address already used by someone else")
+                raise HTTPError(400, "Email address already used by someone else")
 
-        user.username = username
         user.email = email
         user.first_name = first_name
         user.last_name = last_name
         user.save()
 
+        self.push_flash_message("Settings saved",
+          "Your changes have been successfully saved")
         self.redirect('/')
-
-hex_to_int = lambda s: int(s, 16)
-int_to_hex = lambda i: hex(i).replace('0x', '')
-
-@route('/user/forgotten/$')
-class ForgottenPasswordHandler(BaseHandler):
-
-    def get(self, error=None, success=None):
-        options = self.get_base_options()
-        options['error'] = error and error or \
-          self.get_argument('error', None)
-        options['success'] = success and success or \
-          self.get_argument('success', None)
-        self.render("user/forgotten.html", **options)
-
-    #@tornado.web.asynchronous
-    def post(self):
-        email = self.get_argument('email')
-        if not valid_email(email):
-            raise tornado.web.HTTPError(400, "Not a valid email address")
-
-        existing_user = self.find_user_by_email(email)
-        if not existing_user:
-            self.get(error="%s is a valid email address but no account exists matching this" % \
-              email)
-            return
-
-        from tornado.template import Loader
-        loader = Loader(self.application.settings['template_path'])
-
-        recover_url = self.lost_url_for_user(existing_user._id)
-        recover_url = self.request.full_url() + recover_url
-        email_body = loader.load('user/reset_password.txt')\
-          .generate(recover_url=recover_url,
-                    first_name=existing_user.first_name,
-                    signature=self.application.settings['title'])
-
-        #if not isinstance(email_body, unicode):
-        #    email_body = unicode(email_body, 'utf-8')
-
-        try:
-            assert send_email(self.application.settings['email_backend'],
-                      "Password reset for on %s" % self.application.settings['title'],
-                      email_body,
-                      self.application.settings['webmaster'],
-                      [existing_user.email])
-
-            #self.get(success="Password reset instructions sent to %s" % \
-            #  existing_user.email)
-        except:
-            raise
-        self.redirect('/user/forgotten/?success=%s' %
-              quote("Password reset instructions sent to %s" % \
-              existing_user.email)
-        )
-
-        #self.finish()
-
-
-    ORIGIN_DATE = datetime.date(2000, 1, 1)
-
-    def lost_url_for_user(self, user_id):
-        days = int_to_hex((datetime.date.today() - self.ORIGIN_DATE).days)
-        secret_key = self.application.settings['cookie_secret']
-        hash = md5(secret_key + days + str(user_id)).hexdigest()
-        return 'recover/%s/%s/%s/'%\
-                       (user_id, days, hash)
-
-    def hash_is_valid(self, user_id, days, hash):
-        secret_key = self.application.settings['cookie_secret']
-        if md5(secret_key + days + str(user_id)).hexdigest() != hash:
-            return False # Hash failed
-        # Ensure days is within a week of today
-        days_now = (datetime.date.today() - self.ORIGIN_DATE).days
-        days_old = days_now - hex_to_int(days)
-        return days_old < 7
-
-
-@route('/user/forgotten/recover/(\w+)/([a-f0-9]+)/([a-f0-9]{32})/$')
-class RecoverForgottenPasswordHandler(ForgottenPasswordHandler):
-    def get(self, user_id, days, hash, error=None):
-        if not self.hash_is_valid(user_id, days, hash):
-            return self.write("Error. Invalid link. Expired probably")
-        user = self.db.User.one({'_id': ObjectId(user_id)})
-        if not user:
-            return self.write("Error. Invalid user")
-
-        options = self.get_base_options()
-        options['error'] = error
-        self.render("user/recover_forgotten.html", **options)
-
-    def post(self, user_id, days, hash):
-        if not self.hash_is_valid(user_id, days, hash):
-            raise tornado.web.HTTPError(400, "invalid hash")
-
-        new_password = self.get_argument('password')
-        if len(new_password) < 4:
-            raise tornado.web.HTTPError(400, "password too short")
-
-        user = self.db.User.one({'_id': ObjectId(user_id)})
-        if not user:
-            raise tornado.web.HTTPError(400, "invalid hash")
-
-        user.set_password(new_password)
-        user.save()
-
-        self.set_secure_cookie("user", str(user._id), expires_days=100)
-
-        self.redirect("/")
-
 
 class BaseAuthHandler(BaseHandler):
 
@@ -566,58 +389,26 @@ class BaseAuthHandler(BaseHandler):
                    self.application.settings['admin_emails'],
                    )
 
-
-
-@route('/user/signup/')
-class SignupHandler(BaseAuthHandler):
+route_redirect('/login', '/login/', name='login_shortcut')
+@route('/login/', name='login')
+class LoginHandler(BaseAuthHandler):
 
     def get(self):
-        if self.get_argument('validate_username', None):
-            username = self.get_argument('validate_username').strip()
-            if self.has_user(username):
-                result = dict(error='taken')
-            else:
-                result = dict(ok=True)
-            self.write_json(result)
+        options = self.get_base_options()
+        self.render("user/login.html", **options)
+
+
+@route('/login/fake/', name='fake_login')
+class FakeLoginHandler(LoginHandler):
+    def get(self):
+        assert self.application.settings['debug']
+        if self.get_argument('username', None):
+            user = self.find_user(self.get_argument('username'))
+            self.set_secure_cookie("user", str(user._id), expires_days=100)
+            return self.redirect(self.get_next_url())
         else:
-            raise tornado.web.HTTPError(404, "Nothing to check")
-
-    def post(self):
-        username = self.get_argument('username', u'').strip()
-        email = self.get_argument('email', u'').strip()
-        password = self.get_argument('password')
-        first_name = self.get_argument('first_name', u'').strip()
-        last_name = self.get_argument('last_name', u'').strip()
-
-        if not username:
-            return self.write("Error. No username provided")
-        if email and not valid_email(email):
-            raise tornado.web.HTTPError(400, "Not a valid email address")
-        if not password:
-            return self.write("Error. No password provided")
-
-        if self.has_user(email):
-            return self.write("Error. Email already taken")
-
-        if len(password) < 4:
-            return self.write("Error. Password too short")
-
-        user = self.get_current_user()
-        if not user:
-            user = self.db.User()
-        user.username = username
-        user.email = email
-        user.set_password(password)
-        user.first_name = first_name
-        user.last_name = last_name
-        user.save()
-
-        self.notify_about_new_user(user)
-
-        self.set_secure_cookie("user", str(user._id), expires_days=100)
-
-        self.redirect('/')
-
+            users = self.db.User.find()
+            self.render("user/fake_login.html", users=users)
 
 
 class CredentialsError(Exception):
@@ -675,9 +466,9 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
 
     def _on_auth(self, user):
         if not user:
-            raise tornado.web.HTTPError(500, "Google auth failed")
+            raise HTTPError(500, "Google auth failed")
         if not user.get('email'):
-            raise tornado.web.HTTPError(500, "No email provided")
+            raise HTTPError(500, "No email provided")
         locale = user.get('locale') # not sure what to do with this yet
         first_name = user.get('first_name')
         last_name = user.get('last_name')
@@ -720,11 +511,11 @@ class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
 
     def _on_auth(self, user):
         if not user:
-            raise tornado.web.HTTPError(500, "Twitter auth failed")
+            raise HTTPError(500, "Twitter auth failed")
         from pprint import pprint
         pprint(user)
         #if not user.get('email'):
-        #    raise tornado.web.HTTPError(500, "No email provided")
+        #    raise HTTPError(500, "No email provided")
         username = user.get('username')
         #locale = user.get('locale') # not sure what to do with this yet
         first_name = user.get('first_name', user.get('name'))
@@ -768,7 +559,7 @@ class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
         self.redirect(self.get_next_url())
 
 
-@route(r'/auth/logout/')
+@route(r'/auth/logout/', name='logout')
 class AuthLogoutHandler(BaseAuthHandler):
     def get(self):
         self.clear_all_cookies()
@@ -806,7 +597,7 @@ class HelpHandler(BaseHandler):
 
             return self.render(filename, **options)
 
-        raise tornado.web.HTTPError(404, "Unknown page")
+        raise HTTPError(404, "Unknown page")
 
     def get_see_also_links(self):
         for each in self.SEE_ALSO:

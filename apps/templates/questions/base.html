@@ -15,14 +15,12 @@
 {% block extra_login %}
       <div id="questions_score">
       <p>
-        <strong>Your score</strong>
-        <br>
-        published: {{ questions_score['published'] }}
-        accepted: {{ questions_score['accepted'] }}
-        reviewed: {{ questions_score['reviewed'] }}
+        <strong>Your Question Points:</strong>
+        <span class="question-points">{{ total_question_points }}</span>
+        <a href="{{ reverse_url('question_points') }}"
+           title="Click to see a break down of your total Question Points">?</a>
       </p>
       </div>
-
 {% end %}
 
 {% block content_outer %}

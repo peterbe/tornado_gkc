@@ -7,7 +7,9 @@
 
 {% if user %}
 <p>
-<a href="{{ reverse_url('questions') }}">Questions</a>
+There are current <strong>{{ count_published_questions }}</strong> published
+<a href="{{ reverse_url('questions') }}">Questions</a>.
+<a href="{{ reverse_url('add_question') }}">Wanna contribute some more?</a>
 </p>
 
 <p>
@@ -15,7 +17,7 @@
 </p>
 {% end %}
 
-<p>You currently have <strong>{{ total_points }}</strong> kwissle points</p>
+
 
 
 {% end %}
