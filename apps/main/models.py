@@ -58,8 +58,9 @@ class UserSettings(BaseDocument):
       'user': User,
       'disable_sound': bool,
       'newsletter_opt_out': bool,
-      'twitter_access_token': unicode,
-      'twitter_profile_image_url': unicode,
+      'twitter': dict,
+      'facebook': dict,
+      'google': dict,
     }
     use_autorefs = True
 

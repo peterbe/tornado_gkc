@@ -4,6 +4,7 @@ APPS = (
   'questions',
   'play',
 )
+DATABASE_NAME = "gkc"
 
 LOGIN_URL = "/auth/login/"
 NODE_URL = "http://%(host)s/start"

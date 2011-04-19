@@ -155,7 +155,7 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
             raise ValueError("Can't get settings when there is no user")
         _search = {'user.$id': user['_id']}
         if fast:
-            return self.db[UserSettings.__collection__].one(_search) # skip mongokit
+            return self.db.UserSettings.collection.one(_search) # skip mongokit
         else:
             return self.db.UserSettings.one(_search)
 
@@ -509,14 +509,69 @@ class FacebookAuthHandler(BaseAuthHandler, tornado.auth.FacebookMixin):
             return
         self.authenticate_redirect()
 
-    def _on_auth(self, user):
-        if not user:
+    def _on_auth(self, user_struct):
+        if not user_struct:
             raise HTTPError(500, "Facebook auth failed")
         from pprint import pprint
-        pprint(user)
-        logging.info(user)
-        self.redirect('/login/')
+        pprint(user_struct)
+        logging.info(user_struct)
+        # Example response:
+        #  {'username': u'peterbecom',
+        #   'pic_square': u'http://profile.ak.fbcdn.net/hprofile-ak-snc4/174129_564710728_3557794_q.jpg',
+        #   'first_name': u'Peter',
+        #   'last_name': u'Bengtsson',
+        #   'name': u'Peter Bengtsson',
+        #   'locale': u'en_GB',
+        #   'session_expires': 1303218000,
+        #   'session_key': u'2.UYZ9b8YQuRMjdcFy0RtAbg__.3600.1303218000.0-564710728',
+        #   'profile_url': u'http://www.facebook.com/peterbecom',
+        #   'uid': 564710728}
+        user = None
+        username = user_struct.get('username')
+        email = user_struct.get('email')
+        first_name = user_struct.get('first_name')
+        last_name = user_struct.get('last_name')
+        if username:
+            user = self.find_user(username)
+            if not user:
+                if email:
+                    user = self.find_user_by_email(email)
+        if not user:
+            new = True
+            user = self.db.User()
+            user.username = username
+            user.email = email
+            if first_name:
+                user.first_name = first_name
+            if last_name:
+                user.last_name = last_name
+            user.set_password(random_string(20))
+        else:
+            new = False
+            if first_name:
+                user.first_name = first_name
+            if last_name:
+                user.last_name = last_name
+        user.save()
 
+        if new:
+            self.push_flash_message("Welcome!",
+                                    "You username is %s" % user.username)
+            self.notify_about_new_user(user,
+                                       extra_message="Used Facebook to sign in")
+
+        user_settings = self.get_user_settings(user)
+        if not user_settings:
+            user_settings = self.create_user_settings(user)
+        user_settings.facebook = user_struct
+        user_settings.save()
+
+        # XXX: expires_days needs to reflect user_struct['session_expires']
+        self.set_secure_cookie("user", str(user._id), expires_days=100)
+        if new:
+            self.redirect(self.reverse_url('settings'))
+        else:
+            self.redirect(self.get_next_url())
 
 @route('/auth/twitter/')
 class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
@@ -527,20 +582,20 @@ class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
             return
         self.authenticate_redirect()
 
-    def _on_auth(self, user):
-        if not user:
+    def _on_auth(self, user_struct):
+        if not user_struct:
             raise HTTPError(500, "Twitter auth failed")
         from pprint import pprint
-        pprint(user)
-        #if not user.get('email'):
+        pprint(user_struct)
+        #if not user_struct.get('email'):
         #    raise HTTPError(500, "No email provided")
-        username = user.get('username')
-        #locale = user.get('locale') # not sure what to do with this yet
-        first_name = user.get('first_name', user.get('name'))
-        last_name = user.get('last_name')
-        email = user.get('email')
-        access_token = user['access_token']['key']
-        profile_image_url = user.get('profile_image_url', None)
+        username = user_struct.get('username')
+        #locale = user_struct.get('locale') # not sure what to do with this yet
+        first_name = user_struct.get('first_name', user_struct.get('name'))
+        last_name = user_struct.get('last_name')
+        email = user_struct.get('email')
+        #access_token = user_struct['access_token']['key']
+        #profile_image_url = user_struct.get('profile_image_url', None)
 
         user = self.find_user(username)
 
@@ -568,9 +623,7 @@ class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
         user_settings = self.get_user_settings(user)
         if not user_settings:
             user_settings = self.create_user_settings(user)
-        user_settings['twitter_access_token'] = unicode(access_token)
-        if profile_image_url:
-            user_settings['twitter_profile_image_url'] = unicode(profile_image_url)
+        user_settings.twitter = user_struct
         user_settings.save()
 
         self.set_secure_cookie("user", str(user._id), expires_days=100)

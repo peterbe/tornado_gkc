@@ -28,3 +28,5 @@ elastic_smtp.json
 local_settings.py
 mongodb_dump/
 facebook_consumer_secret
+NAMES.txt
+deployment/
