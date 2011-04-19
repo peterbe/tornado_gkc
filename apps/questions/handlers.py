@@ -68,6 +68,7 @@ class QuestionsBaseHandler(BaseHandler):
         data = {
           'published': F(dict(author_search, state=PUBLISHED)),
           'accepted': F(dict(author_search, state=ACCEPTED)),
+          'rejected': F(dict(author_search, state=REJECTED)),
           'reviewed': R(dict(user_search)),
         }
         return data
@@ -76,6 +77,7 @@ class QuestionsBaseHandler(BaseHandler):
       'published': 10,
       'accepted': 5,
       'reviewed': 1,
+      'rejected': -5,
     }
 
     def get_total_questions_points(self, user):

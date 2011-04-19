@@ -499,6 +499,24 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
 
         self.redirect(self.get_next_url())
 
+@route('/auth/facebook/')
+class FacebookAuthHandler(BaseAuthHandler, tornado.auth.FacebookMixin):
+
+    @tornado.web.asynchronous
+    def get(self):
+        if self.get_argument("session", None):
+            self.get_authenticated_user(self.async_callback(self._on_auth))
+            return
+        self.authenticate_redirect()
+
+    def _on_auth(self, user):
+        if not user:
+            raise HTTPError(500, "Facebook auth failed")
+        from pprint import pprint
+        pprint(user)
+
+        self.redirect('/login/')
+
 
 @route('/auth/twitter/')
 class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
