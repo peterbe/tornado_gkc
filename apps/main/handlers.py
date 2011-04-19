@@ -514,7 +514,7 @@ class FacebookAuthHandler(BaseAuthHandler, tornado.auth.FacebookMixin):
             raise HTTPError(500, "Facebook auth failed")
         from pprint import pprint
         pprint(user)
-
+        logging.info(user)
         self.redirect('/login/')
 
 
