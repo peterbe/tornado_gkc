@@ -91,3 +91,81 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(fixture_user.email, 'ok@test.com')
         self.assertEqual(fixture_user.first_name, u'Fred')
         self.assertEqual(fixture_user.last_name, u'')
+
+    def test_facebook_login(self):
+        url = self.reverse_url('auth_facebook')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 302)
+        self.assertTrue('facebook.com' in response.headers['location'])
+        from apps.main.handlers import FacebookAuthHandler
+        FacebookAuthHandler.get_authenticated_user = \
+          facebook_get_authenticated_user
+        response = self.client.get(url, dict(session='peter'))
+        self.assertEqual(response.code, 302)
+        settings_url = self.reverse_url('settings')
+        self.assertTrue(settings_url in response.headers['location'])
+
+        user = self.db.User.one()
+        self.assertEqual(user.username, 'peterbecom')
+        self.assertEqual(user.first_name, 'Peter')
+        self.assertEqual(user.last_name, 'Bengtsson')
+        self.assertTrue(not user.email)
+
+        user_settings = self.db.UserSettings.one({'user.$id': user._id})
+        assert user_settings
+        self.assertTrue(user_settings.facebook)
+        # log out and do it again
+        self.client.get(self.reverse_url('logout'))
+        response = self.client.get(url, dict(session='peter'))
+        self.assertEqual(response.code, 302)
+        self.assertTrue(settings_url not in response.headers['location'])
+        self.assertEqual(self.db.User.find().count(), 1)
+
+        response = self.client.get('/')
+        self.assertTrue('Peter' in response.body)
+
+    def test_facebook_login_no_username(self):
+        from apps.main.handlers import FacebookAuthHandler
+        FacebookAuthHandler.get_authenticated_user = \
+          facebook_get_authenticated_user
+
+        url = self.reverse_url('auth_facebook')
+        response = self.client.get(url, dict(session='ashley'))
+        self.assertEqual(response.code, 302)
+        settings_url = self.reverse_url('settings')
+        self.assertTrue(settings_url in response.headers['location'])
+
+        user = self.db.User.one()
+        self.assertEqual(user.username, 'ashleynoval')
+        self.assertEqual(user.first_name, 'Ashley')
+        self.assertEqual(user.last_name, 'Noval')
+        self.assertTrue(not user.email)
+
+
+
+def facebook_get_authenticated_user(self, callback, **k):
+    session = self.get_argument('session')
+    if session == 'peter':
+        callback({'username': u'peterbecom',
+           'pic_square': u'http://profile.ak.fbcdn.net/0000.jpg',
+           'first_name': u'Peter',
+           'last_name': u'Bengtsson',
+           'name': u'Peter Bengtsson',
+           'locale': u'en_GB',
+           'session_expires': 1303218000,
+           'session_key': u'abc123',
+           'profile_url': u'http://www.facebook.com/peterbecom',
+           'uid': 512720738
+        })
+    elif session == 'ashley':
+        callback({'first_name': u'Ashley',
+           'last_name': u'Noval',
+           'locale': u'en_US',
+           'name': u'Ashley Noval',
+           'pic_square': u'http://profile.ak.fbcdn.net/0000.jpg',
+           'profile_url': u'http://www.facebook.com/profile.php?id=111111',
+           'session_expires': 1303246800,
+           'session_key': u'1111113123',
+           'uid': 182052646,
+           'username': None,
+        })

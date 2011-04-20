@@ -389,6 +389,11 @@ class BaseAuthHandler(BaseHandler):
                    self.application.settings['admin_emails'],
                    )
 
+    def make_username(self, first_name, last_name):
+        def simple(s):
+            return s.lower().replace(' ','').replace('-','')
+        return '%s%s' % (simple(first_name), simple(last_name))
+
 route_redirect('/login', '/login/', name='login_shortcut')
 @route('/login/', name='login')
 class LoginHandler(BaseAuthHandler):
@@ -499,7 +504,7 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
 
         self.redirect(self.get_next_url())
 
-@route('/auth/facebook/')
+@route('/auth/facebook/', name='auth_facebook')
 class FacebookAuthHandler(BaseAuthHandler, tornado.auth.FacebookMixin):
 
     @tornado.web.asynchronous
@@ -512,8 +517,6 @@ class FacebookAuthHandler(BaseAuthHandler, tornado.auth.FacebookMixin):
     def _on_auth(self, user_struct):
         if not user_struct:
             raise HTTPError(500, "Facebook auth failed")
-        from pprint import pprint
-        pprint(user_struct)
         logging.info(user_struct)
         # Example response:
         #  {'username': u'peterbecom',
@@ -531,11 +534,14 @@ class FacebookAuthHandler(BaseAuthHandler, tornado.auth.FacebookMixin):
         email = user_struct.get('email')
         first_name = user_struct.get('first_name')
         last_name = user_struct.get('last_name')
-        if username:
-            user = self.find_user(username)
-            if not user:
-                if email:
-                    user = self.find_user_by_email(email)
+        if not username:
+            username = self.make_username(first_name, last_name)
+
+        user = self.find_user(username)
+        if not user:
+            if email:
+                user = self.find_user_by_email(email)
+
         if not user:
             new = True
             user = self.db.User()
