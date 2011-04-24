@@ -1,0 +1,12 @@
+{% extends "../base.html" %}
+
+
+{% block content_inner %}
+<p>
+<a href="{{ node_url }}" id="opener">open play</a>
+</p>
+{% end %}
+
+{% block extra_js %}
+{{ modules.Static("js/play.js") }}
+{% end %}
