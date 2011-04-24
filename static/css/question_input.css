@@ -15,3 +15,10 @@ label:after {
 .errors li { color:red; font-weight:bold;}
 
 .shuffler { font-size:90%; padding-left:4px; }
+
+p.field label.genre {
+  display:inline;
+  margin-right:10px;
+  font-weight:normal;
+}
+label.genre:after { content: ''; }

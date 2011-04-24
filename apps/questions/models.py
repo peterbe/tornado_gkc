@@ -8,6 +8,7 @@ class Genre(BaseDocument):
     }
 
 
+
 DRAFT = u"DRAFT"
 SUBMITTED = u"SUBMITTED"
 REJECTED = u"REJECTED"

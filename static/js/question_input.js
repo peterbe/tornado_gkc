@@ -48,27 +48,100 @@ var Form = (function() {
 
 var GENRE_NAMES;
 head.js(JS_URLS.jquery_autocomplete, function() {
-   $.getJSON('/questions/genre_names.json', function(r) {
-      $('input[name="genre"]').autocomplete(r.names);
+   $.getJSON('/questions/genre_names.json', {separate_popular:true}, function(r) {
+      var preval = $('#genre').val(), preval_element;
+      $('#genre').hide();
+      var container = $('#genre').parents('p.field');
+      $.each(r.popular_names, function(i, e) {
+         $('<input type="radio" name="chosen_genre">')
+           .attr('id', 'g_' + i)
+             .val(e[1])
+               .change(function() {
+                  L('triggered');
+                  $('#id_other_genre').fadeTo(300, 0.2);
+               })
+           .appendTo(container);
+         if (e[1] == preval) {
+            preval_element = $('#g_' + i);
+         }
+         $('<label>',
+           {title:e[0] + ' questions',
+            text:e[1],
+            'for':'g_' + i})
+           .addClass('genre')
+           .appendTo(container);
+      });
+      $('<br>').appendTo(container);
+      $('<input type="radio" name="chosen_genre">')
+        .attr('id', 'g_other')
+          .val('other')
+            .change(function() {
+               $('#id_other_genre').fadeTo(300, 1);
+            })
+          .appendTo(container);
+      $('<label>', {text:'Other:', 'for':'g_other'})
+        .addClass('genre')
+        .appendTo(container);
+      $('<input type="text" name="other_genre" id="id_other_genre">')
+        .autocomplete(r.all_names)
+          .bind('focus', function() {
+             $('input[value="other"]').attr('checked','checked');
+             $('#id_other_genre').fadeTo(300, 1);
+          })
+        .appendTo(container);
+
+      if (preval_element) {
+         L(preval_element);
+         preval_element.attr('checked','checked');
+      } else if (preval) {
+         $('#id_other_genre').val(preval);
+         $('#g_other').attr('checked','checked');
+      }
+      //$('input[name="genre"]').autocomplete(r.names);
    });
 });
 
 head.js(JS_URLS.jquery_tipsy, function() {
-   $('textarea').tipsy({trigger: 'focus', gravity: 'sw', fade: true});
+   $('textarea').tipsy({trigger: 'focus', gravity: 'se', fade: true});
    $('input[title]')
-     .not('#spell_correct')
+     .not('#spell_correct,#genre')
        .not('input[type="submit"]')
        .tipsy({trigger: 'focus', gravity: 'ne', fade: true});
    $('#spell_correct').tipsy({trigger: 'hover', gravity: 'w', fade: true});
+   $('#genre').tipsy({trigger: 'hover', gravity: 'sw', fade: true});
    $('input[type="submit"]').tipsy({trigger: 'hover', gravity: 'w', fade: true});
 });
 
+
 head.ready(function() {
+   var uniqify = function(seq, case_insensitive) {
+      var copy = [];
+      case_insensitive = case_insensitive === undefined ? false : true;
+      var item;
+      for (var i=0, j=seq.length; i<j; i++) {
+         item = seq[i];
+         if (case_insensitive && typeof(item) == 'string')
+           item = item.toLowerCase();
+         if (-1 == copy.indexOf(item)) {
+            copy.push(item);
+         }
+      }
+      return copy;
+   };
    if (Form.has_all_alternatives()) {
       Form.add_shuffler();
    }
    $('form[method="post"]', '#content_inner').submit(function() {
+      var text = $('input[name="text"]').val();
+      if (!$.trim(text)) {
+         alert("Please enter the question");
+         return false;
+      }
       var answer = $('input[name="answer"]').val();
+      if (!$.trim(answer)) {
+         alert("Please enter the answer");
+         return false;
+      }
       var alternatives = [];
       $('input[name="alternatives"]').each(function() {
          if ($(this).val().length) {
@@ -80,10 +153,20 @@ head.ready(function() {
             alert("One of the alternatives must be the answer");
             return false;
          }
+
       } else {
          alert("Please fill in 4 alternatives");
          return false;
       }
+      if (uniqify(alternatives, true).length < 4) {
+         alert("Please enter 4 *different* alternatives");
+         return false;
+      }
+
+      var chosen_genre = $('input[name="chosen_genre"]:checked').val();
+      if (chosen_genre == 'other')
+        chosen_genre = $('input[name="other_genre"]').val();
+      $('input[name="genre"]').val(chosen_genre);
       return true;
    });
    $('input[name="alternatives"]').change(function() {
@@ -102,11 +185,9 @@ head.ready(function() {
          });
       }
    });
-   
+
    // on the Edit question page
-   $('input[name="submit_question"]').click(function() {
-      return confirm("Are you sure?\nQuestion can not be edited after this.");
-   });
-   
-   
+   //$('input[name="submit_question"]').click(function() {
+   //   return confirm("Are you sure?\nQuestion can not be edited after this.");
+   //});
 });

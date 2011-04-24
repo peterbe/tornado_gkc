@@ -114,8 +114,34 @@ class QuestionPointsHandler(QuestionsBaseHandler):
 @route('/questions/genre_names.json$', name="genre_names_json")
 class QuestionsGenreNamesHandler(QuestionsBaseHandler):
     def get(self):
-        names = [x.name for x in self.db.Genre.find().sort('name')]
-        self.write_json(dict(names=names))
+        limit = self.get_argument('limit', None)
+        if self.get_argument('separate_popular', False):
+            def count_questions(genre):
+                _search = {'accept_date': {'$gt':datetime.datetime(2000,1,1)},
+                           'genre.$id': genre._id}
+                return self.db.Question.find(_search).count()
+            names = []
+            for genre in self.db.Genre.find():
+                count = count_questions(genre)
+                if count:
+                    names.append((count, genre.name))
+            all_names = [x[1] for x in names]
+            all_names.sort()
+
+            if limit:
+                names.sort()
+                names.reverse()
+                names = names[:int(limit)]
+            names.sort(lambda x,y: cmp(x[1], y[1]))
+
+            self.write_json(dict(popular_names=names,
+                                 all_names=all_names))
+        else:
+            qs = self.db.Genre.find().sort('name')
+            if limit:
+                qs.limit(int(limit))
+            names = [x.name for x in qs]
+            self.write_json(dict(names=names))
 
 route_redirect('/questions$', '/questions/', name="questions_shortcut")
 @route('/questions/$', name="questions")
@@ -128,11 +154,19 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
         options['page_title'] = "Questions dashboard"
         user = self.get_current_user()
         _user_search = {'author.$id': user._id}
-        options['accepted_questions'] = \
+        options['all_accepted_questions'] = \
           self.db.Question.find({
             'author.$id': {'$ne': user._id},
             'state': ACCEPTED
           })
+        options['all_accepted_questions_count'] = \
+          options['all_accepted_questions'].count()
+
+        options['accepted_questions'] = \
+        self.db.Question.find(
+          dict(_user_search, state=ACCEPTED))
+        options['accepted_questions_count'] = \
+          options['accepted_questions'].count()
 
         options['draft_questions'] = \
         self.db.Question.find(
@@ -407,15 +441,15 @@ class RejectQuestionHandler(QuestionsBaseHandler):
           (self.request.host, self.reverse_url('edit_question', question._id))
         try:
             if question.author.email:
-                email_body = 'Sorry but the question you added ("%s") had to '\
-                             'be rejected.\n' % question.text
+                email_body = 'Sorry but the question you added ("%s") was '\
+                             'unfortunately rejected.\n' % question.text
                 if reject_comment:
                     email_body += 'Comment: %s\n\n' % reject_comment
-                email_body += "To edit the question again go to:\n%s\n" %\
+                email_body += "To edit the question again, go to:\n%s\n" %\
                   edit_question_url
                 email_body += "\n--\n%s\n" % settings.PROJECT_TITLE
                 send_email(self.application.settings['email_backend'],
-                           "%s has submitted a question" % user.username,
+                           "One of your questions has been rejected",
                            email_body,
                            self.application.settings['webmaster'],
                            [question.author.email],
@@ -635,7 +669,6 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler): # pragma: no cover
     def get(self):
         options = self.get_base_options()
         options['all_questions'] = self.db.Question.find().sort('add_date', 1)
-        options['page_title'] = "All questions (admin eyes only)"
 
         state_counts = []
         for state in STATES:
@@ -644,7 +677,11 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler): # pragma: no cover
         _total = sum(x[1] for x in state_counts)
         state_counts = [(state, count, round(100.0*count/_total,0))
           for (state, count) in state_counts]
+        options['total_count'] = sum([x[1] for x in state_counts])
         options['state_counts'] = state_counts
+
+        options['page_title'] = "All %s questions (admin eyes only)" %\
+          options['total_count']
 
         try:
             from pygooglechart import PieChart2D

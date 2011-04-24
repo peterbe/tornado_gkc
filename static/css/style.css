@@ -36,6 +36,7 @@ a { color:white; }
   text-decoration:none;
 }
 div.clearer {clear: both; line-height: 0; height: 0;}
+/*
 .btn {
     -moz-border-bottom-colors: none;
     -moz-border-image: none;
@@ -72,6 +73,7 @@ div.clearer {clear: both; line-height: 0; height: 0;}
     border-width: 1px;
     box-shadow: none;
 }
+*/
 
 
 input {
@@ -115,3 +117,9 @@ form.question textarea {
   margin-top:100px;
   font-size:0.8em;
 }
+
+#gritter-notice-wrapper {
+  top:100px;
+}
+
+a.bold { font-weight:bold; }

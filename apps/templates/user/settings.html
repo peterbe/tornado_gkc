@@ -25,6 +25,11 @@ input {
 
 <form action="" class="question" method="post">{{ xsrf_form_html() }}
 
+<p class="field">
+<label for="username">Username</label>
+<code>{{ user.username }}</code>
+</p>
+
 {% for field in form %}
   <p class="field">
     {{ field.label }}

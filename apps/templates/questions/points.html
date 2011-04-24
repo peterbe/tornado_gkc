@@ -9,6 +9,7 @@ td.count, td.points, td.value { text-align:right; padding-right:20px; }
 td.count { font-size:130%; }
 td.points { font-size:150%; text-align:right; }
 tfoot td.total { font-size:150%; }
+.explanation { padding-left:5px; font-size:80%; }
 </style>
 {% end %}
 {% block content_inner %}
@@ -32,19 +33,19 @@ tfoot td.total { font-size:150%; }
   </tfoot>
   <tbody>
   <tr>
-    <td>Published</td>
+    <td>Published <span class="explanation">(questions ready for play)</span></td>
     <td class="count">{{ published }}</td>
     <td class="value">&times; {{ published_value }}</td>
     <td class="points">{{ published_points }}</td>
   </tr>
   <tr>
-    <td>Accepted</td>
+    <td>Accepted <span class="explanation">(not yet published, available for group review)</span></td>
     <td class="count">{{ accepted }}</td>
     <td class="value">&times; {{ accepted_value }}</td>
     <td class="points">{{ accepted_points }}</td>
   </tr>
   <tr>
-    <td>Reviewed</td>
+    <td>Reviewed <span class="explanation">(reviews of other people's questions)</span></td>
     <td class="count">{{ reviewed }}</td>
     <td class="value">&times; {{ reviewed_value }}</td>
     <td class="points">{{ reviewed_points }}</td>

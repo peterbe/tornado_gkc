@@ -2,10 +2,10 @@
 
 {% block content_inner %}
 
-
-<p><a href="{{ reverse_url('add_question') }}" class="btn">Add a new question &rarr;</a>
-{% if accepted_questions.count() %}
-  There are {{ accepted_questions.count() }} accepted questions that needs
+<p><a href="{{ reverse_url('add_question') }}" class="bold btn">Add a new question &rarr;</a><br>
+{% if all_accepted_questions_count %}
+  There are {{ all_accepted_questions_count }} accepted questions
+  (written by other people) that needs
   <a href="{{ reverse_url('review_random') }}" title="click to review a random accepted question">reviewing</a>
   {% if is_admin_user %}
     |
@@ -22,7 +22,7 @@
   {% for question in draft_questions %}
   <div id="{{ question._id }}" class="question">
     <p class="question_text"><a href="{{ reverse_url('edit_question', question._id ) }}">{{ question.text }}</a></p>
-    <p class="question_metadata">Genre: {{ question.genre.name }}<br>
+    <p class="question_metadata">Category: {{ question.genre.name }}<br>
     Added {{ modules.TimeSince(question.add_date) }} ago
     </p>
   </div>
@@ -42,7 +42,7 @@
   <div id="{{ question._id }}" class="question">
     <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}">{{ question.text }}</a></p>
     <p class="question_metadata">Comment: <em>{{ question.reject_comment }}</em><br>
-    Genre: {{ question.genre.name }}<br>
+    Category: {{ question.genre.name }}<br>
     Rejected {{ modules.TimeSince(question.reject_date) }} ago
     </p>
   </div>
@@ -56,7 +56,7 @@
   <div id="{{ question._id }}" class="question">
     <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}">{{ question.text }}</a></p>
     <p class="question_metadata">{% if is_admin_user %}By: {{ modules.ShowUser(question.author) }}<br>{% end %}
-    Genre: {{ question.genre.name }}<br>
+    Category: {{ question.genre.name }}<br>
     Submitted {{ modules.TimeSince(question.submit_date) }} ago
     </p>
   </div>
@@ -67,5 +67,24 @@
   </div>
   {% end %}
 </div>
+
+{% if accepted_questions_count %}
+<div id="accepted_questions">
+  <h3>Accepted Questions ({{ accepted_questions_count }})</h3>
+  <p>For your
+  {% if accepted_questions_count == 1 %}
+  one accepted question
+  {% else %}
+  {{ accepted_questions_count }} accepted questions
+  {% end %}
+  to be published (by the administrator)
+  your questions first need to be reviewed by other people a bit.
+  Just wait.</p>
+  {% if all_accepted_questions_count %}
+  <p>To help out, <a href="{{ reverse_url('review_random') }}">review other people's questions</a> whilst you wait.
+  </p>
+  {% end %}
+</div>
+{% end %}
 
 {% end %}

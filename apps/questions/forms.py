@@ -42,7 +42,7 @@ class MultilinesWidget(object):
 
 
 class QuestionForm(BaseForm):
-    text = TextField("Text", [validators.Required(),
+    text = TextField("Question", [validators.Required(),
                               validators.Length(min=5, max=100)],
                      description="Make sure the question ends with a ?",
                      id="id_text")
