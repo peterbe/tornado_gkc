@@ -10,6 +10,7 @@ class StartPlayingHandler(BaseHandler):
 
     @tornado.web.authenticated
     def get(self):
+        options = self.get_base_options()
         user = self.get_current_user()
         node_url = settings.NODE_URL % \
           dict(host=settings.NODE_DOMAIN,
@@ -17,6 +18,7 @@ class StartPlayingHandler(BaseHandler):
                uid=str(user._id),
                )
         node_url += '?u=%s' % user._id
+        options['node_url'] = node_url
         #self.set_cookie('user_id', str(user._id))
-        #self.write(node_url)
-        self.redirect(node_url)
+        self.render("play/play.html", **options)
+        #self.redirect(node_url)

@@ -7,8 +7,8 @@ APPS = (
 DATABASE_NAME = "gkc"
 
 LOGIN_URL = "/auth/login/"
-NODE_URL = "http://%(host)s/start"
-NODE_DOMAIN = 'play.kwissle.com'
+NODE_URL = "http://%(host)s:8888/start"
+NODE_DOMAIN = 'kwissle.com'
 
 COOKIE_SECRET = "12orTzK2XQAGUYdkL5gmueJIFuY37EQn92XsTo1v/Vo="
 
