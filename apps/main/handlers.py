@@ -649,6 +649,7 @@ class HelpHandler(BaseHandler):
     SEE_ALSO = (
       ['/', u"Help"],
       u"About",
+      ['/a-good-question', u"Writing a good question"],
       #u"News",
       #['/API', u"Developers' API"],
       #u"Bookmarklet",

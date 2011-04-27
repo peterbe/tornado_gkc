@@ -28,6 +28,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertTrue(redirected_to.endswith(url))
 
 
+
     def test_adding_question(self):
         url = self.reverse_url('add_question')
         response = self.client.get(url)
@@ -502,3 +503,16 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         question = self.db.Question.one({'_id':question._id})
         assert question.state == PUBLISHED
+
+    def test_adding_question_form_maxlengths(self):
+        self._login()
+        url = self.reverse_url('add_question')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        regex = re.compile('<input (.*?)name="text"(.*?)>', re.M)
+        attrs = ' '.join(regex.findall(response.body)[0])
+        self.assertTrue('maxlength=' in attrs)
+
+        regex = re.compile('<input (.*?)name="answer"(.*?)>', re.M)
+        attrs = ' '.join(regex.findall(response.body)[0])
+        self.assertTrue('maxlength=' in attrs)

@@ -40,15 +40,25 @@ class MultilinesWidget(object):
                 htmls.append('<br/>')
         return '\n'.join(htmls)
 
+class TextInputWithMaxlength(TextInput):
+    def __init__(self, maxlength, *args, **kwargs):
+        self.maxlength = maxlength
+        super(TextInputWithMaxlength, self).__init__(*args, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        kwargs.update(dict(maxlength=self.maxlength))
+        return super(TextInputWithMaxlength, self).__call__(*args, **kwargs)
 
 class QuestionForm(BaseForm):
     text = TextField("Question", [validators.Required(),
-                              validators.Length(min=5, max=100)],
+                              validators.Length(min=5, max=60)],
                      description="Make sure the question ends with a ?",
+                     widget=TextInputWithMaxlength(60),
                      id="id_text")
     answer = TextField("Answer", [validators.Required(),
-                                  validators.Length(min=1, max=25)],
+                                  validators.Length(min=1, max=15)],
                       description="Make it reasonably short and easy to type",
+                      widget=TextInputWithMaxlength(15),
                       id="id_answer")
     accept = TextAreaField("Also accept", widget=MultilinesWidget(length=3, vertical=True),
                            description="Other answers that are also correct")

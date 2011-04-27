@@ -191,7 +191,7 @@ class AddQuestionHandler(QuestionsBaseHandler):
     def get(self, form=None):
         options = self.get_base_options()
         if form is None:
-            form = QuestionForm()
+            form = QuestionForm(spell_correct=True)
         options['form'] = form
         options['page_title'] = "Add question"
         self.render("questions/add.html", **options)

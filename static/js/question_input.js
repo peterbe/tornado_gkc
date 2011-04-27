@@ -1,5 +1,6 @@
 /* Nothing yet */
 
+
 var Form = (function() {
    function shuffle(o) { //v1.0
       for(var j, x, i = o.length; i; j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
@@ -185,6 +186,50 @@ head.ready(function() {
          });
       }
    });
+
+   (function($) {
+      $.fn.maxlength_countdown = function() {
+         return this.each(function() {
+            var e = $(this);
+            if (!e.attr('id')) {
+               throw "input element lacks ID attribute";
+            }
+            var c = e.val().length;
+            var p = c / parseFloat($(this).attr('maxlength'));
+            var t = $('<span>',
+                      {text: c + ' of max ' + $(this).attr('maxlength')})
+              .attr('id', 'countdown' + e.attr('id'))
+              .fadeTo(0, p)
+                .addClass('maxlength-countdown')
+                .insertAfter(e);
+            if (p >= 1) {
+               t.addClass('maxlength-maxed');
+            }
+            e.bind('keyup', function() {
+               L('keyup!');
+
+               var e = $(this);
+               var c = e.val().length;
+               var t = $('#countdown' + e.attr('id'));
+               var p = c / parseFloat(e.attr('maxlength'));
+               t.text(c + ' of max ' + e.attr('maxlength'))
+                 .fadeTo(100, p);
+               if (p >= 1) {
+                  t.addClass('maxlength-maxed');
+               } else {
+                  t.removeClass('maxlength-maxed');
+               }
+            }).bind('blur', function() {
+               var e = $(this);
+               $('#countdown' + e.attr('id'))
+                 .fadeTo(500, 0.2);
+
+            });
+         });
+      };
+   })(jQuery);
+
+   $('input[maxlength]').maxlength_countdown();
 
    // on the Edit question page
    //$('input[name="submit_question"]').click(function() {

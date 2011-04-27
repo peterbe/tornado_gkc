@@ -1,0 +1,43 @@
+{% extends "help_base.html" %}
+
+{% block extra_head %}
+<style type="text/css">
+p.contribute-now {
+  text-align:center;
+  margin:60px;
+}
+p.contribute-now a {
+  font-weight:bold;
+}
+</style>
+{% end %}
+
+{% block content_inner %}
+<h2>Writing a good question</h2>
+
+<p>
+<a href="{{ reverse_url('questions') }}" class="btn">&larr; back to questions dashboard</a></p>
+
+
+
+<h3>Very important</h3>
+<ul class="main-tips">
+  <li>Make the question <em>short</em> and <em>easy to read</em></li>
+  <li>Encourage people to <em>think</em> instead of <em>Google'ing it</em></li>
+  <li>Make the answer short and easy to type</li>
+  <li>Ask yourself if you would enjoy answering the question</li>
+</ul>
+
+<h3>Also important</h3>
+<ul class="minor-tips">
+  <li>Allow spelling mistakes on non-numeric answers</li>
+  <li>Support the validity of your answer in the comment to make it easy for reviewers to verify the answer</li>
+  <li>If the question is hard, try to encourage clues inside the question</li>
+  <li>Add many questions and let reviews decide which ones are good questions</li>
+</ul>
+
+<p class="contribute-now">Right! What are you waiting for?<br>
+<a href="{{ reverse_url('add_question') }}">Contribute some questions of your own &rarr;</a>
+</p>
+
+{% end %}
