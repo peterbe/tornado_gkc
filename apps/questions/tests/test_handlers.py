@@ -516,3 +516,63 @@ class HandlersTestCase(BaseHTTPTestCase):
         regex = re.compile('<input (.*?)name="answer"(.*?)>', re.M)
         attrs = ' '.join(regex.findall(response.body)[0])
         self.assertTrue('maxlength=' in attrs)
+
+    def test_admin_editing_other_peoples_questions(self):
+        self._login()
+        peter = self.db.User.one()
+        assert peter.email not in settings.ADMIN_EMAILS
+
+        admin_client = TestClient(self)
+        self._login('admin',
+                    email=settings.ADMIN_EMAILS[0],
+                    client=admin_client)
+
+        geography = self.db.Genre()
+        geography.name = u'Geo'
+        geography.save()
+
+        question = self.db.Question()
+        question.text = u"??"
+        question.answer = u"!"
+        question.author = peter
+        question.genre = geography
+        question.state = DRAFT
+        question.save()
+
+        url = self.reverse_url('edit_question', question._id)
+
+        response = admin_client.get(url)
+        self.assertEqual(response.code, 200)
+
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+
+        question.state = SUBMITTED
+        question.submit_date = datetime.datetime.now()
+        question.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.code, 403)
+
+        response = admin_client.get(url)
+        self.assertEqual(response.code, 200)
+
+        question.state = ACCEPTED
+        question.accept_date = datetime.datetime.now()
+        question.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.code, 403)
+
+        response = admin_client.get(url)
+        self.assertEqual(response.code, 200)
+
+        question.state = PUBLISHED
+        question.accept_date = datetime.datetime.now()
+        question.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.code, 403)
+
+        response = admin_client.get(url)
+        self.assertEqual(response.code, 200)

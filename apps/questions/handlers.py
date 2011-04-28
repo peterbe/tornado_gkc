@@ -40,8 +40,9 @@ class QuestionsBaseHandler(BaseHandler):
         question = self.find_question(question_id)
         if not question:
             raise HTTPError(404, "Question can't be found")
-        if question.author != user and not self.is_admin_user(user):
-            raise HTTPError(403, "Not your question")
+        if question.author != user:
+            if not self.is_admin_user(user):
+                raise HTTPError(403, "Not your question")
         return question
 
     def can_submit_question(self, question):
@@ -53,10 +54,10 @@ class QuestionsBaseHandler(BaseHandler):
         return False
 
     def can_edit_question(self, question, user):
+        if self.is_admin_user(user):
+            return True
         if question.state in (DRAFT, REJECTED):
             if question.author == user:
-                return True
-            elif self.is_admin_user(user):
                 return True
         return False
 
@@ -263,7 +264,6 @@ class ViewQuestionHandler(QuestionsBaseHandler):
 
 @route('/questions/(\w{24})/edit/$', name="edit_question")
 class EditQuestionHandler(QuestionsBaseHandler):
-
 
     @tornado.web.authenticated
     def get(self, question_id, form=None):
