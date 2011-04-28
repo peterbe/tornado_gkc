@@ -113,6 +113,9 @@ head.js(JS_URLS.jquery_tipsy, function() {
    $('input[type="submit"]').tipsy({trigger: 'hover', gravity: 'w', fade: true});
 });
 
+head.js(JS_URLS.maxlength_countdown, function() {
+   $('input[maxlength]').maxlength_countdown();
+});
 
 head.ready(function() {
    var uniqify = function(seq, case_insensitive) {
@@ -187,49 +190,8 @@ head.ready(function() {
       }
    });
 
-   (function($) {
-      $.fn.maxlength_countdown = function() {
-         return this.each(function() {
-            var e = $(this);
-            if (!e.attr('id')) {
-               throw "input element lacks ID attribute";
-            }
-            var c = e.val().length;
-            var p = c / parseFloat($(this).attr('maxlength'));
-            var t = $('<span>',
-                      {text: c + ' of max ' + $(this).attr('maxlength')})
-              .attr('id', 'countdown' + e.attr('id'))
-              .fadeTo(0, p)
-                .addClass('maxlength-countdown')
-                .insertAfter(e);
-            if (p >= 1) {
-               t.addClass('maxlength-maxed');
-            }
-            e.bind('keyup', function() {
-               L('keyup!');
 
-               var e = $(this);
-               var c = e.val().length;
-               var t = $('#countdown' + e.attr('id'));
-               var p = c / parseFloat(e.attr('maxlength'));
-               t.text(c + ' of max ' + e.attr('maxlength'))
-                 .fadeTo(100, p);
-               if (p >= 1) {
-                  t.addClass('maxlength-maxed');
-               } else {
-                  t.removeClass('maxlength-maxed');
-               }
-            }).bind('blur', function() {
-               var e = $(this);
-               $('#countdown' + e.attr('id'))
-                 .fadeTo(500, 0.2);
-
-            });
-         });
-      };
-   })(jQuery);
-
-   $('input[maxlength]').maxlength_countdown();
+   
 
    // on the Edit question page
    //$('input[name="submit_question"]').click(function() {
