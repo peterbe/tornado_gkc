@@ -25,3 +25,41 @@ class ModelsTestCase(BaseModelsTestCase):
         question.author = user
         question.save()
         self.assertEqual(question.state, STATES[0])
+
+    def test_questionpoints_highscore(self):
+        user = self.db.User()
+        user.username = u"something"
+        user.save()
+
+        user_points = self.db.QuestionPoints()
+        user_points.user = user
+        user_points.points = 12
+        user_points.save()
+
+        user_points.update_highscore_position()
+        self.assertEqual(user_points.highscore_position, 1)
+
+        user2 = self.db.User()
+        user2.username = u"else"
+        user2.save()
+
+        user_points2 = self.db.QuestionPoints()
+        user_points2.user = user2
+        user_points2.points = 10
+        user_points2.save()
+
+        user_points2.update_highscore_position()
+        self.assertEqual(user_points2.highscore_position, 2)
+
+        user_points2.points += 2
+        user_points2.update_highscore_position()
+        self.assertEqual(user_points2.highscore_position, 1)
+        user_points.update_highscore_position()
+        self.assertEqual(user_points.highscore_position, 1)
+
+        user_points2.points += 1
+
+        user_points2.update_highscore_position()
+        self.assertEqual(user_points2.highscore_position, 2)
+        user_points.update_highscore_position()
+        self.assertEqual(user_points.highscore_position, 1)

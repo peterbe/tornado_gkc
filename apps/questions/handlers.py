@@ -81,7 +81,18 @@ class QuestionsBaseHandler(BaseHandler):
       'rejected': -5,
     }
 
-    def get_total_questions_points(self, user):
+    def get_total_questions_points(self, user, force_refresh=False):
+        user_points = self.db.QuestionPoints.one({'user.$id': user._id})
+        if not user_points or force_refresh:
+            if not user_points:
+                user_points = self.db.QuestionPoints()
+                user_points.user = user
+            user_points.points = self._get_total_questions_points(user)
+            user_points.update_highscore_position()
+            user_points.save()
+        return user_points.points
+
+    def _get_total_questions_points(self, user):
         total_points = 0
         for key, count in self.get_questions_counts(user).items():
             value = self.QUESTION_VALUES[key]

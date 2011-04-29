@@ -80,3 +80,25 @@ class QuestionReview(BaseDocument):
     validators = {
       'verdict': lambda x: x in VERDICTS
     }
+
+
+class QuestionPoints(BaseDocument):
+    __collection__ = 'question_points'
+    structure = {
+      'user': User,
+      'points': int,
+      'highscore_position': int,
+    }
+
+    required_fields = ['user','points']
+    validators = {
+      'points': lambda x: x is None or x >= 0,
+      'highscore_position': lambda x: x is None or x > 0,
+    }
+
+    def update_highscore_position(self):
+        # how many has better points?
+        print "Out of", self.db.User.find().count()
+        c = self.db.User.find({'points':{'$gte': self.points}}).count()
+        print "C", c
+        self.highscore_position = max(c, 1)
