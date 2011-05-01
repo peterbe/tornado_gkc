@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block extra_head %}
+<style type="text/css">
+table { width:70%; }
+thead td { border-bottom:1px solid white; }
+thead td { font-weight:bold; font-size:120% }
+tfoot td {border-top:1px solid white; }
+td.count, td.points, td.value { text-align:right; padding-right:20px; }
+td.count { font-size:130%; }
+td.points { font-size:150%; text-align:right; }
+tfoot td.total { font-size:150%; }
+.explanation { padding-left:5px; font-size:80%; }
+</style>
+{% end %}
+{% block content_inner %}
+
+<p>
+<a href="/questions/" class="btn">&larr; back to questions dashboard</a>
+<br>
+<a href="/questions/points/" class="btn">&larr; back to your points</a>
+</p>
+
+{% if is_admin_user %}
+<form action="{{ reverse_url('update_question_points') }}" method="post">
+{{ xsrf_form_html() }}
+<div style="float:right">
+  <input type="submit" value="update">(admin only)
+</div>
+</form>
+{% end %}
+
+<table>
+  <thead>
+    <tr>
+      <td>&nbsp;</td>
+      <td>Name</td>
+      <td class="points">Points</td>
+    </tr>
+  </thead>
+  <tbody>
+  {% for qp in question_points %}
+  <tr>
+    <td>{{ qp.highscore_position }}</td>
+    <td>{{ qp.user.username }}
+      {% if qp.highscore_position == your_position %}
+      &larr; you you you!
+      {% end %}
+    </td>
+    <td class="points">{{ qp.points }}</td>
+  </tr>
+  {% end %}
+  </tbody>
+</table>
+
+
+{% end %}

@@ -81,6 +81,9 @@ class QuestionsBaseHandler(BaseHandler):
       'rejected': -5,
     }
 
+    def update_total_questions_points(self, user):
+        self.get_total_questions_points(user, force_refresh=True)
+
     def get_total_questions_points(self, user, force_refresh=False):
         user_points = self.db.QuestionPoints.one({'user.$id': user._id})
         if not user_points or force_refresh:
@@ -121,6 +124,36 @@ class QuestionPointsHandler(QuestionsBaseHandler):
 
         options['page_title'] = "Breakdown of your Question Points"
         self.render('questions/points.html', **options)
+
+@route('/questions/points/highscore/', name='question_points_highscore')
+class QuestionPointsHighscoreHandler(QuestionsBaseHandler):
+
+    def get(self):
+        options = self.get_base_options()
+        options['question_points'] = self.db.QuestionPoints.find()\
+          .sort('highscore_position')
+
+        your_position = None
+        if options['user']:
+            qp = self.db.QuestionPoints.one({'user.$id': options['user']._id})
+            if qp:
+                your_position = qp.highscore_position
+        options['your_position'] = your_position
+        options['is_admin_user'] = options['user'] and \
+          self.is_admin_user(options['user'])
+        self.render('questions/highscore.html', **options)
+
+@route('/questions/points/update/', name='update_question_points')
+class UpdateQuestionPointsHandler(QuestionsBaseHandler):
+
+    @tornado.web.authenticated
+    def post(self):
+        you = self.get_current_user()
+        if not self.is_admin_user(you):
+            raise HTTPError(403)
+        for user in self.db.User.find():
+            self.get_total_questions_points(user, force_refresh=True)
+        self.redirect(self.reverse_url('question_points_highscore'))
 
 
 @route('/questions/genre_names.json$', name="genre_names_json")
@@ -444,6 +477,8 @@ class RejectQuestionHandler(QuestionsBaseHandler):
         question.state = REJECTED
         question.save()
 
+        self.update_total_questions_points(question.author)
+
         # XXX Need ability here to send an email to the question owner!!
         self.push_flash_message("Question rejected!",
             "Question owner needs to amend the question.")
@@ -486,6 +521,8 @@ class AcceptQuestionHandler(QuestionsBaseHandler):
         question.accept_date = datetime.datetime.now()
         question.save()
 
+        self.update_total_questions_points(question.author)
+
         self.push_flash_message("Question accepted!",
             "Question is now ready to be peer reviewed")
 
@@ -504,6 +541,8 @@ class PublishQuestionHandler(QuestionsBaseHandler):
         question.state = PUBLISHED
         question.publish_date = datetime.datetime.now()
         question.save()
+
+        self.update_total_questions_points(question.author)
 
         self.push_flash_message("Question published!",
             "Question is now ready for game play!")
@@ -618,6 +657,8 @@ class ReviewQuestionHandler(QuestionsBaseHandler):
         review.comment = comment
         review.save()
 
+        self.update_total_questions_points(user)
+
         self.push_flash_message("Question reviewed!",
             "Thank you for adding your review")
 
@@ -626,7 +667,7 @@ class ReviewQuestionHandler(QuestionsBaseHandler):
 
 
 @route('/questions/review/accepted/$', name="review_accepted")
-class AcceptedReviewQuestionHandler(QuestionsBaseHandler):
+class ReviewAcceptedQuestionHandler(QuestionsBaseHandler):
 
     @tornado.web.authenticated
     def get(self):

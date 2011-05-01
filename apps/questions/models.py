@@ -95,7 +95,6 @@ class QuestionPoints(BaseDocument):
     }
     required_fields = ['user','points']
     validators = {
-      'points': lambda x: x is None or x >= 0,
     }
 
     def update_highscore_position(self):
