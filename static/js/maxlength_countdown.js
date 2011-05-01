@@ -1,3 +1,8 @@
+// maxlength_countdown, shows how many characters you have left in an input field
+// version 1.0
+// (c) 2011 Peter Bengtsson, mail@peterbe.com
+// released under the MIT license
+
 (function($) {
    $.fn.maxlength_countdown = function(formatter) {
       formatter = formatter !== undefined ? formatter : function(c, m) {
