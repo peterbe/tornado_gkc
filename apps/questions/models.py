@@ -90,15 +90,31 @@ class QuestionPoints(BaseDocument):
       'highscore_position': int,
     }
 
+    default_values = {
+      'highscore_position': 0,
+    }
     required_fields = ['user','points']
     validators = {
       'points': lambda x: x is None or x >= 0,
-      'highscore_position': lambda x: x is None or x > 0,
     }
 
     def update_highscore_position(self):
         # how many has better points?
-        print "Out of", self.db.User.find().count()
-        c = self.db.User.find({'points':{'$gte': self.points}}).count()
-        print "C", c
+        #print "Out of", self.db.QuestionPoints.find().count()
+        c = self.db.QuestionPoints.find({'points':{'$gte': self.points}}).count()
+        #print "C", c
         self.highscore_position = max(c, 1)
+        self.save()
+
+        self.db.QuestionPoints.collection.update(
+          {'points':{'$lt': self.points}},
+          {'$inc': {'highscore_position': 1}},
+          multi=True # multi
+        )
+        #for each in self.db.QuestionPoints.find({'points':{'$lt': self.points}}):
+        #    print "BUMPING"
+        #    print repr(each)
+        #    print "\t", repr(each.highscore_position)
+        #    each.highscore_position += 1
+        #    each.save()
+        #    print
