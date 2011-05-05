@@ -1,0 +1,19 @@
+{% extends "../base.html" %}
+
+{% block extra_head %}
+{{ modules.Static("css/chat.css") }}
+{% end %}
+{% block extra_js %}
+<script src="http://cdn.socket.io/stable/socket.io.js"></script>
+<script>WEB_SOCKET_SWF_LOCATION = 'http://cdn.socket.io/stable/WebSocketMain.swf';</script>
+{{ modules.Static("js/chat.js") }}
+{% end %}
+
+{% block content_inner %}
+<h2>{{ page_title }}</h2>
+<div id="chat">
+</div>
+<form id="chatform">
+<input type="text">
+</form>
+{% end %}

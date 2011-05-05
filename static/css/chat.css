@@ -1,0 +1,22 @@
+#chat {
+    background-color:white;
+    color:black;
+    width:500px;
+    height: 20em;
+    overflow:auto;
+    border: 1px solid black;
+    padding:5px;
+    font-size:80%;
+}
+#chat span.u {
+  font-weight:bold;
+  padding-right:4px;
+}
+#chatform input[type="text"] {
+   width:500px;
+}
+#chat .ts {
+  font-size:80%;
+  float:right;
+  color:#666;
+}
