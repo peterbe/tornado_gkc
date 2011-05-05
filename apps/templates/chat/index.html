@@ -11,9 +11,16 @@
 
 {% block content_inner %}
 <h2>{{ page_title }}</h2>
-<div id="chat">
+<h3 id="pleasewait">Please wait...</h3>
+<div id="chat-wrapper" style="display:none">
+  <div id="participants">
+    <p>People here:</p>
+    <ul></ul>
+  </div>
+  <div id="chat">
+  </div>
+  <form id="chatform">
+    <input type="text">
+  </form>
 </div>
-<form id="chatform">
-<input type="text">
-</form>
 {% end %}

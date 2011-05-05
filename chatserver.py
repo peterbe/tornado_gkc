@@ -11,6 +11,7 @@ from pymongo.objectid import InvalidId, ObjectId
 from tornado.options import define, options
 import logging
 from apps.main.models import User
+from apps.chat.models import ChatMessage
 from mongokit import Connection
 import settings
 
@@ -111,20 +112,73 @@ class ChatConnection(tornadio.SocketConnection):
     participants = set()
 
     def on_open(self, request, **kwargs):
+        if not hasattr(request, 'headers'):
+            self.send({'error': 'Not logged in. Try reloading'})
+            return
+
         cookie_parser = CookieParser(request)
         user_id = cookie_parser.get_secure_cookie('user')
 
+        if not user_id:
+            self.send({'error': 'Not logged in. Try reloading'})
+            return
+
+        assert user_id, "no user_id"
         user = application.db.User.one({'_id': ObjectId(user_id)})
+        assert user, "no user"
         self.user_id = user_id
-        self.user_name = user.first_name and user.first_name or user.username
+
+        self.user_name = user.first_name if user.first_name else user.username
+        assert self.user_name
+        for p in self.participants:
+            p.send({'p': self.user_name, 'm': self.user_name + ' joined'})
         self.participants.add(self)
-        self.send({'m':"Welcome! %s" % self.user_name})
+        self.send({'ps': [x.user_name for x in self.participants]})
+        self.send({'m': "Welcome! %s" % self.user_name})
+
+        _first = True
+        reversed_messages = []
+        for chat_message in application.db.ChatMessage.find().limit(10).sort('add_date', -1):
+            if _first:
+                self.send({'m': 'loading the last 10 messages'})
+                _first = False
+
+            user_name = (chat_message.user.first_name if chat_message.user.first_name
+                         else chat_message.user.username)
+            reversed_messages.append(
+              {'u': user_name,
+               'm': chat_message.message,
+               't': time.mktime(chat_message.add_date.timetuple())}
+            )
+        reversed_messages.reverse()
+        for each in reversed_messages:
+            self.send(each)
+
 
     def on_message(self, message):
+
         for p in self.participants:
             p.send({'m': message, 'u': self.user_name})
 
+        user = application.db.User.one({'_id': ObjectId(self.user_id)})
+        assert user
+        cm = application.db.ChatMessage()
+        cm.user = user
+        cm.message = unicode(message)
+        cm.save()
+
     def on_close(self):
+        dead = []
+        for p in self.participants:
+            message = self.user_name + " left"
+            try:
+                p.send({'po': self.user_name,
+                        'm': message})
+            except IOError:
+                dead.append(p)
+        for p in dead:
+            self.participants.remove(p)
+
         try:
             self.participants.remove(self)
             message = "%s has left" % self.user_name
@@ -141,7 +195,7 @@ class Application(tornado.web.Application):
         tornado.web.Application.__init__(self, handlers, **kwargs)
         self.database_name = database_name and database_name or options.database_name
         self.con = Connection()
-        self.con.register([User])
+        self.con.register([User, ChatMessage])
 
     @property
     def db(self):

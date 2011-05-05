@@ -1,7 +1,7 @@
 #chat {
     background-color:white;
     color:black;
-    width:500px;
+    width:74%;
     height: 20em;
     overflow:auto;
     border: 1px solid black;
@@ -12,6 +12,10 @@
   font-weight:bold;
   padding-right:4px;
 }
+#chat span.system {
+  font-style:italic;
+  padding-right:4px;
+}
 #chatform input[type="text"] {
    width:500px;
 }
@@ -19,4 +23,11 @@
   font-size:80%;
   float:right;
   color:#666;
+}
+#participants {
+    width:24%;
+    float:right;
+}
+#participants .new {
+    font-weight:bold;
 }
