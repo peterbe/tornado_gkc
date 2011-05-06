@@ -56,7 +56,7 @@ var Chat = (function() {
 })();
 
 head.ready(function() {
-   var s = new io.Socket(window.location.hostname, {port: 8001, rememberTransport: false});
+   var s = new io.Socket(window.location.hostname, {port: 9000, rememberTransport: false});
    s.connect();
 
    s.addEvent('connect', function() {

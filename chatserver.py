@@ -16,6 +16,7 @@ from mongokit import Connection
 import settings
 
 define("database_name", default=settings.DATABASE_NAME, help="mongodb database name")
+define("port", default=9000, help="run on the given port", type=int)
 
 ROOT = op.normpath(op.dirname(__file__))
 
@@ -202,19 +203,21 @@ class Application(tornado.web.Application):
         return self.con[self.database_name]
 
 #configure the Tornado application
-application = Application(
-    [(r"/", IndexHandler), ChatRouter.route()],
-    enabled_protocols=['websocket',
-                       'flashsocket',
-                       'xhr-multipart',
-                       'xhr-polling'],
-    flash_policy_port=843,
-    flash_policy_file=op.join(ROOT, 'flashpolicy.xml'),
-    socket_io_port=8001,
-)
 
 if __name__ == "__main__":
-    logging.getLogger().setLevel(logging.DEBUG)
+    tornado.options.parse_command_line()
+    application = Application(
+        [(r"/", IndexHandler), ChatRouter.route()],
+        enabled_protocols=['websocket',
+                           'flashsocket',
+                           'xhr-multipart',
+                           'xhr-polling'],
+        flash_policy_port=843,
+        flash_policy_file=op.join(ROOT, 'flashpolicy.xml'),
+        socket_io_port=options.port,
+    )
+
+    #logging.getLogger().setLevel(logging.DEBUG)
     try:
         tornadio.server.SocketServer(application)
     except KeyboardInterrupt:
