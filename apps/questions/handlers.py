@@ -173,7 +173,11 @@ class QuestionsGenreNamesHandler(QuestionsBaseHandler):
                 return self.db.Question.find(_search).count()
             names = []
             for genre in self.db.Genre.find():
-                count = count_questions(genre)
+                if genre.approved:
+                    count = count_questions(genre)
+                else:
+                    # makes it included but not popular
+                    count = 0
                 if count:
                     names.append((count, genre.name))
             all_names = [x[1] for x in names]

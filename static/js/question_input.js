@@ -58,7 +58,6 @@ head.js(JS_URLS.jquery_autocomplete, function() {
            .attr('id', 'g_' + i)
              .val(e[1])
                .change(function() {
-                  L('triggered');
                   $('#id_other_genre').fadeTo(300, 0.2);
                })
            .appendTo(container);
@@ -92,7 +91,6 @@ head.js(JS_URLS.jquery_autocomplete, function() {
         .appendTo(container);
 
       if (preval_element) {
-         L(preval_element);
          preval_element.attr('checked','checked');
       } else if (preval) {
          $('#id_other_genre').val(preval);
