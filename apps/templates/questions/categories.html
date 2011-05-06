@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block extra_js %}
+<script>
+var DATA = {{ data_json }};
+var HIGHCHARTS_URL = '{{ modules.StaticURL("js/ext/highcharts/highcharts.src.js") }}';
+var HIGHCHARTS_THEME_URL = '{{ modules.StaticURL("js/ext/highcharts/themes/gray.js") }}';
+head.js(HIGHCHARTS_URL, HIGHCHARTS_THEME_URL, function() {
+  L(Highcharts);
+  L(Highcharts.theme);
+});
+</script>
+{{ modules.Static("js/categories.js") }}
+{% end %}
+
+{% block content_inner %}
+
+<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
+
+<div id="container" class="highcharts-container"
+style="height:410px; margin: 0 2em; clear:both; min-width: 600px"></div>
+
+
+{% end %}

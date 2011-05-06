@@ -5,8 +5,12 @@ class Genre(BaseDocument):
     __collection__ = 'question_genres'
     structure = {
       'name': unicode,
+      'approved': bool,
     }
 
+    default_values = {
+      'approved': False,
+    }
 
 
 DRAFT = u"DRAFT"

@@ -103,6 +103,12 @@ class QuestionsBaseHandler(BaseHandler):
             total_points += points
         return total_points
 
+    def count_all_genres(self, approved_only=False):
+        _search = {}
+        if approved_only:
+            _search['approved'] = True
+        return self.db.Genre.find(**_search).count()
+
 @route('/questions/points/', name='question_points')
 class QuestionPointsHandler(QuestionsBaseHandler):
 
@@ -197,6 +203,8 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
     def get(self):
         options = self.get_base_options()
         options['page_title'] = "Questions dashboard"
+        options['count_all_approved_genres'] = \
+          self.count_all_genres(approved_only=True)
         user = self.get_current_user()
         _user_search = {'author.$id': user._id}
         options['all_accepted_questions'] = \
@@ -542,6 +550,10 @@ class PublishQuestionHandler(QuestionsBaseHandler):
         question.publish_date = datetime.datetime.now()
         question.save()
 
+        if not question.genre.approved:
+            question.genre.approved = True
+            question.genre.save()
+
         self.update_total_questions_points(question.author)
 
         self.push_flash_message("Question published!",
@@ -711,6 +723,51 @@ class ReviewAcceptedQuestionHandler(QuestionsBaseHandler):
     def post(self):
         skip = int(self.get_argument('skip'))
         self.redirect(self.reverse_url('review_accepted') + "?skip=%d" % (skip + 1))
+
+
+route_redirect('/questions/categories$', '/questions/categories/', name="all_categories_shortcut")
+@route('/questions/categories/$', name="all_categories")
+class CategoriesHandler(QuestionsBaseHandler): # pragma: no cover
+
+    @tornado.web.authenticated
+    def get(self):
+        options = self.get_base_options()
+        options['page_title'] = "All approved categories"
+        aux_series = {}
+        x_categories = []
+        names = []
+        status_and_names = ((PUBLISHED, 'Published'),
+                            (ACCEPTED, 'Accepted'),
+                            (REJECTED, 'Rejected'),
+                            (SUBMITTED, 'Submitted'))
+
+        for status, name in status_and_names:
+            aux_series[name] = {}
+
+        for genre in self.db.Genre.find({'approved':True}).sort('name'):
+            x_categories.append(genre.name)
+            for status, name in status_and_names:
+                count = self.db.Question.find({'genre.$id': genre._id,
+                                                'state': status}).count()
+                aux_series[name][genre.name] = count
+
+        series = []
+        for status, name in status_and_names:
+
+            data = []
+            for cat in x_categories:
+                data.append(aux_series[name][cat])
+            series.append(dict(name=name,
+                               data=data))
+
+        data = dict(title="All categories",
+                    x_categories=x_categories,
+                    y_title='Number of questions',
+                    series=series
+                    )
+
+        options['data_json'] = tornado.escape.json_encode(data)
+        self.render("questions/categories.html", **options)
 
 
 route_redirect('/questions/all$', '/questions/all/', name="all_questions_shortcut")

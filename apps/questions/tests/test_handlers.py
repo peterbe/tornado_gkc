@@ -335,6 +335,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         maths = self.db.Genre()
         maths.name = u'Maths'
         maths.save()
+        assert not maths.approved
 
         question = self.db.Question()
         question.text = u'Who likes milk?'
@@ -503,6 +504,15 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         question = self.db.Question.one({'_id':question._id})
         assert question.state == PUBLISHED
+
+        maths = self.db.Genre.one(dict(name=maths.name))
+        self.assertTrue(not maths.approved)
+
+        maths = self.db.Genre.one(dict(name=maths.name))
+        self.assertTrue(not maths.approved)
+
+        geography = self.db.Genre.one({'name':'Geography'})
+        self.assertTrue(geography.approved)
 
     def test_adding_question_form_maxlengths(self):
         self._login()
