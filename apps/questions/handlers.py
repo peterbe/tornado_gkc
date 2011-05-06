@@ -753,7 +753,6 @@ class CategoriesHandler(QuestionsBaseHandler): # pragma: no cover
 
         series = []
         for status, name in status_and_names:
-
             data = []
             for cat in x_categories:
                 data.append(aux_series[name][cat])

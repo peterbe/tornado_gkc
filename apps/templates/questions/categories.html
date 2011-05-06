@@ -3,12 +3,9 @@
 {% block extra_js %}
 <script>
 var DATA = {{ data_json }};
-var HIGHCHARTS_URL = '{{ modules.StaticURL("js/ext/highcharts/highcharts.src.js") }}';
+var HIGHCHARTS_URL = '{{ modules.StaticURL("js/ext/highcharts/highcharts.js") }}';
 var HIGHCHARTS_THEME_URL = '{{ modules.StaticURL("js/ext/highcharts/themes/gray.js") }}';
-head.js(HIGHCHARTS_URL, HIGHCHARTS_THEME_URL, function() {
-  L(Highcharts);
-  L(Highcharts.theme);
-});
+head.js(HIGHCHARTS_URL, HIGHCHARTS_THEME_URL);
 </script>
 {{ modules.Static("js/categories.js") }}
 {% end %}
