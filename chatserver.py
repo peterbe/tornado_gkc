@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import Cookie
 import hmac
 import base64
