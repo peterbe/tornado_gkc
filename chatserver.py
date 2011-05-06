@@ -24,7 +24,7 @@ ROOT = op.normpath(op.dirname(__file__))
 class IndexHandler(tornado.web.RequestHandler):
     """Regular HTTP handler to serve the chatroom page"""
     def get(self):
-        self.render("index.html")
+        self.write("All is well")
 
 
 def _time_independent_equals(a, b):
