@@ -25,3 +25,5 @@ label.genre:after { content: ''; }
 
 span.maxlength-countdown { padding-left:10px; font-size:80%; }
 span.maxlength-maxed { color:red; }
+
+a.bold { font-weight:bold; }

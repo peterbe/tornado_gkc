@@ -30,8 +30,8 @@
 </p>
 
 <form action="" method="post">{{ xsrf_form_html() }}
-<div><input type="submit" value="Submit question">
-or go back to <a href="{{ reverse_url('edit_question', question._id) }}">Edit the question</a>
+<div><input type="submit" value="Submit question &rarr;"><br>
+or go back to <a href="{{ reverse_url('edit_question', question._id) }}">&larr; edit the question</a>
 </div>
 </form>
 

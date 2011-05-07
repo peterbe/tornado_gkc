@@ -387,7 +387,8 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         response = self.client.post(submit_question_url, {})
         self.assertEqual(response.code, 302)
-        self.assertEqual(url, response.headers['location'])
+        submitted_url = self.reverse_url('submitted_question', question._id)
+        self.assertEqual(submitted_url, response.headers['location'])
         response = self.client.get(url)
         self.assertEqual(response.code, 200)
 

@@ -280,11 +280,18 @@ class AddQuestionHandler(QuestionsBaseHandler):
             question.author = self.get_current_user()
             question.state = DRAFT
             question.save()
-            edit_url = self.reverse_url('edit_question', str(question._id))
-            #self.redirect('/questions/%s/edit/' % question._id)
-            self.push_flash_message("Question added",
-              "Your question has been added and can now be edited")
-            self.redirect(edit_url)
+
+            if not self.get_argument('save_as_draft', False) and \
+              self.can_submit_question(question):
+                self.push_flash_message("Question added",
+                "Your question has been added and can now be submitted")
+                goto_url = self.reverse_url('submit_question', question._id)
+            else:
+                goto_url = self.reverse_url('edit_question', str(question._id))
+                self.push_flash_message("Question added",
+                "Your question has been added and can now be edited")
+
+            self.redirect(goto_url)
 
         else:
             self.get(form=form)
@@ -423,6 +430,30 @@ class EditQuestionHandler(QuestionsBaseHandler):
         else:
             self.get(question_id, form=form)
 
+@route('/questions/(\w{24})/submitted/$', name="submitted_question")
+class QuestionSubmittedHandler(QuestionsBaseHandler):
+
+    @tornado.web.authenticated
+    def get(self, question_id):
+        options = self.get_base_options()
+        question = self.must_find_question(question_id, options['user'])
+        options['question'] = question
+
+        age = (datetime.datetime.now() - question.add_date).seconds
+        if age > 6000:
+            self.redirect(self.reverse_url('questions'))
+            return
+
+        options['accept_question_points'] = self.QUESTION_VALUES['accepted']
+        options['all_accepted_questions_count'] = \
+          self.db.Question.find({
+            'author.$id': {'$ne': options['user']._id},
+            'state': ACCEPTED
+          })
+        options['page_title'] = "Hurray! Question submitted!"
+        self.render('questions/submitted.html', **options)
+
+
 @route('/questions/(\w{24})/submit/$', name="submit_question")
 class SubmitQuestionHandler(QuestionsBaseHandler):
 
@@ -471,7 +502,7 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
         except:
             logging.error("Unable to send email about submitted question %s"\
               % question_url, exc_info=True)
-        url = self.reverse_url('questions')
+        url = self.reverse_url('submitted_question', question._id)
         self.redirect(url)
 
 @route('/questions/(\w{24})/reject/$', name="reject_question")

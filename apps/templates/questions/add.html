@@ -34,7 +34,10 @@
     {% end %}
   </p>
 {% end %}
-<div><input type="submit" value="Add question" title="You can edit the question before you submit it"></div>
+<div>
+  <input type="submit" value="Save and confirm to submit" title="You have to confirm the question before submitting">
+  <input type="submit" name="save_as_draft" value="Save as draft" title="You can return and work on it any time">
+</div>
 </form>
 
 {% end %}

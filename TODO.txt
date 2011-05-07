@@ -1,2 +1,3 @@
+
 * SMTP details from elastic needs to be read in from a git ignored
   files instead.

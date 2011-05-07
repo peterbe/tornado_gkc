@@ -36,10 +36,12 @@ var Form = (function() {
       add_shuffler: function() {
          $('<a>', {href:'#', text:'shuffle!'})
            .addClass('shuffler')
+	     .addClass('bold')
              .click(function() {
                 if (Form.has_all_alternatives) {
                    Form.shuffle_alternatives();
                 }
+		$('a.bold').removeClass('bold');
                 return false;
              })
                .insertAfter($('input[name="alternatives"]').eq(-1));

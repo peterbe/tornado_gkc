@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<style type="text/css">
+#center {
+  max-width:50%;
+  margin:auto;
+}
+#center form, #center div { display:inline; }
+#center form input { margin:20px }
+</style>
+{% end %}
+
+{% block content_inner %}
+
+<h3>No points awarded yet. What happens next?</h3>
+
+<p>As soon as your question has been accepted, by the moderators, you get
+<strong>{{ accept_question_points }} points</strong>. Till then, you can...</p>
+
+<div id="center">
+<form action="{{ reverse_url('add_question') }}">
+<div><input type="submit" value="Add another question &rarr;"></div>
+</form>
+{% if all_accepted_questions_count %}
+<form action="{{ reverse_url('review_random') }}">
+<div><input type="submit" value="Review other people's questions &rarr;"></div>
+</form>
+{% end %}
+</div>
+
+
+<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
+
+
+{% end %}
