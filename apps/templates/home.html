@@ -3,7 +3,9 @@
 {% block content_inner %}
 
 
-<p style="text-align:center">Kwissle is all about playing general knowledge quiz battles against other people.</p>
+<p style="text-align:center; font-weight:bold;">
+Kwissle is an real-time general knowledge quiz battle game. 
+</p>
 
 {% if user %}
 <p>
@@ -19,6 +21,20 @@ There are current <strong>{{ count_published_questions }}</strong> published
 <p>
 <a href="{{ reverse_url('chat') }}">Chat</a>  - to see if there are more people around
 </p>
+{% else %}
+
+<p style="margin-top:60px">
+<strong>How to play</strong>
+<p>
+
+<ol>
+  <li><a href="{{ reverse_url('login') }}" class="account">Sign in</a></li>
+  <li>Click on "Play!" on the home page</li>
+  <li>Wait for someone to play against</li>
+  <li>Battle! You get 3 points if you answer right, 1 point if you get it by alternative</li>
+  <li>Bask in the glory!</li>
+</ol>
+
 {% end %}
 
 
