@@ -51,6 +51,7 @@ var Chat = (function() {
          }
          $('<span>', {text: message}).appendTo(line);
          line.appendTo($('#chat'));
+	 $('#chat')[0].scrollTop = 1000000;
       }
    }
 })();
