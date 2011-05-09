@@ -30,3 +30,4 @@ mongodb_dump/
 facebook_consumer_secret
 NAMES.txt
 deployment/
+scripts/backups/
