@@ -126,3 +126,14 @@ class FlashMessages(tornado.web.UIModule):
             message.read = True
             message.save()
         return Messages(msgs)
+
+class SortKey(tornado.web.UIModule):
+    def render(self, key):
+        current_key = self.handler.get_argument('sort', '**')
+        if current_key == key:
+            if self.handler.get_argument('reverse', False):
+                return "?sort=%s" % key
+            else:
+                return "?sort=%s&reverse=yes" % key
+        else:
+            return "?sort=%s" % key

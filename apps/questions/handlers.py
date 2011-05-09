@@ -811,7 +811,34 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler): # pragma: no cover
     @tornado.web.authenticated
     def get(self):
         options = self.get_base_options()
-        options['all_questions'] = self.db.Question.find().sort('add_date', 1)
+
+        _filter = {}
+        states_filter = self.get_arguments('states', [])
+        genres_filter = self.get_arguments('genres', [])
+        users_filter = self.get_arguments('users', [])
+        if states_filter:
+            _filter['state'] = {'$in': states_filter}
+        if genres_filter:
+            genres_filter = [ObjectId(x) for x in genres_filter]
+            _filter['genre.$id'] = {'$in': genres_filter}
+        if users_filter:
+            users_filter = [ObjectId(x) for x in users_filter]
+            _filter['author.$id'] = {'$in': users_filter}
+
+        options['states_filter'] = states_filter
+        options['genres_filter'] = genres_filter
+        options['users_filter'] = users_filter
+
+        qs = self.db.Question.find(_filter)
+
+        direction = 1 if self.get_argument('reverse', False) else -1
+        if self.get_argument('sort', None) == 'state':
+            qs = qs.sort('state', direction)
+        elif self.get_argument('sort', None) == 'age':
+            qs = qs.sort('add_date', direction)
+        else:
+            qs = qs.sort('add_date', direction)
+        options['all_questions'] = qs
 
         state_counts = []
         for state in STATES:
@@ -835,5 +862,12 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler): # pragma: no cover
             options['state_counts_pie'] = chart.get_url()
         except ImportError:
             options['state_counts_pie'] = None
+
+        options['all_genres'] = self.db.Genre.find().sort('name', 1)
+        options['all_users'] = []
+        for user in self.db.User.find().sort('first_name'):
+            c = self.db.Question.find({'author.$id': user._id}).count()
+            if c:
+                options['all_users'].append(user)
 
         self.render("questions/all.html", **options)

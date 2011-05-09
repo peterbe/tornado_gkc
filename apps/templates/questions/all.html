@@ -7,18 +7,51 @@
 <img src="{{ state_counts_pie }}" alt="pie">
 </p>
 {% end %}
-
+<form action="">
 <table>
   <thead>
     <tr>
-      <th>State</th>
+      <th><a href="{{ modules.SortKey('state') }}">State</a></th>
       {% if 0 %}<th>Question</th>{% end %}
       <th>Category</th>
       <th>By</th>
-      <th>Age</th>
+      <th><a href="{{ modules.SortKey('age') }}">Age</a></th>
       <th>&nbsp;</th>
     </tr>
   <thead>
+  <tfoot>
+    <tr>
+      <td><select name="states" multiple size="5">
+        <option value="DRAFT" {% if 'DRAFT' in states_filter %}selected{% end %}>Draft</option>
+        <option value="SUBMITTED" {% if 'SUBMITTED' in states_filter %}selected{% end %}>Submitted</option>
+        <option value="REJECTED" {% if 'REJECTED' in states_filter %}selected{% end %}>Rejected</option>
+        <option value="ACCEPTED" {% if 'ACCEPTED' in states_filter %}selected{% end %}>Accepted</option>
+        <option value="PUBLISHED" {% if 'PUBLISHED' in states_filter %}selected{% end %}>Published</option>
+      </select>
+      </td>
+      <td>
+        <select name="genres" multiple size="5">
+          {% for genre in all_genres %}
+          <option value="{{ genre._id }}"
+           {% if genre._id in genres_filter %}selected{% end %}>{{ genre.name }}</option>
+          {% end %}
+        </select>
+      </td>
+      <td>
+        <select name="users" multiple size="5">
+          {% for user_ in all_users %}
+          <option value="{{ user_._id }}"
+          {% if user_._id in users_filter %}selected{% end %}
+          >{{ user_.first_name }} {% if user_.last_name %}{{ user_.last_name }}{% end %}</option>
+          {% end %}
+        </select>
+      </td>
+      <td colspan="2">
+      &nbsp;
+      <input type="submit" value="Filter">
+      </td>
+    </tr>
+  </tfoot>
   {% for question in all_questions %}
   <tbody>
     <tr>
@@ -35,6 +68,7 @@
   </tbody>
   {% end %}
 </table>
+</form>
 
 
 {% end %}
