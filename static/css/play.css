@@ -1,0 +1,28 @@
+#log { height: 200px; overflow: auto; width: 750px; border: 1px solid #eee; font: 11px Helvetica, Arial; }
+#log p { padding: 4px; margin: 0; }
+#log p:nth-child(odd) { }
+li.past span { text-decoration:line-through; }
+dt.disconnected { text-decoration:line-through; }
+dd.disconnected { font-size:70%; }
+li.current { font-weight:bold; }
+#you_won, #you_lost, #you_drew { background-color:#efefef; border:1px solid #333; position:relative; z-index:1; }
+#you_won h3 { color:green; }
+#you_lost h3 { color:red; }
+#you_drew h3 { color:orange; }
+#scoreboard { position:absolute; top:50px; right:25px; width:200px; border:1px solid white; }
+#timer {
+    width:90px;
+    background: #f36;
+    color: #fff;
+    font-size: 35px;
+    font-weight: bold;
+    height: 90px;
+    line-height: 90px;
+    margin: 10px 0 0 0;
+    text-align: center;
+    border-radius: 20px;
+    -moz-border-radius: 20px;
+    -webkit-border-radius: 20px;
+}
+#timer-wrapper { float:left; width:100px; }
+#respond { margin-left:105px; }
