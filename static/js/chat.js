@@ -1,3 +1,40 @@
+var Title = (function() {
+   var current_title = document.title
+     , original_title = document.title
+     , no_participants = 0
+     , timer;
+   function render() {
+      var word = no_participants == 1 ? 'participant' : 'participants';
+      document.title = '(' + no_participants + ' ' + word + ') ' + original_title;
+      current_title = document.title;
+   }
+   return {
+      increment_participants: function (inc) {
+	 no_participants += inc;
+         L('timer', timer);
+         render();
+      },
+      decrement_participants: function (dec) {
+         if (inc < 0) throw "decrement with a positive number";
+	 no_participants -= dec;
+         if (!timer) {
+            render();
+         }
+      },
+      show_temporarily: function (msg, msec) {
+         msec = typeof(msec) !== 'undefined' ? msec : 2000;
+         if (timer) {
+            clearTimeout(timer);
+         }
+         var old = current_title;
+         document.title = msg;
+         timer = setTimeout(function() {
+            document.title = old;
+         }, msec);
+      }
+   }
+})();
+
 var Chat = (function() {
    return {
       show_participants: function (participants) {
@@ -76,12 +113,15 @@ head.ready(function() {
       }
       if (data.p) {
          Chat.show_participant(data.p, true);
+	 Title.increment_participants(1);
       }
       if (data.ps) {
          Chat.show_participants(data.ps);
+	 Title.increment_participants(data.ps.length);
       }
       if (data.po) {
          Chat.remove_participant(data.po);
+	 Title.decrement_participants(1);
       }
       if (data.error) {
          alert(data.error);
