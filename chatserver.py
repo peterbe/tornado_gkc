@@ -170,9 +170,14 @@ class ChatConnection(tornadio.SocketConnection):
         cm.save()
 
     def on_close(self):
+        try:
+            message = self.user_name + " left"
+        except AttributeError:
+            return
+
         dead = []
         for p in self.participants:
-            message = self.user_name + " left"
+
             try:
                 p.send({'po': self.user_name,
                         'm': message})
@@ -187,6 +192,9 @@ class ChatConnection(tornadio.SocketConnection):
             for p in self.participants:
                 p.send({'m': message})
         except KeyError:
+            pass
+        except AttributeError:
+            # self is broken
             pass
 
 #use the routes classmethod to build the correct resource
