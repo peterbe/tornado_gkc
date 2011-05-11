@@ -3,33 +3,30 @@ var Title = (function() {
      , original_title = document.title
      , no_participants = 0
      , timer;
-   function render() {
+   function render(refresh) {
       var word = no_participants == 1 ? 'participant' : 'participants';
-      document.title = '(' + no_participants + ' ' + word + ') ' + original_title;
-      current_title = document.title;
+      current_title = '(' + no_participants + ' ' + word + ') ' + original_title;
+      if (refresh)
+	document.title = current_title;
    }
    return {
       increment_participants: function (inc) {
 	 no_participants += inc;
-         L('timer', timer);
-         render();
+	 render(!timer);
       },
       decrement_participants: function (dec) {
          if (inc < 0) throw "decrement with a positive number";
 	 no_participants -= dec;
-         if (!timer) {
-            render();
-         }
+	 render(!timer);
       },
       show_temporarily: function (msg, msec) {
          msec = typeof(msec) !== 'undefined' ? msec : 2000;
          if (timer) {
             clearTimeout(timer);
          }
-         var old = current_title;
          document.title = msg;
          timer = setTimeout(function() {
-            document.title = old;
+            document.title = current_title;
          }, msec);
       }
    }
