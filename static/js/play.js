@@ -71,12 +71,14 @@ var question_handler = (function() {
 
    return {
       initialize: function() {
+         L("initializing");
 	 $('#respond').show();
 	 $('#waiting').hide();
 	 $('#your_name').hide();
 	 _initialized = true;
       },
       load_question: function(question) {
+         L("LOAD_QUESTION", question);
 	 if (!_initialized) {
 	    this.initialize();
 	 }
@@ -260,9 +262,11 @@ socket.on('connect', function() {
 socket.on('message', function(obj){
    __log_message(obj);
    if (obj.question) {
-
       question_handler.load_question(obj.question);
-
+   } else if (obj.wait && obj.message) {
+      setTimeout(function() {
+         socket.send(obj.message);
+      }, obj.wait * 1000);
    } else if (obj.winner) {
       if (obj.winner.draw) {
 	 question_handler.finish(null, true);

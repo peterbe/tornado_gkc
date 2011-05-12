@@ -3,6 +3,7 @@ import hmac
 import base64
 import time
 import hashlib
+import random
 import os.path as op
 import tornadio.router
 import tornadio.server
@@ -11,11 +12,16 @@ from pymongo.objectid import InvalidId, ObjectId
 from tornado.options import define, options
 import logging
 from apps.main.models import User
+from apps.questions.models import Question, Genre
 from apps.play.models import Play, PlayedQuestion
+from apps.play.battle import Battle
 from mongokit import Connection
 import settings
 
+define("debug", default=False, help="run in debug mode", type=bool)
 define("database_name", default=settings.DATABASE_NAME, help="mongodb database name")
+define("port", default=8888, help="run on the given port", type=int)
+
 ROOT = op.normpath(op.dirname(__file__))
 
 def _time_independent_equals(a, b):
@@ -116,6 +122,10 @@ class Client(tornadio.SocketConnection):
                 info = '*unknown*'
         return "<Client: %s>" % info
 
+    @property
+    def db(self):
+        return application.db
+
     def on_open(self, request, **kwargs):
         self.send({'debug': "Connected!"});
         if hasattr(request, 'headers'):
@@ -124,15 +134,17 @@ class Client(tornadio.SocketConnection):
 
             if user_id:
                 self.user_id = user_id
-                user = application.db.User.one({'_id': ObjectId(user_id)})
+                user = self.db.User.one({'_id': ObjectId(user_id)})
                 if user:
-                    self.user_name = user.first_name if user.first_name else user.username
-                    print "user_name", self.user_name
+                    assert user.username
+                    self.user_name = user.username
                     self.send({'debug': "Your name is %s" % self.user_name})
                     self._initiate()
 
     def _initiate(self):
         """called when the client has connected successfully"""
+        self.send(dict(your_name=self.user_name))
+        battle = None
         for created_battle in application.battles:
             if created_battle.is_open():
                 battle = created_battle
@@ -142,41 +154,82 @@ class Client(tornadio.SocketConnection):
             battle = Battle()
             logging.debug("Creating new battle")
             application.battles.add(battle)
+        battle.add_participant(self)
         application.current_client_battles[self.user_id] = battle
+        print "application.current_client_battles"
+        print application.current_client_battles
+        if battle.ready_to_play():
+            battle.send_wait(3, dict(next_question=True))
 
     def on_message(self, message):
+        print "MESSAGE"
         print repr(message)
-        message = tornado.escape.json_decode(message)
-        if message.get('answer'):
-            pass
-        elif message.get('alternatives'):
-            pass
-        elif message.get('timed_out'):
-            pass
+        if not hasattr(self, 'user_id'):
+            print "DUFF client"
+            return
+        print "\n"
+        try:
+            battle = application.current_client_battles[self.user_id]
+        except KeyError:
+            logging.debug('%r not in any battle' % self)
+            return
 
+        if message.get('answer'):
+            assert battle.current_question
+            if battle.has_answered(self):
+                self.send({'error': 'You have already answered this question'})
+                return
+            XXXXXXXXXX X X X X X
+        elif message.get('alternatives'):
+            raise NotImplementedError
+        elif message.get('timed_out'):
+            raise NotImplementedError
+        elif message.get('next_question'):
+            if battle.current_question:
+                battle.send_question(battle.current_question)
+            else:
+                question = self._get_next_question(battle)
+                if question:
+                    battle.current_question = question
+                else:
+                    battle.send_to_all({'error':"No more questions! Run out!"})
+                    battle.stop()
+
+    def _get_next_question(self, battle):
+        search = {'_id':{'$nin': [x._id for x in battle.sent_questions]}}
+        if battle.genres_only:
+            search['genre.$id'] = {'$nin': [x._id for x in battle.genres_only]}
+
+        while True:
+            count = self.db.Question.find(search).count()
+            if not count:
+                return
+            rand = random.randint(0, count)
+            for question in self.db.Question.find(search).limit(1).skip(rand):
+                # XXX at this point we might want to check that the question
+                # hasn't been
+                #   a) written by any of the participants of the battle
+                #   b) hasn't been reviewed by any of the participants
+                #   c) questions played in the past
+                if 1: # too few questions in db for this at the moment
+                    return question
+                else:
+                    search['_id']['$nin'].append(question._id)
 
     def on_close(self):
-        pass
+        print repr(self), "closed connection"
+        if getattr(self, 'user_id', None) and getattr(self, 'user_name', None):
+            #print "application.current_client_battles SECOND"
+            #print application.current_client_battles
+            try:
+                battle = application.current_client_battles[self.user_id]
+            except KeyError:
+                logging.debug('%r not in any battle' % self.user_id)
+                return
 
-class Battle:
-
-    def is_open(self):
-        pass
-
-    def send_to_everyone_else(self, client, msg):
-        pass
-
-    def send_to_all(self, msg):
-        pass
-
-    def ready_to_play(self):
-        pass
-
-    def send_next_question(self):
-        pass
-
-
-
+            battle.remove_participant(self)
+            battle.send_to_all({'disconnected': self.user_name})
+            battle.stop()
 
 
 class Application(tornado.web.Application):
@@ -187,27 +240,30 @@ class Application(tornado.web.Application):
         tornado.web.Application.__init__(self, handlers, **kwargs)
         self.database_name = database_name and database_name or options.database_name
         self.con = Connection()
-        self.con.register([User])
+        self.con.register([User, Question, Genre, Play, PlayedQuestion])
 
     @property
     def db(self):
         return self.con[self.database_name]
 
-if __name__ == "__main__":
+application = None
+def main():
+    tornado.options.parse_command_line()
     # use the routes classmethod to build the correct resource
     SocketRouter = tornadio.get_router(Client)
 
     #configure the Tornado application
+    global application
     application = Application(
         [SocketRouter.route()],
         enabled_protocols=['websocket',
                            'flashsocket',
-                           #'xhr-multipart',
-                           #'xhr-polling'
+                           'xhr-multipart',
+                           'xhr-polling'
                            ],
         flash_policy_port=843,
         flash_policy_file=op.join(ROOT, 'flashpolicy.xml'),
-        socket_io_port=8888,
+        socket_io_port=options.port,
     )
 
     logging.getLogger().setLevel(logging.DEBUG)
@@ -215,3 +271,6 @@ if __name__ == "__main__":
         tornadio.server.SocketServer(application)
     except KeyboardInterrupt:
         pass
+
+if __name__ == "__main__":
+    main()
