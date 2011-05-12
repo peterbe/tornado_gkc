@@ -7,7 +7,6 @@ import unittest
 from urllib import urlencode
 from cStringIO import StringIO
 
-from tornado.httpclient import HTTPRequest
 from tornado.testing import LogTrapTestCase, AsyncHTTPTestCase
 
 import app

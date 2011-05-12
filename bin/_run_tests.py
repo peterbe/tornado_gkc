@@ -10,6 +10,9 @@ TEST_MODULES = [
     'apps.main.tests.test_models',
     'apps.questions.tests.test_models',
     'apps.questions.tests.test_handlers',
+    'apps.play.tests.test_handlers',
+    'apps.play.tests.test_models',
+    'apps.play.tests.test_client',
 ]
 
 def all():

@@ -126,6 +126,14 @@ class Client(tornadio.SocketConnection):
     def db(self):
         return application.db
 
+    @property
+    def battles(self):
+        return application.battles
+
+    @property
+    def current_client_battles(self):
+        return application.current_client_battles
+
     def on_open(self, request, **kwargs):
         self.send({'debug': "Connected!"});
         if hasattr(request, 'headers'):
@@ -145,7 +153,7 @@ class Client(tornadio.SocketConnection):
         """called when the client has connected successfully"""
         self.send(dict(your_name=self.user_name))
         battle = None
-        for created_battle in application.battles:
+        for created_battle in self.battles:
             if created_battle.is_open():
                 battle = created_battle
                 logging.debug("Joining battle: %r" % battle)
@@ -153,11 +161,11 @@ class Client(tornadio.SocketConnection):
         if not battle:
             battle = Battle()
             logging.debug("Creating new battle")
-            application.battles.add(battle)
+            self.battles.add(battle)
         battle.add_participant(self)
-        application.current_client_battles[self.user_id] = battle
-        print "application.current_client_battles"
-        print application.current_client_battles
+        self.current_client_battles[self.user_id] = battle
+        print "self.current_client_battles"
+        print self.current_client_battles
         if battle.ready_to_play():
             battle.send_wait(3, dict(next_question=True))
 
@@ -169,7 +177,7 @@ class Client(tornadio.SocketConnection):
             return
         print "\n"
         try:
-            battle = application.current_client_battles[self.user_id]
+            battle = self.current_client_battles[self.user_id]
         except KeyError:
             logging.debug('%r not in any battle' % self)
             return
@@ -179,7 +187,7 @@ class Client(tornadio.SocketConnection):
             if battle.has_answered(self):
                 self.send({'error': 'You have already answered this question'})
                 return
-            XXXXXXXXXX X X X X X
+            raise NotImplementedError("WORK HARDER")
         elif message.get('alternatives'):
             raise NotImplementedError
         elif message.get('timed_out'):
@@ -219,10 +227,8 @@ class Client(tornadio.SocketConnection):
     def on_close(self):
         print repr(self), "closed connection"
         if getattr(self, 'user_id', None) and getattr(self, 'user_name', None):
-            #print "application.current_client_battles SECOND"
-            #print application.current_client_battles
             try:
-                battle = application.current_client_battles[self.user_id]
+                battle = self.current_client_battles[self.user_id]
             except KeyError:
                 logging.debug('%r not in any battle' % self.user_id)
                 return
@@ -236,8 +242,20 @@ class Application(tornado.web.Application):
     battles = set()
     current_client_battles = {}
 
-    def __init__(self, handlers, database_name=None, **kwargs):
-        tornado.web.Application.__init__(self, handlers, **kwargs)
+    def __init__(self, database_name=None, **kwargs):
+        handlers = [tornadio.get_router(Client).route()]
+        app_settings = dict(kwargs,
+          debug=options.debug,
+          enabled_protocols=['websocket',
+                             'flashsocket',
+                             'xhr-multipart',
+                             'xhr-polling'
+                             ],
+          flash_policy_port=843,
+          flash_policy_file=op.join(ROOT, 'flashpolicy.xml'),
+          socket_io_port=options.port,
+        )
+        tornado.web.Application.__init__(self, handlers, **app_settings)
         self.database_name = database_name and database_name or options.database_name
         self.con = Connection()
         self.con.register([User, Question, Genre, Play, PlayedQuestion])
@@ -250,22 +268,11 @@ application = None
 def main():
     tornado.options.parse_command_line()
     # use the routes classmethod to build the correct resource
-    SocketRouter = tornadio.get_router(Client)
+
 
     #configure the Tornado application
     global application
-    application = Application(
-        [SocketRouter.route()],
-        enabled_protocols=['websocket',
-                           'flashsocket',
-                           'xhr-multipart',
-                           'xhr-polling'
-                           ],
-        flash_policy_port=843,
-        flash_policy_file=op.join(ROOT, 'flashpolicy.xml'),
-        socket_io_port=options.port,
-    )
-
+    application = Application()
     logging.getLogger().setLevel(logging.DEBUG)
     try:
         tornadio.server.SocketServer(application)

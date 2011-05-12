@@ -6,7 +6,7 @@ class Play(BaseDocument):
     __collection__ = 'plays'
     structure = {
       'users': [User],
-      'started': datetime.datetime,
+      #'started': datetime.datetime,
       'no_players': int,
       'no_questions': int,
       'draw': bool,
@@ -16,7 +16,7 @@ class Play(BaseDocument):
     default_values = {
       'no_players': 0,
       'draw': False,
-      'started': datetime.datetime.now,
+      #'started': datetime.datetime.now,
     }
 
 

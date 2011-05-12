@@ -129,7 +129,6 @@ for app_name in settings.APPS:
     __import__('apps.%s' % app_name, globals(), locals(), ['handlers'], -1)
 
 
-
 def main(): # pragma: no cover
     tornado.options.parse_command_line()
     if options.showurls:
