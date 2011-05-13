@@ -200,9 +200,8 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(not client2._sent[-1]['answered']['right'])
 
         # make sure there's a new question available
-        self._create_question()
+        question = self._create_question()
         client.on_message(dict(answer='Yes  '))
-
 
         self.assertTrue(client._sent[-3]['answered'])
         self.assertTrue(client._sent[-3]['answered']['right'])
@@ -216,4 +215,70 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
 
-        XXX let client2 get the next question right my loading alterantives
+        battle.min_wait_delay -= 10 # anything
+        client.on_message(dict(next_question=1))
+        assert client._sent[-1] == client2._sent[-1]
+        assert client._sent[-1]['question']['text'] == question.text
+
+        client2.on_message(dict(alternatives=1))
+
+        #print client._sent[-1]
+        self.assertTrue(client2._sent[-1]['alternatives'])
+        self.assertEqual(client2._sent[-1]['alternatives'],
+                         question.alternatives)
+
+
+        # suppose that client2 gets it right then
+        alternative = [x for x in question.alternatives if x == question.answer][0]
+        client2.on_message(dict(answer=alternative.upper()))
+        self.assertEqual(client._sent[-2], client2._sent[-2])
+        self.assertTrue(client._sent[-2]['update_scoreboard'])
+        self.assertEqual(client._sent[-2]['update_scoreboard'][1], 1)
+
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
+        self._create_question()
+        # let both people get it wrong this time
+        battle.min_wait_delay -= 10 # anything
+        client.on_message(dict(next_question=1))
+        client.on_message(dict(answer='WRONG'))
+        self.assertTrue(client2._sent[-1]['has_answered'])
+        client2.on_message(dict(answer='ALSO WRONG'))
+
+        self.assertTrue(not client2._sent[-3]['answered']['right'])
+        self.assertTrue(client2._sent[-2]['answered']['both_wrong'])
+        self.assertTrue(client._sent[-2]['answered']['both_wrong'])
+
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
+        self._create_question()
+        battle.min_wait_delay -= 10 # anything
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+
+        # now pretend that both people are too slow
+        client2.on_message(dict(timed_out=1))
+        # you can't send this until there's been a delay
+        self.assertTrue(client2._sent[-1]['error'])
+        battle.current_question_sent -= battle.thinking_time # fake time
+        # both will send this within nanoseconds of each other
+        client.on_message(dict(timed_out=1))
+        client2.on_message(dict(timed_out=1))
+
+        self.assertTrue(client._sent[-2]['answered']['both_too_slow'])
+        self.assertTrue(client2._sent[-2]['answered']['both_too_slow'])
+
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
+#        print client._sent[-3]
+#        print client2._sent[-3]
+#        print
+        print client._sent[-2]
+        print client2._sent[-2]
+        print
+        print client._sent[-1]
+        print client2._sent[-1]

@@ -1,10 +1,13 @@
-from time import time
+import time
 from collections import defaultdict
 
 class Battle(object):
 
-    def __init__(self, min_no_people=2, max_no_people=2, no_questions=10,
+    def __init__(self, thinking_time,
+                 min_no_people=2, max_no_people=2, no_questions=10,
                  genres_only=None):
+        # how long time between the questions
+        self.thinking_time = thinking_time
         self.min_no_people = min_no_people
         self.max_no_people = max_no_people
         self.no_questions = no_questions
@@ -19,6 +22,7 @@ class Battle(object):
         #self._checking_answer = set()
         #self._ready_to_play = False
         self.current_question = None
+        self.current_question_sent = None
         self.genres_only = genres_only
 
     def add_participant(self, client):
@@ -40,7 +44,7 @@ class Battle(object):
                 and not self.stopped)
 
     def send_wait(self, seconds, next_message):
-        self.min_wait_delay = time() + seconds
+        self.min_wait_delay = time.time() + seconds
         self.send_to_all(dict(wait=seconds, message=next_message))
 
     def send_to_everyone_else(self, client, msg):
@@ -52,23 +56,26 @@ class Battle(object):
         for p in self.participants:
             p.send(msg)
 
-    #def send_next_question(self):
-    #    raise NotImplementedError
-
     def send_question(self, question):
         self.sent_questions.add(question)
         self.current_question = question
+        self.current_question_sent = time.time()
         packaged_question = {
           'id': str(question._id),
           'text': question.text,
           'genre': question.genre.name,
         }
-        self.send_to_all(dict(question=packaged_question))
+        self.send_to_all(dict(question=packaged_question,
+                              thinking_time=self.thinking_time))
 
     def close_current_question(self):
         self.current_question = None
+        self.current_question_sent = None
         self.clear_answered()
         self.clear_loaded_alternatives()
+
+    def timed_out_too_soon(self):
+        return time.time() < (self.current_question_sent + self.thinking_time)
 
     ## Answered
 
@@ -94,6 +101,10 @@ class Battle(object):
 
     def clear_loaded_alternatives(self):
         self.loaded_alternatives = set()
+
+    def send_alternatives(self, client):
+        self.remember_loaded_alternatives(client)
+        client.send(dict(alternatives=self.current_question.alternatives))
 
     ## Checking answer
 

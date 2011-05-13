@@ -159,7 +159,7 @@ class Client(tornadio.SocketConnection):
                 logging.debug("Joining battle: %r" % battle)
                 break
         if not battle:
-            battle = Battle()
+            battle = Battle(15) # specify how long the waiting delay is
             logging.debug("Creating new battle")
             self.battles.add(battle)
         battle.add_participant(self)
@@ -206,15 +206,28 @@ class Client(tornadio.SocketConnection):
                 )
                 if battle.has_everyone_answered():
                     battle.close_current_question()
+                    battle.send_to_all({'answered':{'both_wrong': True}})
                     # XXX perhaps here we ought to check if the battle is over????
                     battle.send_wait(3, dict(next_question=True))
 
         elif message.get('alternatives'):
-            raise NotImplementedError
+            assert battle.current_question
+            if not battle.has_loaded_alternatives(self):
+                battle.send_alternatives(self)
         elif message.get('timed_out'):
-            raise NotImplementedError
+            if battle.current_question:
+                if battle.timed_out_too_soon():
+                    self.send({'error': 'Timed out too soon'})
+                    return
+                battle.close_current_question()
+                battle.send_to_all({'answered':{'both_too_slow': True}})
+                # XXX perhaps here we ought to check if the battle is over????
+                battle.send_wait(3, dict(next_question=True))
+
+
         elif message.get('next_question'):
             # this is going to be hit twice, within nanoseconds of each other.
+            #print (battle.min_wait_delay, time.time())
             if battle.min_wait_delay > time.time():
                 self.send({'error': 'Too soon'})
                 return
