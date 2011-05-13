@@ -14,18 +14,18 @@ class Battle(object):
         self.sent_questions = set()
         self.stopped = False
         self.scores = defaultdict(int)
-        self.loaded_alternatives = []
-        self.attempted = {}
+        self.loaded_alternatives = set()
+        self.attempted = set()
         #self._checking_answer = set()
-        self._ready_to_play = False
+        #self._ready_to_play = False
         self.current_question = None
         self.genres_only = genres_only
 
     def add_participant(self, client):
         assert client.user_id and client.user_name
         self.participants.add(client)
-        if len(self.participants) >= self.min_no_people:
-            self._ready_to_play = True
+        #if len(self.participants) >= self.min_no_people:
+        #    self._ready_to_play = True
 
     def ready_to_play(self):
         return len(self.participants) >= self.min_no_people
@@ -65,8 +65,59 @@ class Battle(object):
         }
         self.send_to_all(dict(question=packaged_question))
 
+    def close_current_question(self):
+        self.current_question = None
+        self.clear_answered()
+        self.clear_loaded_alternatives()
+
+    ## Answered
+
+    def has_everyone_answered(self):
+        return len(self.attempted) == len(self.participants)
+
+    def has_answered(self, client):
+        return client in self.attempted
+
+    def remember_answered(self, client):
+        self.attempted.add(client)
+
+    def clear_answered(self):
+        self.attempted = set()
+
+    ## Alternatives
+
+    def has_loaded_alternatives(self, client):
+        return client in self.loaded_alternatives
+
+    def remember_loaded_alternatives(self, client):
+        self.loaded_alternatives.add(client)
+
+    def clear_loaded_alternatives(self):
+        self.loaded_alternatives = set()
+
+    ## Checking answer
+
+    def check_answer(self, answer, spell_correct=False):
+        self.remember_answered(answer)
+        _answer = answer.lower().strip()
+        if spell_correct:
+            raise NotImplementedError
+        if _answer == self.current_question.answer.lower():
+            return True
+        if self.current_question.accept:
+            if _answer in [x.lower() for x in self.current_question.accept]:
+                return True
+
+        if not spell_correct and self.current_question.spell_correct:
+            return self.check_answer(answer, spell_correct=True)
+
+        return False
+
+    ## Scoring
+
     def increment_score(self, client, points):
         self.scores[client] += points
+        self.send_to_all({'update_scoreboard': [client.user_name, points]})
 
     def get_winner(self):
         best_points = -1

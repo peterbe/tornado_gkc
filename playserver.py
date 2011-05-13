@@ -164,22 +164,21 @@ class Client(tornadio.SocketConnection):
             self.battles.add(battle)
         battle.add_participant(self)
         self.current_client_battles[self.user_id] = battle
-        print "self.current_client_battles"
-        print self.current_client_battles
         if battle.ready_to_play():
             battle.send_wait(3, dict(next_question=True))
 
     def on_message(self, message):
-        print "MESSAGE"
-        print repr(message)
+        #print "MESSAGE",
+        #print repr(message)
+        #print
         if not hasattr(self, 'user_id'):
             print "DUFF client"
             return
-        print "\n"
         try:
             battle = self.current_client_battles[self.user_id]
         except KeyError:
             logging.debug('%r not in any battle' % self)
+            print "No battle :("
             return
 
         if message.get('answer'):
@@ -187,21 +186,49 @@ class Client(tornadio.SocketConnection):
             if battle.has_answered(self):
                 self.send({'error': 'You have already answered this question'})
                 return
-            raise NotImplementedError("WORK HARDER")
+            if battle.check_answer(message.get('answer')):
+                # client got it right!!
+                points = 3
+                if battle.has_loaded_alternatives(self):
+                    points = 1
+                self.send({'answered': {'right': True}})
+                battle.send_to_everyone_else(self,
+                                             {'answered': {'too_slow': True}})
+                battle.increment_score(self, points)
+                battle.close_current_question()
+                # XXX perhaps here we ought to check if the battle is over????
+                battle.send_wait(3, dict(next_question=True))
+            else:
+                # you suck!
+                self.send({'answered': {'right': False}})
+                battle.send_to_everyone_else(self,
+                  {'has_answered': self.user_name}
+                )
+                if battle.has_everyone_answered():
+                    battle.close_current_question()
+                    # XXX perhaps here we ought to check if the battle is over????
+                    battle.send_wait(3, dict(next_question=True))
+
         elif message.get('alternatives'):
             raise NotImplementedError
         elif message.get('timed_out'):
             raise NotImplementedError
         elif message.get('next_question'):
-            if battle.current_question:
-                battle.send_question(battle.current_question)
-            else:
+            # this is going to be hit twice, within nanoseconds of each other.
+            if battle.min_wait_delay > time.time():
+                self.send({'error': 'Too soon'})
+                return
+            if not battle.current_question:
                 question = self._get_next_question(battle)
                 if question:
                     battle.current_question = question
+                    battle.send_question(battle.current_question)
                 else:
                     battle.send_to_all({'error':"No more questions! Run out!"})
                     battle.stop()
+        else:
+            print message
+            raise NotImplementedError("Unrecognized message")
 
     def _get_next_question(self, battle):
         search = {'_id':{'$nin': [x._id for x in battle.sent_questions]}}
