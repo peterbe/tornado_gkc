@@ -105,7 +105,8 @@ var question_handler = (function() {
 	 // check if an image was loaded to the previous question
 	 if (!$('img', $('li.past').eq(-1)).size()) {
 	    $('li.past').eq(-1)
-	      .append($('<img>', {src:'/images/hourglass.png',
+	      .append($('<img>', {
+                 src: IMAGES.HOURGLASS,
 		alt:'Timed out'
 	      }));
 	 }
@@ -115,7 +116,7 @@ var question_handler = (function() {
 	 $('#answer').removeAttr('readonly');
 	 var msg = "Both too slow";
 	 $('li.current')
-	   .append($('<img>', {src:'/images/hourglass.png',
+	   .append($('<img>', {src: IMAGES.HOURGLASS,
 		alt:msg
 	   }));
 	 $('#input').hide();
@@ -153,10 +154,8 @@ var question_handler = (function() {
       },
       stop: function(information) { // the whole battle is over
 	 Clock.stop();
-	 //$('#question li.current').removeClass('current').addClass('past');
 	 $('#timer').hide();
-	 //$('form#respond').fadeTo(900, 0.4);
-	 $('#input').hide(800);
+	 $('#input').hide(500);
 	 if (information && information.message) {
 	    $('#information p').text(information.message);
 	    $('#information').show();
@@ -165,24 +164,27 @@ var question_handler = (function() {
       right_answer: function() {
 	 var msg = 'Yay! you got it right';
 	 $('li.current')
-	   .append($('<img>', {src:'/images/right.png',
-		alt:msg
+	   .append($('<img>', {
+              src: IMAGES.RIGHT,
+		alt: msg
 	   }));
 	 $('#alert').text(msg).show(100);
       },
       wrong_answer: function() {
 	 var msg = 'Sorry. You got it wrong';
 	 $('li.current')
-	   .append($('<img>', {src:'/images/wrong.png',
-		alt:msg
+	   .append($('<img>', {
+              src: IMAGES.WRONG,
+		alt: msg
 	   }));
 	 $('#alert').text(msg).show(100);
       },
       too_slow: function() {
 	 var msg = 'Sorry. You were too slow';
 	 $('li.current')
-	   .append($('<img>', {src:'/images/wrong.png',
-		alt:msg
+	   .append($('<img>', {
+              src: IMAGES.WRONG,
+		alt: msg
 	   }));
 	 $('#alert').text(msg).show(100);
       },
@@ -244,7 +246,16 @@ function __log_message(msg) {
 var socket = new io.Socket(null, {port: CONFIG.SOCKET_PORT, rememberTransport: false});
 socket.connect();
 
+var waiting_message_interval = setInterval(function() {
+   $('#waiting .message').text($('#waiting .message').text() + '.');
+}, 1000);
 socket.on('connect', function() {
+   clearInterval(waiting_message_interval);
+   $('#waiting .message').text("Waiting for an opponent");
+   waiting_message_interval = setInterval(function() {
+      $('#waiting .message').text($('#waiting .message').text() + '.');
+   }, 1000);
+
    $('form#respond').submit(function() {
       var answer = $.trim($('#answer').val());
       if (!answer.length || question_handler.has_sent_answer()) {
@@ -257,11 +268,13 @@ socket.on('connect', function() {
       $('#answer').attr('readonly','readonly').attr('disabled','disabled');
       alternatives.load();
    });
+
 });
 
 socket.on('message', function(obj){
    __log_message(obj);
    if (obj.question) {
+      clearInterval(waiting_message_interval);
       question_handler.load_question(obj.question);
    } else if (obj.wait && obj.message) {
       setTimeout(function() {
@@ -282,8 +295,8 @@ socket.on('message', function(obj){
    } else if (obj.alternatives) {
       alternatives.show(obj.alternatives);
    } else if (obj.init_scoreboard) {
-      $('#scoreboard:hidden').show(500);
       scoreboard.init_players(obj.init_scoreboard);
+      $('#scoreboard:hidden').show(500);
    } else if (obj.stop) {
       question_handler.stop(obj.stop);
    } else if (obj.answered) {
@@ -298,6 +311,9 @@ socket.on('message', function(obj){
 	 Clock.stop();
 	 question_handler.wrong_answer();
       }
+   } else if (obj.disconnected) {
+      scoreboard.drop_score(obj.disconnected);
+      question_handler.stop();
    } else if (obj.error) {
       question_handler.stop();
       alert("Error!\n" + obj.error);

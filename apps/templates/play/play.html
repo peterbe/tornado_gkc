@@ -11,14 +11,15 @@
     {% block extra_head %}{% end %}
     {% end %}
   </head>
-  <body id="body">
+  <body>
+    <div id="body">
 
+    <div id="scoreboard" style="display:none"></div>
     <div id="your_name" style="display:none">
       <p>Hi there <strong></strong>!<br>
       We're about to begin playing shortly.<br>
       Just waiting for someone to play against.
     </div>
-    <div id="scoreboard" style="display:none"></div>
 
     <div id="timer-wrapper">
     <div id="timer" style="display:none"></div>
@@ -38,7 +39,7 @@
 
     <div id="waiting">
       <p><img src="{{ static_url("images/loading.gif") }}" alt="Waiting..."></p>
-      <p>Waiting... waiting... waiting...</p>
+      <p class="message">Conneting</p>
     </div>
 
     <form action="" id="respond" style="display:none">
@@ -60,16 +61,21 @@
     <div id="log" style="display:none">
 
     </div>
-
+</div>
 
 <script src="http://cdn.socket.io/stable/socket.io.js"></script>
 <script>
+var IMAGES = {
+  WRONG: '{{ static_url('images/wrong.png') }}'
+, RIGHT: '{{ static_url('images/right.png') }}'
+, HOURGLASS: '{{ static_url('images/hourglass.png') }}'
+};
 var CONFIG = {{ config_json }};
 WEB_SOCKET_DEBUG = false;
 // it's important this appears *after* loading socket.io.js
 WEB_SOCKET_SWF_LOCATION = 'http://cdn.socket.io/stable/WebSocketMain.swf';
 </script>
-{{ modules.Static("js/ext/jquery-1.6.min.js", "js/scoreboard.js", "js/rumbler.js", "js/play.js") }}
+{{ modules.Static("js/ext/jquery-1.6.1.min.js", "js/scoreboard.js", "js/rumbler.js", "js/play.js") }}
 <script>
 $(function () {
    if (CONFIG.DEBUG) {

@@ -7,6 +7,7 @@ import random
 import os.path as op
 import tornadio.router
 import tornadio.server
+from tornado import escape
 import tornado.web
 from pymongo.objectid import InvalidId, ObjectId
 from tornado.options import define, options
@@ -47,10 +48,16 @@ class CookieParser(object):
             self._cookies = Cookie.BaseCookie()
             if "Cookie" in self.request.headers:
                 try:
-                    self._cookies.load(self.request.headers["Cookie"])
+                    self._cookies.load(
+                        escape.native_str(self.request.headers["Cookie"]))
                 except:
                     self.clear_all_cookies()
         return self._cookies
+
+    def clear_all_cookies(self):
+        """Deletes all the cookies the user sent with this request."""
+        for name in self.cookies.iterkeys():
+            self.clear_cookie(name)
 
     def get_cookie(self, name, default=None):
         """Gets the value of the cookie with the given name, else default."""
@@ -134,20 +141,32 @@ class Client(tornadio.SocketConnection):
     def current_client_battles(self):
         return application.current_client_battles
 
-    def on_open(self, request, **kwargs):
-        self.send({'debug': "Connected!"});
-        if hasattr(request, 'headers'):
-            cookie_parser = CookieParser(request)
-            user_id = cookie_parser.get_secure_cookie('user')
+    def _handle_request_exception(self, exception):
+        print "ExCePtIoN"
+        print exception
 
-            if user_id:
-                self.user_id = user_id
-                user = self.db.User.one({'_id': ObjectId(user_id)})
-                if user:
-                    assert user.username
-                    self.user_name = user.username
-                    self.send({'debug': "Your name is %s" % self.user_name})
-                    self._initiate()
+    def on_open(self, request, **kwargs):
+        print "Opening", repr(self), kwargs
+        self.send({'debug': "Connected!"});
+        if not hasattr(request, 'headers'):
+            self.send({'error': 'Unable to find login information. Try reloading'})
+            return
+
+        cookie_parser = CookieParser(request)
+        user_id = cookie_parser.get_secure_cookie('user')
+
+        if not user_id:
+            self.send({'error': 'Unable to log you in. Try reloading'})
+            return
+
+        self.user_id = user_id
+        user = self.db.User.one({'_id': ObjectId(user_id)})
+        if user:
+            assert user.username
+            self.user_name = user.username
+            self.send({'debug': "Your name is %s" % self.user_name})
+            self._initiate()
+
 
     def _initiate(self):
         """called when the client has connected successfully"""
@@ -159,12 +178,15 @@ class Client(tornadio.SocketConnection):
                 logging.debug("Joining battle: %r" % battle)
                 break
         if not battle:
-            battle = Battle(15) # specify how long the waiting delay is
+            battle = Battle(15, no_questions=5) # specify how long the waiting delay is
             logging.debug("Creating new battle")
             self.battles.add(battle)
         battle.add_participant(self)
         self.current_client_battles[self.user_id] = battle
         if battle.ready_to_play():
+            battle.send_to_all({
+              'init_scoreboard': [x.user_name for x in battle.participants]
+            })
             battle.send_wait(3, dict(next_question=True))
 
     def on_message(self, message):
@@ -186,6 +208,7 @@ class Client(tornadio.SocketConnection):
             if battle.has_answered(self):
                 self.send({'error': 'You have already answered this question'})
                 return
+            battle.remember_answered(self)
             if battle.check_answer(message.get('answer')):
                 # client got it right!!
                 points = 3
@@ -196,8 +219,10 @@ class Client(tornadio.SocketConnection):
                                              {'answered': {'too_slow': True}})
                 battle.increment_score(self, points)
                 battle.close_current_question()
-                # XXX perhaps here we ought to check if the battle is over????
-                battle.send_wait(3, dict(next_question=True))
+                if battle.has_more_questions():
+                    battle.send_wait(3, dict(next_question=True))
+                else:
+                    battle.conclude()
             else:
                 # you suck!
                 self.send({'answered': {'right': False}})
@@ -207,8 +232,10 @@ class Client(tornadio.SocketConnection):
                 if battle.has_everyone_answered():
                     battle.close_current_question()
                     battle.send_to_all({'answered':{'both_wrong': True}})
-                    # XXX perhaps here we ought to check if the battle is over????
-                    battle.send_wait(3, dict(next_question=True))
+                    if battle.has_more_questions():
+                        battle.send_wait(3, dict(next_question=True))
+                    else:
+                        battle.conclude()
 
         elif message.get('alternatives'):
             assert battle.current_question
@@ -217,19 +244,28 @@ class Client(tornadio.SocketConnection):
         elif message.get('timed_out'):
             if battle.current_question:
                 if battle.timed_out_too_soon():
+                    logging.warning("time.time():%s current_question_sent+thinking_time:%s"
+                      %(time.time(), battle.current_question_sent+battle.thinking_time))
                     self.send({'error': 'Timed out too soon'})
                     return
-                battle.close_current_question()
-                battle.send_to_all({'answered':{'both_too_slow': True}})
-                # XXX perhaps here we ought to check if the battle is over????
-                battle.send_wait(3, dict(next_question=True))
 
+                for participant in battle.participants:
+                    if not battle.has_answered(participant):
+                        participant.send({'answered': {'too_slow': True}})
+                battle.close_current_question()
+                if battle.has_more_questions():
+                    battle.send_wait(3, dict(next_question=True))
+                else:
+                    battle.conclude()
 
         elif message.get('next_question'):
             # this is going to be hit twice, within nanoseconds of each other.
             #print (battle.min_wait_delay, time.time())
             if battle.min_wait_delay > time.time():
                 self.send({'error': 'Too soon'})
+                return
+            if battle.stopped:
+                #self.send({'error': 'Battle already stopped'})
                 return
             if not battle.current_question:
                 question = self._get_next_question(battle)
@@ -244,7 +280,8 @@ class Client(tornadio.SocketConnection):
             raise NotImplementedError("Unrecognized message")
 
     def _get_next_question(self, battle):
-        search = {'_id':{'$nin': [x._id for x in battle.sent_questions]}}
+        search = {'state': 'PUBLISHED',
+                  '_id':{'$nin': [x._id for x in battle.sent_questions]}}
         if battle.genres_only:
             search['genre.$id'] = {'$nin': [x._id for x in battle.genres_only]}
 
@@ -269,7 +306,9 @@ class Client(tornadio.SocketConnection):
         if getattr(self, 'user_id', None) and getattr(self, 'user_name', None):
             try:
                 battle = self.current_client_battles[self.user_id]
+                print "found battle"
             except KeyError:
+                print "cound't find battle"
                 logging.debug('%r not in any battle' % self.user_id)
                 return
 
@@ -303,6 +342,8 @@ class Application(tornado.web.Application):
     @property
     def db(self):
         return self.con[self.database_name]
+
+
 
 application = None
 def main():

@@ -3,20 +3,24 @@ html, body {
   margin: 0;
   padding: 0;
   background-color:black;
-  background-image:url(../images/black-background.png);
 }
-#bg {position:fixed; top:0; left:0; width:100%; height:100%;}
+body {
+  background: -webkit-gradient(radial, 50% 50%, 10, 50% 50%, 900, from(rgba(0,0,0,0)), to(rgba(0,0,0,1))), url("../images/black-back3.png") repeat;
+  background: -moz-radial-gradient(50% 50% 360deg, circle closest-corner, transparent 5%, #000) repeat scroll 0 10%, url("../images/black-back3.png") repeat scroll 0 0 transparent;
+}
+
+/*#bg {position:fixed; top:0; left:0; width:100%; height:100%;}*/
 #body {
   position:relative;
-  z-index:1;
+  /*z-index:1;*/
   max-width:900px;
   margin:auto;
   color:#f1f1f1;
-  /*font-family: Arial,Helvetica,sans-serif;*/
-  font-family: "Droid Sans",Arial,Helvetica,sans-serif;
+  /*font-family: "Droid Sans",Arial,Helvetica,sans-serif;*/
+  font-family:'Trebuchet MS','Lucida Grande',Verdana,Arial,Sans-Serif;
 }
 h1,h2,h3,h4 {
-  font-family: "Droid Sans",Arial,Helvetica,sans-serif;
+  /*font-family: "Droid Sans",Arial,Helvetica,sans-serif;*/
   color:#ffea00;
 }
 a { color:white; }

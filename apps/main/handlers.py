@@ -467,12 +467,16 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
             # because this is going to get lost when we get back from Google
             # stick it in a cookie
             self.set_cookie('next', self.get_argument('next'))
+        print "REDIRECTE!"
         self.authenticate_redirect()
 
     def _on_auth(self, user):
+        print "IN _on_auth"
         if not user:
+            print "\tNot user"
             raise HTTPError(500, "Google auth failed")
         if not user.get('email'):
+            print "\tNot email"
             raise HTTPError(500, "No email provided")
         locale = user.get('locale') # not sure what to do with this yet
         first_name = user.get('first_name')
@@ -500,9 +504,21 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
 
             self.notify_about_new_user(user, extra_message="Used Google OpenID")
 
+        print "SETTING secure cookie"
         self.set_secure_cookie("user", str(user._id), expires_days=100)
 
         self.redirect(self.get_next_url())
+
+@route('/poop/')
+class PoopHandler(BaseHandler):
+
+    def get(self):
+        from time import time
+        if self.get_secure_cookie('poop'):
+            self.write("YES cookie: %r\n" % self.get_secure_cookie('poop'))
+        else:
+            self.set_secure_cookie('poop', str(time()), expires_days=2)
+            self.write("no cookie\n")
 
 @route('/auth/facebook/', name='auth_facebook')
 class FacebookAuthHandler(BaseAuthHandler, tornado.auth.FacebookMixin):

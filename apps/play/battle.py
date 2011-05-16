@@ -1,11 +1,16 @@
 import time
 from collections import defaultdict
+from utils.edit_distance import EditDistance
 
+class BattleError(Exception):
+    pass
 class Battle(object):
 
     def __init__(self, thinking_time,
-                 min_no_people=2, max_no_people=2, no_questions=10,
-                 genres_only=None):
+                 min_no_people=2, max_no_people=2,
+                 no_questions=10,
+                 genres_only=None,
+                 language=None):
         # how long time between the questions
         self.thinking_time = thinking_time
         self.min_no_people = min_no_people
@@ -24,8 +29,11 @@ class Battle(object):
         self.current_question = None
         self.current_question_sent = None
         self.genres_only = genres_only
+        self.language = language
 
     def add_participant(self, client):
+        if not self.is_open():
+            raise BattleError("can't add more participants. it's full")
         assert client.user_id and client.user_name
         self.participants.add(client)
         #if len(self.participants) >= self.min_no_people:
@@ -53,8 +61,13 @@ class Battle(object):
                 p.send(msg)
 
     def send_to_all(self, msg):
+        #print repr(msg)
         for p in self.participants:
+            #print "\t", time.time(), repr(p)
             p.send(msg)
+
+    def has_more_questions(self):
+        return len(self.sent_questions) < self.no_questions
 
     def send_question(self, question):
         self.sent_questions.add(question)
@@ -108,19 +121,24 @@ class Battle(object):
 
     ## Checking answer
 
-    def check_answer(self, answer, spell_correct=False):
-        self.remember_answered(answer)
+    def check_answer(self, answer, _spell_correct=False):
+        if self.stopped:
+            return
         _answer = answer.lower().strip()
-        if spell_correct:
-            raise NotImplementedError
+        if _spell_correct:
+            ed = EditDistance([self.current_question.answer.lower()] +
+                              [x.lower() for x in self.current_question.accept])
+            if ed.match(_answer):
+                return True
+
         if _answer == self.current_question.answer.lower():
             return True
         if self.current_question.accept:
             if _answer in [x.lower() for x in self.current_question.accept]:
                 return True
 
-        if not spell_correct and self.current_question.spell_correct:
-            return self.check_answer(answer, spell_correct=True)
+        if not _spell_correct and self.current_question.spell_correct:
+            return self.check_answer(answer, _spell_correct=True)
 
         return False
 
@@ -129,6 +147,7 @@ class Battle(object):
     def increment_score(self, client, points):
         self.scores[client] += points
         self.send_to_all({'update_scoreboard': [client.user_name, points]})
+        print self.scores
 
     def get_winner(self):
         best_points = -1
@@ -137,6 +156,7 @@ class Battle(object):
         for client, points in self.scores.items():
             if points > best_points:
                 winner = client
+                best_points = points
             elif points == best_points:
                 tie = True
         if not tie:
@@ -144,3 +164,14 @@ class Battle(object):
 
     def stop(self):
         self.stopped = True
+
+    ## Concluding
+
+    def conclude(self):
+        winner = self.get_winner()
+        if not winner:
+            self.send_to_all({'winner': {'draw': True}})
+        else:
+            winner.send({'winner': {'you_won': True}})
+            self.send_to_everyone_else(winner, {'winner': {'you_won': False}})
+        self.stop()
