@@ -1,13 +1,13 @@
+#body { padding:15px; }
 #log { height: 200px; overflow: auto; width: 750px; border: 1px solid #eee; font: 11px Helvetica, Arial; }
 #log p { padding: 4px; margin: 0; }
 #log p:nth-child(odd) { }
 li.past span { text-decoration:line-through; }
-dt.disconnected { text-decoration:line-through; }
-dd.disconnected { font-size:70%; }
+.disconnected { text-decoration:line-through; }
 li.current { font-weight:bold; }
 h3 { margin-top:0; margin-bottom:2px; }
-#you_won, #you_lost, #you_drew { background-color:#efefef; border:1px solid #333; position:relative; z-index:1; }
-#you_won h3 { color:green; }
+#you_won, #you_lost, #you_drew { padding:50px; }
+#you_won h2 { color:green; }
 #you_lost h3 { color:red; }
 #you_drew h3 { color:orange; }
 #scoreboard { float:right; /*width:200px;*/ }
@@ -30,3 +30,10 @@ h3 { margin-top:0; margin-bottom:2px; }
 }
 #timer-wrapper { float:left; width:100px; }
 #respond { margin-left:105px; }
+
+#gossip {
+    font-style:italic;
+    position:absolute;
+    left:265px;
+    top:0;
+ }

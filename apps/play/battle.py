@@ -24,6 +24,7 @@ class Battle(object):
         self.scores = defaultdict(int)
         self.loaded_alternatives = set()
         self.attempted = set()
+        self.timed_out = set()
         #self._checking_answer = set()
         #self._ready_to_play = False
         self.current_question = None
@@ -73,6 +74,9 @@ class Battle(object):
         self.sent_questions.add(question)
         self.current_question = question
         self.current_question_sent = time.time()
+        #print "SENDING", repr(self.current_question.text)
+        #print self.current_question_sent
+        #print
         packaged_question = {
           'id': str(question._id),
           'text': question.text,
@@ -85,9 +89,22 @@ class Battle(object):
         self.current_question = None
         self.current_question_sent = None
         self.clear_answered()
+        self.clear_timed_out()
         self.clear_loaded_alternatives()
 
+    ## Timed out
+
+    def remember_timed_out(self, client):
+        self.timed_out.add(client)
+
+    def clear_timed_out(self):
+        self.timed_out = set()
+
+    def has_all_timed_out(self):
+        return len(self.timed_out) == len(self.participants)
+
     def timed_out_too_soon(self):
+        assert self.current_question_sent
         return time.time() < (self.current_question_sent + self.thinking_time)
 
     ## Answered

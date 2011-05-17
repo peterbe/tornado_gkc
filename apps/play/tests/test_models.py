@@ -13,6 +13,5 @@ class ModelsTestCase(BaseModelsTestCase):
         play.no_questions = 10
         play.save()
 
-        self.assertTrue(play.started)
         self.assertTrue(not play.draw)
         self.assertTrue(not play.winner)

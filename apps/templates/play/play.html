@@ -26,7 +26,7 @@
     </div>
 
     <div id="you_won" class="finish" style="display:none">
-      <h3>You won!</h3>
+      <h2>You won!</h2>
     </div>
 
     <div id="you_lost" class="finish" style="display:none">
@@ -42,9 +42,12 @@
       <p class="message">Conneting</p>
     </div>
 
+    <p id="gossip">
+    </p>
+
     <form action="" id="respond" style="display:none">
     <input type="hidden" id="question_id">
-      <h3>Question:</h3>
+      <h3>Questions</h3>
       <ol id="question"></ol>
       <div id="input">
         <div id="alternatives-outer" style="display:none">
@@ -80,7 +83,7 @@ WEB_SOCKET_SWF_LOCATION = 'http://cdn.socket.io/stable/WebSocketMain.swf';
 $(function () {
    if (CONFIG.DEBUG) {
       $('#log').show();
-      WEB_SOCKET_DEBUG = true;
+      //WEB_SOCKET_DEBUG = true;
     }
 });
 </script>

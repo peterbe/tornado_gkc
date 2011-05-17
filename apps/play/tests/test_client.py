@@ -5,7 +5,8 @@ import Cookie
 import unittest
 from apps.main.models import User
 from apps.questions.models import Question, Genre
-from playserver import Client, CookieParser
+from apps.play.cookies import CookieParser
+from apps.play.client_app import Client
 
 class BaseTestCase(unittest.TestCase):
     _once = False
@@ -265,11 +266,23 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client2._sent[-1]['error'])
         battle.current_question_sent -= battle.thinking_time # fake time
         # both will send this within nanoseconds of each other
-        client.on_message(dict(timed_out=1))
-        client2.on_message(dict(timed_out=1))
 
-        self.assertTrue(client._sent[-2]['answered']['both_too_slow'])
-        self.assertTrue(client2._sent[-2]['answered']['both_too_slow'])
+        assert battle.current_question
+        assert battle.current_question_sent
+
+        _before = len(client._sent) + len(client2._sent)
+        client.on_message(dict(timed_out=1))
+        assert battle.current_question
+        assert battle.current_question_sent
+        _after = len(client._sent) + len(client2._sent)
+        self.assertEqual(_before, _after)
+
+        client2.on_message(dict(timed_out=1))
+        _after_2 = len(client._sent) + len(client2._sent)
+        self.assertNotEqual(_after, _after_2)
+
+        self.assertTrue(client._sent[-2]['answered']['too_slow'])
+        self.assertTrue(client2._sent[-2]['answered']['too_slow'])
 
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])

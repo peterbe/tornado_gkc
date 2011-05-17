@@ -71,14 +71,13 @@ var question_handler = (function() {
 
    return {
       initialize: function() {
-         L("initializing");
 	 $('#respond').show();
 	 $('#waiting').hide();
 	 $('#your_name').hide();
 	 _initialized = true;
       },
       load_question: function(question) {
-         L("LOAD_QUESTION", question);
+         //L("LOAD_QUESTION", question);
 	 if (!_initialized) {
 	    this.initialize();
 	 }
@@ -99,7 +98,6 @@ var question_handler = (function() {
 	 $('#alert:visible').hide(400);
 	 Clock.stop();
 	 Clock.start(15, this.timed_out);
-	 L("focus on answer");
 	 $('#answer').focus();
 
 	 // check if an image was loaded to the previous question
@@ -120,8 +118,8 @@ var question_handler = (function() {
 		alt:msg
 	   }));
 	 $('#input').hide();
-	 $('#alert').text(msg).show(100);
-	 $('#timer').hide(100);
+	 //$('#alert').text(msg).show(100);
+	 $('#timer').hide();
 	 socket.send({timed_out:true});
       },
       finish: function(you_won, draw) {
@@ -188,11 +186,15 @@ var question_handler = (function() {
 	   }));
 	 $('#alert').text(msg).show(100);
       },
-
       send_answer: function(answer) {
-	 $('#answer').attr('readonly','readonly').attr('disabled','disabled');
-	 socket.send({answer:answer});
-	 _has_answered = true;
+         if (_has_answered) {
+            alert("You have already answered this question");
+         } else {
+            Clock.stop();
+            $('#answer').attr('readonly','readonly').attr('disabled','disabled');
+            socket.send({answer:answer});
+            _has_answered = true;
+         }
       },
       has_sent_answer: function() {
 	 return _has_answered;
@@ -268,8 +270,33 @@ socket.on('connect', function() {
       $('#answer').attr('readonly','readonly').attr('disabled','disabled');
       alternatives.load();
    });
-
 });
+
+var Gossip = (function() {
+   var timer;
+   return {
+      show: function(msg) {
+         $('#gossip').text(msg).show();
+         timer = setTimeout(function() {
+            $('#gossip:visible').fadeOut(400);
+         }, 3*1000);
+      },
+      clear: function() {
+         $('#gossip').text('').hide();
+      },
+      count_down: function (seconds, message_maker) {
+         Gossip.show(message_maker(seconds));
+         seconds--;
+         if (seconds > 0) {
+            setTimeout(function() {
+               Gossip.count_down(seconds, message_maker);
+            }, 1000);
+         }
+      }
+   }
+})();
+
+
 
 socket.on('message', function(obj){
    __log_message(obj);
@@ -277,6 +304,10 @@ socket.on('message', function(obj){
       clearInterval(waiting_message_interval);
       question_handler.load_question(obj.question);
    } else if (obj.wait && obj.message) {
+      var seconds_left = obj.wait;
+      Gossip.count_down(obj.wait, function (seconds) {
+         return 'Next question in ' + seconds + ' seconds';
+      });
       setTimeout(function() {
          socket.send(obj.message);
       }, obj.wait * 1000);
@@ -299,6 +330,8 @@ socket.on('message', function(obj){
       $('#scoreboard:hidden').show(500);
    } else if (obj.stop) {
       question_handler.stop(obj.stop);
+   } else if (obj.has_answered) {
+      Gossip.show(obj.has_answered + ' has answered but was wrong');
    } else if (obj.answered) {
       $('#timer').hide();
       $('#input').hide();
