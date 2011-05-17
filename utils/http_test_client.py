@@ -1,8 +1,9 @@
 from urllib import urlencode
 import Cookie
 from tornado.httpclient import HTTPRequest
+from tornado import escape
 
-__version__ = '1.1'
+__version__ = '1.2'
 
 class LoginError(Exception):
     pass
@@ -69,7 +70,8 @@ class TestClient(HTTPClientMixin):
     def _update_cookies(self, headers):
         try:
             sc = headers['Set-Cookie']
-            self.cookies.update(Cookie.SimpleCookie(sc))
+            self.cookies.update(Cookie.SimpleCookie(
+              escape.native_str(sc)))
         except KeyError:
             return
 

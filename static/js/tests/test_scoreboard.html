@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+    <head>
+        <title>test_scoreboard</title>
+        <meta charset="utf-8">
+        <style>
+        table { border:1px solid #ccc; }
+        td.score { font-size:1.2em; }
+        td.increment { font-size:1.2em; color:green; }
+        td.score, td.increment { width:30px; text-align:right; }
+        </style>
+    </head>
+    <body>
+
+    <div id="scoreboard">
+    </div>
+
+    <script>
+    function L() {
+      if (window.console && window.console.log)
+        console.log.apply(console, arguments);
+    }
+    </script>
+    <script src="../ext/jquery-1.6.1.min.js"></script>
+    <script src="../scoreboard.js"></script>
+    <script src="test_scoreboard.js"></script>
+
+    </body>
+</html>

@@ -32,10 +32,11 @@ class User(BaseDocument):
     default_values = {
     }
 
-    indexes = [
-      {'fields': 'username',
-       'unique': True},
-    ]
+    # XXX Move these to indexes.py
+    #indexes = [
+    #  {'fields': 'username',
+    #   'unique': True},
+    #]
 
     def set_password(self, raw_password):
         self.password = encrypt_password(raw_password)
@@ -73,11 +74,12 @@ class UserSettings(BaseDocument):
     validators = {
     }
 
-    indexes = [
-      {'fields': 'user.$id',
-       'check': False,
-       'unique': True},
-    ]
+    # XXX Move these to indexes.py
+    #indexes = [
+    #  {'fields': 'user.$id',
+    #   'check': False,
+    #   'unique': True},
+    #]
 
     @staticmethod
     def get_bool_keys():
@@ -99,8 +101,10 @@ class FlashMessage(BaseDocument):
       'text': u'',
     }
     required_fields = ['user', 'title']
-    indexes = [
-      {'fields': 'user.$id',
-       'check': False},
-      {'fields': 'read'},
-    ]
+
+    # XXX Move these to indexes.py
+    #indexes = [
+    #  {'fields': 'user.$id',
+    #   'check': False},
+    #  {'fields': 'read'},
+    #]

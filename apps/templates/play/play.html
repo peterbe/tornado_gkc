@@ -1,14 +1,91 @@
-{% extends "../base.html" %}
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge;chrome=1">
+    <title>Play!!</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!--<link rel="stylesheet" type="text/css" href="/static/css/style.css">-->
+    {{ modules.Static("css/style.css","css/play.css") }}
+    {% block extra_head_outer %}
+    {% block extra_head %}{% end %}
+    {% end %}
+  </head>
+  <body>
+    <div id="body">
 
+    <div id="scoreboard" style="display:none"></div>
+    <div id="your_name" style="display:none">
+      <p>Hi there <strong></strong>!<br>
+      We're about to begin playing shortly.<br>
+      Just waiting for someone to play against.
+    </div>
 
-{% block content_inner %}
-<p style="display:none">
-<a href="{{ node_url }}" id="opener">open play</a>
-</p>
+    <div id="timer-wrapper">
+    <div id="timer" style="display:none"></div>
+    </div>
 
+    <div id="you_won" class="finish" style="display:none">
+      <h2>You won!</h2>
+    </div>
 
-{% end %}
+    <div id="you_lost" class="finish" style="display:none">
+      <h3>You lost :(</h3>
+    </div>
 
-{% block extra_js %}
-{{ modules.Static("js/play.js") }}
-{% end %}
+    <div id="you_drew" class="finish" style="display:none">
+      <h3>You drew</h3>
+    </div>
+
+    <div id="waiting">
+      <p><img src="{{ static_url("images/loading.gif") }}" alt="Waiting..."></p>
+      <p class="message">Conneting</p>
+    </div>
+
+    <p id="gossip">
+    </p>
+
+    <form action="" id="respond" style="display:none">
+    <input type="hidden" id="question_id">
+      <h3>Questions</h3>
+      <ol id="question"></ol>
+      <div id="input">
+        <div id="alternatives-outer" style="display:none">
+          <h4>Alternatives:</h4>
+          <div id="alternatives"></div>
+        </div>
+        <p id="typed"><strong>Answer:</strong>
+        <input name="text" id="answer" autocomplete="off"><input type="submit" value="Go!">
+        </p>
+        <p><input type="button" id="load-alternatives" value="Give me alternatives"></p>
+      </div>
+      <p id="alert"><!-- where messages about getting it right or wrong goes --></p>
+    </form>
+    <div id="log" style="display:none">
+
+    </div>
+</div>
+
+<script src="http://cdn.socket.io/stable/socket.io.js"></script>
+<script>
+var IMAGES = {
+  WRONG: '{{ static_url('images/wrong.png') }}'
+, RIGHT: '{{ static_url('images/right.png') }}'
+, HOURGLASS: '{{ static_url('images/hourglass.png') }}'
+};
+var CONFIG = {{ config_json }};
+WEB_SOCKET_DEBUG = false;
+// it's important this appears *after* loading socket.io.js
+WEB_SOCKET_SWF_LOCATION = 'http://cdn.socket.io/stable/WebSocketMain.swf';
+</script>
+{{ modules.Static("js/ext/jquery-1.6.1.min.js", "js/scoreboard.js", "js/rumbler.js", "js/play.js") }}
+<script>
+$(function () {
+   if (CONFIG.DEBUG) {
+      $('#log').show();
+      //WEB_SOCKET_DEBUG = true;
+    }
+});
+</script>
+</body>
+</html>

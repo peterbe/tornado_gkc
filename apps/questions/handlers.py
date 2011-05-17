@@ -560,6 +560,17 @@ class AcceptQuestionHandler(QuestionsBaseHandler):
         if not self.is_admin_user(user):
             raise HTTPError(403, "Not admin user")
         question = self.must_find_question(question_id, user)
+        # before we change it, figure out which question was next
+        _is_next = False
+        _next = None
+        for each in self.db.Question.find(dict(state=SUBMITTED)
+          ).sort('submit_date', -1):
+            if _is_next:
+                _next = each
+                break
+            elif each == question:
+                _is_next = True
+
         question.state = ACCEPTED
         question.accept_date = datetime.datetime.now()
         question.save()
@@ -569,7 +580,11 @@ class AcceptQuestionHandler(QuestionsBaseHandler):
         self.push_flash_message("Question accepted!",
             "Question is now ready to be peer reviewed")
 
-        url = self.reverse_url('view_question', question._id)
+        if _next:
+            url = self.reverse_url('view_question', _next._id)
+        else:
+            #url = self.reverse_url('view_question', question._id)
+            url = self.reverse_url('questions')
         self.redirect(url)
 
 @route('/questions/(\w{24})/publish/$', name="publish_question")

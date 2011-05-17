@@ -27,8 +27,6 @@ class HandlersTestCase(BaseHTTPTestCase):
         url = self.reverse_url('questions')
         self.assertTrue(redirected_to.endswith(url))
 
-
-
     def test_adding_question(self):
         url = self.reverse_url('add_question')
         response = self.client.get(url)
@@ -459,6 +457,8 @@ class HandlersTestCase(BaseHTTPTestCase):
         # as admin, accept it now
         accept_question_url = self.reverse_url('accept_question', question._id)
         response = admin.post(accept_question_url, {})
+        self.assertEqual(response.code, 302)
+        self.assertEqual(response.headers['Location'], self.reverse_url('questions'))
         question = self.db.Question.one({'_id':question._id})
         assert question.state == ACCEPTED
 
