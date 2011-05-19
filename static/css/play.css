@@ -1,15 +1,16 @@
 #body { padding:15px; }
 #log { height: 200px; overflow: auto; width: 750px; border: 1px solid #eee; font: 11px Helvetica, Arial; }
 #log p { padding: 4px; margin: 0; }
-#log p:nth-child(odd) { }
+#log p.outbound { text-align:right; }
+/*#log p:nth-child(odd) { }*/
 li.past span { text-decoration:line-through; }
 .disconnected { text-decoration:line-through; }
 li.current { font-weight:bold; }
 h3 { margin-top:0; margin-bottom:2px; }
-#you_won, #you_lost, #you_drew { padding:50px; }
-#you_won h2 { color:green; }
-#you_lost h3 { color:red; }
-#you_drew h3 { color:orange; }
+#you_won, #you_lost, #you_drew { padding:50px; text-align:center; }
+#you_won h1 { color:green; }
+#you_lost h2 { color:red; }
+#you_drew h2 { color:orange; }
 #scoreboard { float:right; /*width:200px;*/ }
 #scoreboard .score { font-size:1.2em; }
 #scoreboard .increment { font-size:1.2em; color:green; }

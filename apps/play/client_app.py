@@ -23,7 +23,7 @@ class Client(tornadio.SocketConnection):
                 info = self.user_id
             except AttributeError:
                 info = '*unknown*'
-        return "<Client: %s>" % info
+        return "<Client: %s %s>" % (self._protocol.__class__.__name__, info)
 
     @property
     def db(self):
@@ -36,6 +36,10 @@ class Client(tornadio.SocketConnection):
     @property
     def current_client_battles(self):
         return application.current_client_battles
+
+    @property
+    def application_settings(self):
+        return application.settings
 
     def on_open(self, request, **kwargs):
         print "Opening", repr(self)
@@ -60,8 +64,10 @@ class Client(tornadio.SocketConnection):
             self._initiate()
 
 
+
     def _initiate(self):
         """called when the client has connected successfully"""
+        print "\tInitiate", repr(self)
         self.send(dict(your_name=self.user_name))
         battle = None
         for created_battle in self.battles:
@@ -70,7 +76,9 @@ class Client(tornadio.SocketConnection):
                 logging.debug("Joining battle: %r" % battle)
                 break
         if not battle:
-            battle = Battle(15, no_questions=5) # specify how long the waiting delay is
+            battle = Battle(15, # specify how long the waiting delay is
+                            no_questions=self.application_settings['debug'] and 5 or 10
+                            )
             logging.debug("Creating new battle")
             self.battles.add(battle)
         battle.add_participant(self)
@@ -136,7 +144,11 @@ class Client(tornadio.SocketConnection):
             if not battle.has_loaded_alternatives(self):
                 battle.send_alternatives(self)
         elif message.get('timed_out'):
-            assert battle.current_question
+            print "Timed out!", repr(self)
+            if not battle.current_question:
+                # most likely
+                assert battle.is_waiting()
+                return
             if battle.timed_out_too_soon():
                 print "current_question:", repr(battle.current_question.text)
                 logging.warning("time.time():%s current_question_sent+thinking_time:%s"
@@ -146,21 +158,27 @@ class Client(tornadio.SocketConnection):
                 return
 
             battle.remember_timed_out(self)
-
+            print "battle.timed_out"
+            print battle.timed_out
             if battle.has_all_timed_out():
-                print "ALL HAVE TIMED OUT"
-                print battle.timed_out
-                print battle.participants
+                print "\tALL HAVE TIMED OUT"
+                #print battle.timed_out
+                #print battle.participants
                 print "\n"
                 for participant in battle.participants:
                     if not battle.has_answered(participant):
                         participant.send({'answered': {'too_slow': True}})
-                print "\tCLOSING CURRENT QUESTION"
+                print "\t\tCLOSING CURRENT QUESTION"
                 battle.close_current_question()
+                print "\t\tHas more?", battle.has_more_questions()
                 if battle.has_more_questions():
+                    print "\t\t\tSending a wait"
                     battle.send_wait(3, dict(next_question=True))
                 else:
+                    print "\t\t\tConcluding!"
                     battle.conclude()
+            else:
+                print "\tStill waiting for more to time out"
 
         elif message.get('next_question'):
             # this is going to be hit twice, within nanoseconds of each other.
@@ -218,6 +236,7 @@ class Client(tornadio.SocketConnection):
 
             battle.remove_participant(self)
             battle.send_to_all({'disconnected': self.user_name})
+            print "Stopping battle because", self.user_name, "disconnected"
             battle.stop()
 
 
@@ -236,13 +255,9 @@ class Application(tornado.web.Application):
     def db(self):
         return self.con[self.database_name]
 
-from tornado.options import define, options
 
-define("debug", default=False, help="run in debug mode", type=bool)
-define("database_name", default=settings.DATABASE_NAME, help="mongodb database name")
-define("port", default=8888, help="run on the given port", type=int)
 HERE = op.normpath(op.dirname(__file__))
-
+from tornado.options import options
 application = Application(
       database_name=options.database_name,
       debug=options.debug,

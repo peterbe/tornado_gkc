@@ -29,10 +29,14 @@ class BaseTestCase(unittest.TestCase):
         del self.battles
         del self.current_client_battles
 
+class MockProtocol:
+    pass
+
 class MockClient(Client):
     def __init__(self, test):
         self.test = test
         self._sent = []
+        self._protocol = MockProtocol()
     def send(self, msg):
         self._sent.append(msg)
 
@@ -287,9 +291,97 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
 
-#        print client._sent[-3]
-#        print client2._sent[-3]
-#        print
+    def _create_two_connected_clients(self):
+        client = MockClient(self)
+        request = MockRequest()
+        cookie = Cookie.BaseCookie()
+        cookie_maker = CookieMaker(request)
+
+        user = self.db.User()
+        user.username = u'peterbe'
+        user.save()
+        cookie['user'] = cookie_maker.create_signed_value('user', str(user._id))
+        request.headers['Cookie'] = cookie.output()
+        client.on_open(request)
+
+        user2 = self.db.User()
+        user2.username = u'chris'
+        user2.save()
+
+        client2 = MockClient(self)
+        request = MockRequest()
+        cookie = Cookie.BaseCookie()
+        cookie_maker = CookieMaker(request)
+        cookie['user'] = cookie_maker.create_signed_value('user', str(user2._id))
+        request.headers['Cookie'] = cookie.output()
+        client2.on_open(request)
+
+        return (user, client), (user2, client2)
+
+    def test_both_too_slow_on_last_question(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 2
+        assert battle.current_question is None
+        self._create_question()
+        self._create_question()
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+
+        client.on_message(dict(answer='Yes'))
+        self.assertEqual(client._sent[-2]['update_scoreboard'],
+                         [u'peterbe', 3])
+        self.assertTrue(client._sent[-2]['update_scoreboard'])
+        self.assertTrue(client2._sent[-2]['update_scoreboard'])
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+
+        # now pretend that both people are too slow
+        battle.current_question_sent -= battle.thinking_time # fake time
+        client.on_message(dict(timed_out=1))
+        from time import sleep
+        sleep(0.1)
+        client2.on_message(dict(timed_out=1))
+
+        self.assertTrue(client._sent[-2]['answered']['too_slow'])
+        self.assertTrue(client2._sent[-2]['answered']['too_slow'])
+
+        self.assertTrue(client._sent[-1]['winner']['you_won'])
+        self.assertTrue(not client2._sent[-1]['winner']['you_won'])
+
+
+    def test_timed_out_after_correct_answer(self):
+        """if one client sends the correct answer, that will close the current
+        question and send both of them a wait delay.
+        If the second client ignores that and sends a timed_out that should
+        then be ignored in favor of the new question"""
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 2
+        self._create_question()
+        self._create_question()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+
+        client.on_message(dict(answer='Yes'))
+        client2.on_message(dict(timed_out=1))
+
+        self.assertTrue(client._sent[-2]['update_scoreboard'])
+        self.assertTrue(client2._sent[-2]['update_scoreboard'])
+
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
         print client._sent[-2]
         print client2._sent[-2]
         print

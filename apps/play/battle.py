@@ -32,6 +32,10 @@ class Battle(object):
         self.genres_only = genres_only
         self.language = language
 
+    def __repr__(self):
+        vs = ' vs. '.join(['%s:%r' % (x.user_id, x.user_name) for x in self.participants])
+        return '<Battle: %s>' % vs
+
     def add_participant(self, client):
         if not self.is_open():
             raise BattleError("can't add more participants. it's full")
@@ -55,6 +59,9 @@ class Battle(object):
     def send_wait(self, seconds, next_message):
         self.min_wait_delay = time.time() + seconds
         self.send_to_all(dict(wait=seconds, message=next_message))
+
+    def is_waiting(self):
+        return self.min_wait_delay and self.min_wait_delay > time.time()
 
     def send_to_everyone_else(self, client, msg):
         for p in self.participants:

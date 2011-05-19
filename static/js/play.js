@@ -11,11 +11,13 @@ function message(obj){
    document.getElementById('chat').scrollTop = 1000000;
 }
 
-function send(){
-   var val = document.getElementById('text').value;
-   socket.send(val);
-   message({ message: ['you', val] });
-   document.getElementById('text').value = '';
+function send(msg){
+   __log_message(msg, true);
+   socket.send(msg);
+   //var val = document.getElementById('text').value;
+   //socket.send(val);
+   //message({ message: ['you', val] });
+   //document.getElementById('text').value = '';
 }
 
 function esc(msg){
@@ -63,7 +65,7 @@ var Clock = (function () {
 })();
 
 
-var question_handler = (function() {
+var Question = (function() {
    var _current_question
      , _initialized = false
      , _timer_callback
@@ -120,33 +122,20 @@ var question_handler = (function() {
 	 $('#input').hide();
 	 //$('#alert').text(msg).show(100);
 	 $('#timer').hide();
-	 socket.send({timed_out:true});
+	 send({timed_out:true});
       },
       finish: function(you_won, draw) {
 	 $('#input').hide();
-	 question_handler.stop();
+	 Question.stop();
 	 draw = draw || false;
 	 $('#question li.current').removeClass('current').addClass('past');
 	 if (draw) {
-	    $('#you_drew').show()
-	      .append($('<a>', {
-		 href:CONFIG.HOMEPAGE_URL,
-		   text:"Go back to the home page"}));
-
+            // nothing here yet
 	 } else {
 	    if (you_won) {
-	       $('#you_won').show()
-		 .append($('<a>', {
-		    target: '_top',
-		 href: CONFIG.HIGHSCORE_URL,
-		      text:"Check out where you are now on the Highscore list"}));
-
+               // nothing here yet
 	    } else {
-	       $('#you_lost').show()
-		 .append($('<a>', {
-		    target: '_top',
-		    href: CONFIG.HOMEPAGE_URL,
-		      text:"Go back to the home page"}));
+               // nothing here yet
 	    }
 	 }
       },
@@ -192,7 +181,7 @@ var question_handler = (function() {
          } else {
             Clock.stop();
             $('#answer').attr('readonly','readonly').attr('disabled','disabled');
-            socket.send({answer:answer});
+            send({answer:answer});
             _has_answered = true;
          }
       },
@@ -206,7 +195,7 @@ var alternatives = (function() {
    return {
       load: function() {
 	 $('#load-alternatives').hide();
-	 socket.send({alternatives:true});
+	 send({alternatives:true});
       },
       show: function(alts) {
 	 var container = $('#alternatives');
@@ -221,7 +210,7 @@ var alternatives = (function() {
 	 $('#typed:visible').hide();
       },
       answer: function(ans) {
-	 socket.send({answer:ans});
+	 send({answer:ans});
 	 $('#alternatives input.alternative')
 	   .attr('readonly','readonly')
 	     .attr('disable','disable')
@@ -231,46 +220,29 @@ var alternatives = (function() {
    }
 })();
 
-function __log_message(msg) {
-   var el = document.createElement('p');
+function __log_message(msg, inbound) {
+   var el = $('<p>');
    var d = new Date();
-   var line = '<em>' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + '.' + d.getMilliseconds() + '</em> ';
+   var line = '<em>';
+   if (inbound) {
+      line += '&larr;';
+      el.addClass('inbound');
+   } else {
+      line += '&rarr;';
+      el.addClass('outbound');
+   }
+   line += d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + '.' + d.getMilliseconds() + '</em> ';
    if ('object' == typeof msg) {
       line += JSON.stringify(msg);
    } else {
       line += msg;
    }
    el.innerHTML = line;
-   document.getElementById('log').appendChild(el);
+
+   //document.getElementById('log').appendChild(el);
+   el.appendTo('#log');
    document.getElementById('log').scrollTop = 1000000;
 }
-
-var socket = new io.Socket(null, {port: CONFIG.SOCKET_PORT, rememberTransport: false});
-socket.connect();
-
-var waiting_message_interval = setInterval(function() {
-   $('#waiting .message').text($('#waiting .message').text() + '.');
-}, 1000);
-socket.on('connect', function() {
-   clearInterval(waiting_message_interval);
-   $('#waiting .message').text("Waiting for an opponent");
-   waiting_message_interval = setInterval(function() {
-      $('#waiting .message').text($('#waiting .message').text() + '.');
-   }, 1000);
-
-   $('form#respond').submit(function() {
-      var answer = $.trim($('#answer').val());
-      if (!answer.length || question_handler.has_sent_answer()) {
-	 return false;
-      }
-      question_handler.send_answer(answer);
-      return false;
-   });
-   $('#load-alternatives').click(function() {
-      $('#answer').attr('readonly','readonly').attr('disabled','disabled');
-      alternatives.load();
-   });
-});
 
 var Gossip = (function() {
    var timer;
@@ -298,61 +270,104 @@ var Gossip = (function() {
 
 
 
-socket.on('message', function(obj){
-   __log_message(obj);
-   if (obj.question) {
+// Let the madness begin!
+var socket;
+$(function() {
+   socket = new io.Socket(null, {port: CONFIG.SOCKET_PORT, rememberTransport: false});
+   socket.connect();
+
+   var waiting_message_interval = setInterval(function() {
+      var text = $('#waiting .message').text();
+      if (text.length > 100) {
+         text = text.replace(/\.{3,100}/, '...');
+      }
+      $('#waiting .message').text(text + '.');
+   }, 1000);
+
+   socket.on('connect', function() {
       clearInterval(waiting_message_interval);
-      question_handler.load_question(obj.question);
-   } else if (obj.wait && obj.message) {
-      var seconds_left = obj.wait;
-      Gossip.count_down(obj.wait, function (seconds) {
-         return 'Next question in ' + seconds + ' seconds';
+      $('#waiting .message').text("Waiting for an opponent");
+      waiting_message_interval = setInterval(function() {
+         var text = $('#waiting .message').text();
+         if (text.length > 100) {
+            text = text.replace(/\.{3,100}/, '...');
+         }
+         $('#waiting .message').text(text + '.');
+      }, 1000);
+
+      $('form#respond').submit(function() {
+         var answer = $.trim($('#answer').val());
+         if (!answer.length || Question.has_sent_answer()) {
+            return false;
+         }
+         Question.send_answer(answer);
+         return false;
       });
-      setTimeout(function() {
-         socket.send(obj.message);
-      }, obj.wait * 1000);
-   } else if (obj.winner) {
-      if (obj.winner.draw) {
-	 question_handler.finish(null, true);
-      } else {
-	 question_handler.finish(obj.winner.you_won);
+      $('#load-alternatives').click(function() {
+         $('#answer').attr('readonly','readonly').attr('disabled','disabled');
+         alternatives.load();
+      });
+   });
+
+
+
+   socket.on('message', function(obj){
+      __log_message(obj, false);
+      if (obj.question) {
+         clearInterval(waiting_message_interval);
+         Question.load_question(obj.question);
+      } else if (obj.wait && obj.message) {
+         var seconds_left = obj.wait;
+         Gossip.count_down(obj.wait, function (seconds) {
+            return 'Next question in ' + seconds + ' seconds';
+         });
+         setTimeout(function() {
+            send(obj.message);
+         }, obj.wait * 1000);
+      } else if (obj.winner) {
+         if (obj.winner.draw) {
+            Question.finish(null, true);
+         } else {
+            Question.finish(obj.winner.you_won);
+         }
+      } else if (obj.update_scoreboard) {
+         if (-1 == obj.update_scoreboard[1]) {
+            scoreboard.drop_score(obj.update_scoreboard[0]);
+         } else {
+            scoreboard.incr_score(obj.update_scoreboard[0], obj.update_scoreboard[1]);
+         }
+      } else if (obj.alternatives) {
+         alternatives.show(obj.alternatives);
+      } else if (obj.init_scoreboard) {
+         scoreboard.init_players(obj.init_scoreboard);
+         $('#scoreboard:hidden').show(500);
+      } else if (obj.stop) {
+         Question.stop(obj.stop);
+      } else if (obj.has_answered) {
+         Gossip.show(obj.has_answered + ' has answered but was wrong');
+      } else if (obj.answered) {
+         $('#timer').hide();
+         $('#input').hide();
+         if (obj.answered.right) {
+            Clock.stop();
+            Question.right_answer();
+         } else if (obj.answered.too_slow) {
+            Question.too_slow();
+         } else {
+            Clock.stop();
+            Question.wrong_answer();
+         }
+      } else if (obj.disconnected) {
+         scoreboard.drop_score(obj.disconnected);
+         Question.stop();
+      } else if (obj.error) {
+         Question.stop();
+         alert("Error!\n" + obj.error);
+      } else if (obj.your_name) {
+         // this is mainly for checking that all is working fine
+         $('#your_name strong').text(obj.your_name);
+         $('#your_name:hidden').show(500);
       }
-   } else if (obj.update_scoreboard) {
-      if (-1 == obj.update_scoreboard[1]) {
-	 scoreboard.drop_score(obj.update_scoreboard[0]);
-      } else {
-	 scoreboard.incr_score(obj.update_scoreboard[0], obj.update_scoreboard[1]);
-      }
-   } else if (obj.alternatives) {
-      alternatives.show(obj.alternatives);
-   } else if (obj.init_scoreboard) {
-      scoreboard.init_players(obj.init_scoreboard);
-      $('#scoreboard:hidden').show(500);
-   } else if (obj.stop) {
-      question_handler.stop(obj.stop);
-   } else if (obj.has_answered) {
-      Gossip.show(obj.has_answered + ' has answered but was wrong');
-   } else if (obj.answered) {
-      $('#timer').hide();
-      $('#input').hide();
-      if (obj.answered.right) {
-	 Clock.stop();
-	 question_handler.right_answer();
-      } else if (obj.answered.too_slow) {
-	 question_handler.too_slow();
-      } else {
-	 Clock.stop();
-	 question_handler.wrong_answer();
-      }
-   } else if (obj.disconnected) {
-      scoreboard.drop_score(obj.disconnected);
-      question_handler.stop();
-   } else if (obj.error) {
-      question_handler.stop();
-      alert("Error!\n" + obj.error);
-   } else if (obj.your_name) {
-      // this is mainly for checking that all is working fine
-      $('#your_name strong').text(obj.your_name);
-      $('#your_name:hidden').show(500);
-   }
+   });
+
 });

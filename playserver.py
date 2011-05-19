@@ -5,22 +5,16 @@ import tornado.options
 import logging
 import settings
 
-from apps.play.client_app import Client, application
 
+from tornado.options import define
 def main():
     tornado.options.parse_command_line()
-#    application = Application(
-#      database_name=options.database_name,
-#      debug=options.debug,
-#      enabled_protocols=['websocket',
-#                         'flashsocket',
-#                         'xhr-multipart',
-#                         'xhr-polling'
-#                         ],
-#      flash_policy_port=843,
-#      flash_policy_file=op.join(ROOT, 'flashpolicy.xml'),
-#      socket_io_port=options.port,
-#    )
+
+    define("debug", default=False, help="run in debug mode", type=bool)
+    define("database_name", default=settings.DATABASE_NAME, help="mongodb database name")
+    define("port", default=8888, help="run on the given port", type=int)
+    from apps.play.client_app import Client, application
+
     logging.getLogger().setLevel(logging.DEBUG)
     try:
         tornadio.server.SocketServer(application)

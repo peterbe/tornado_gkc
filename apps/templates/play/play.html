@@ -26,20 +26,31 @@
     </div>
 
     <div id="you_won" class="finish" style="display:none">
-      <h2>You won!</h2>
+      <h1>You won!</h1>
+      <p>
+        Well done! But can you repeat it?<br>
+        <a href="{{ reverse_url('start_play') }}">Play again</a>
+      </p>
+
     </div>
 
     <div id="you_lost" class="finish" style="display:none">
-      <h3>You lost :(</h3>
+      <h2>You lost :(</h2>
+      <p>
+        <a href="{{ reverse_url('start_play') }}">Play again</a> Good luck next time!
+      </p>
     </div>
 
     <div id="you_drew" class="finish" style="display:none">
-      <h3>You drew</h3>
+      <h2>You drew</h2>
+      <p>
+        <a href="{{ reverse_url('start_play') }}">Play again</a> Good luck next time!
+      </p>
     </div>
 
     <div id="waiting">
       <p><img src="{{ static_url("images/loading.gif") }}" alt="Waiting..."></p>
-      <p class="message">Conneting</p>
+      <p class="message">Connecting</p>
     </div>
 
     <p id="gossip">
@@ -66,7 +77,8 @@
     </div>
 </div>
 
-<script src="http://cdn.socket.io/stable/socket.io.js"></script>
+<!--<script src="http://cdn.socket.io/stable/socket.io.js"></script>-->
+{{ modules.Static("js/ext/socket.io-0.6.3-debug.js") }}
 <script>
 var IMAGES = {
   WRONG: '{{ static_url('images/wrong.png') }}'
@@ -74,16 +86,18 @@ var IMAGES = {
 , HOURGLASS: '{{ static_url('images/hourglass.png') }}'
 };
 var CONFIG = {{ config_json }};
-WEB_SOCKET_DEBUG = false;
+//WEB_SOCKET_DEBUG = false;
+WEB_SOCKET_DEBUG=1;
 // it's important this appears *after* loading socket.io.js
-WEB_SOCKET_SWF_LOCATION = 'http://cdn.socket.io/stable/WebSocketMain.swf';
+//WEB_SOCKET_SWF_LOCATION = 'http://cdn.socket.io/stable/WebSocketMain.swf';
+WEB_SOCKET_SWF_LOCATION = '{{ static_url("js/ext/WebSocketMain.swf") }}';
 </script>
 {{ modules.Static("js/ext/jquery-1.6.1.min.js", "js/scoreboard.js", "js/rumbler.js", "js/play.js") }}
 <script>
 $(function () {
    if (CONFIG.DEBUG) {
       $('#log').show();
-      //WEB_SOCKET_DEBUG = true;
+      WEB_SOCKET_DEBUG = true;
     }
 });
 </script>
