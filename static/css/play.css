@@ -1,7 +1,7 @@
 #body { padding:15px; }
 #log { height: 200px; overflow: auto; width: 750px; border: 1px solid #eee; font: 11px Helvetica, Arial; }
 #log p { padding: 4px; margin: 0; }
-#log p.outbound { text-align:right; }
+#log p.inbound { text-align:right; }
 /*#log p:nth-child(odd) { }*/
 li.past span { text-decoration:line-through; }
 .disconnected { text-decoration:line-through; }

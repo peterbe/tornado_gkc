@@ -27,15 +27,17 @@ function esc(msg){
 var Clock = (function () {
    var _clock
      , _callback
-     , _init_seconds;
+     , _init_seconds
+     , _thinking_time;
    return {
       stop: function () {
 	 clearTimeout(_clock);
       },
-      start: function (seconds, callback) {
+      start: function (callback) {
+         if (_thinking_time === null) throw "Thinking time not set";
 	 Rumbler.stop();
-	 _init_seconds = seconds;
-	 Clock.tick(seconds);
+	 _init_seconds = _thinking_time;
+	 Clock.tick(_thinking_time);
 	 _callback = callback;
       },
       tick: function (seconds) {
@@ -51,7 +53,7 @@ var Clock = (function () {
 	    if (p < 30) {
 	       rumbleSpeed = 1 * p;
 	       var range;
-	       if      (p < 1) range = 6;
+	       if      (p < 1) range = 8;
 	       else if (p < 5) range = 4;
 	       else if (p < 10) range = 3;
 	       else    range = 2;
@@ -60,6 +62,12 @@ var Clock = (function () {
 	 } else {
 	    _callback();
 	 }
+      },
+      get_thinking_time: function() {
+         return _thinking_time;
+      },
+      set_thinking_time: function(t) {
+         _thinking_time = t;
       }
    }
 })();
@@ -99,7 +107,7 @@ var Question = (function() {
 	 $('#alternatives').fadeTo(0, 1.0);
 	 $('#alert:visible').hide(400);
 	 Clock.stop();
-	 Clock.start(15, this.timed_out);
+	 Clock.start(this.timed_out);
 	 $('#answer').focus();
 
 	 // check if an image was loaded to the previous question
@@ -130,12 +138,12 @@ var Question = (function() {
 	 draw = draw || false;
 	 $('#question li.current').removeClass('current').addClass('past');
 	 if (draw) {
-            // nothing here yet
+            $('#you_drew').fadeIn(400);
 	 } else {
 	    if (you_won) {
-               // nothing here yet
+               $('#you_won').fadeIn(400);
 	    } else {
-               // nothing here yet
+               $('#you_lost').fadeIn(400);
 	    }
 	 }
       },
@@ -237,7 +245,7 @@ function __log_message(msg, inbound) {
    } else {
       line += msg;
    }
-   el.innerHTML = line;
+   el.html(line);
 
    //document.getElementById('log').appendChild(el);
    el.appendTo('#log');
@@ -309,8 +317,6 @@ $(function() {
       });
    });
 
-
-
    socket.on('message', function(obj){
       __log_message(obj, false);
       if (obj.question) {
@@ -338,9 +344,6 @@ $(function() {
          }
       } else if (obj.alternatives) {
          alternatives.show(obj.alternatives);
-      } else if (obj.init_scoreboard) {
-         scoreboard.init_players(obj.init_scoreboard);
-         $('#scoreboard:hidden').show(500);
       } else if (obj.stop) {
          Question.stop(obj.stop);
       } else if (obj.has_answered) {
@@ -367,6 +370,15 @@ $(function() {
          // this is mainly for checking that all is working fine
          $('#your_name strong').text(obj.your_name);
          $('#your_name:hidden').show(500);
+      }
+
+      // things that might be included with any other message
+      if (obj.thinking_time) {
+         Clock.set_thinking_time(obj.thinking_time);
+      }
+      if (obj.init_scoreboard) {
+         scoreboard.init_players(obj.init_scoreboard);
+         $('#scoreboard:hidden').show(500);
       }
    });
 

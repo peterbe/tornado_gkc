@@ -200,6 +200,8 @@ class ClientTestCase(BaseTestCase):
 
         # client2 sends an answer and gets it wrong
         client2.on_message(dict(answer='WRONG'))
+
+
         self.assertTrue(client._sent[-1]['has_answered'])
         self.assertTrue(client2._sent[-1]['answered'])
         self.assertTrue(not client2._sent[-1]['answered']['right'])
@@ -379,6 +381,29 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-2]['update_scoreboard'])
         self.assertTrue(client2._sent[-2]['update_scoreboard'])
 
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
+    def test_timed_out_after_wrong_answer(self):
+        """if one client sends the correct answer, that will close the current
+        question and send both of them a wait delay.
+        If the second client ignores that and sends a timed_out that should
+        then be ignored in favor of the new question"""
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 3
+        self._create_question()
+        self._create_question()
+        self._create_question()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+
+        client.on_message(dict(answer='WRONG'))
+        battle.current_question_sent -= battle.thinking_time # fake time
+        client2.on_message(dict(timed_out=1))
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
 

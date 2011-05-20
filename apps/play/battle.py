@@ -114,6 +114,10 @@ class Battle(object):
         assert self.current_question_sent
         return time.time() < (self.current_question_sent + self.thinking_time)
 
+    def has_everyone_answered_or_timed_out(self):
+        return (len(self.attempted) + len(self.timed_out)
+          == len(self.participants))
+
     ## Answered
 
     def has_everyone_answered(self):

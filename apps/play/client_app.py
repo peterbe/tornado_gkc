@@ -63,8 +63,6 @@ class Client(tornadio.SocketConnection):
             self.send({'debug': "Your name is %s" % self.user_name})
             self._initiate()
 
-
-
     def _initiate(self):
         """called when the client has connected successfully"""
         print "\tInitiate", repr(self)
@@ -85,7 +83,8 @@ class Client(tornadio.SocketConnection):
         self.current_client_battles[self.user_id] = battle
         if battle.ready_to_play():
             battle.send_to_all({
-              'init_scoreboard': [x.user_name for x in battle.participants]
+              'init_scoreboard': [x.user_name for x in battle.participants],
+              'thinking_time': battle.thinking_time,
             })
             battle.send_wait(3, dict(next_question=True))
 
@@ -131,6 +130,7 @@ class Client(tornadio.SocketConnection):
                 battle.send_to_everyone_else(self,
                   {'has_answered': self.user_name}
                 )
+
                 if battle.has_everyone_answered():
                     battle.close_current_question()
                     battle.send_to_all({'answered':{'both_wrong': True}})
@@ -146,7 +146,8 @@ class Client(tornadio.SocketConnection):
         elif message.get('timed_out'):
             print "Timed out!", repr(self)
             if not battle.current_question:
-                # most likely
+                # happens if the timed_out is sent even though someone has
+                # already answered correctly
                 assert battle.is_waiting()
                 return
             if battle.timed_out_too_soon():
@@ -160,7 +161,7 @@ class Client(tornadio.SocketConnection):
             battle.remember_timed_out(self)
             print "battle.timed_out"
             print battle.timed_out
-            if battle.has_all_timed_out():
+            if battle.has_everyone_answered_or_timed_out():
                 print "\tALL HAVE TIMED OUT"
                 #print battle.timed_out
                 #print battle.participants
@@ -258,6 +259,7 @@ class Application(tornado.web.Application):
 
 HERE = op.normpath(op.dirname(__file__))
 from tornado.options import options
+print "options.start_flashpolicy", options.start_flashpolicy
 application = Application(
       database_name=options.database_name,
       debug=options.debug,
@@ -266,7 +268,8 @@ application = Application(
                          'xhr-multipart',
                          'xhr-polling'
                          ],
-      flash_policy_port=843,
-      flash_policy_file=op.join(HERE, 'flashpolicy.xml'),
+      flash_policy_port=options.start_flashpolicy and 843 or None,
+      flash_policy_file=(options.start_flashpolicy and
+                         op.join(HERE, 'flashpolicy.xml') or None),
       socket_io_port=options.port,
     )
