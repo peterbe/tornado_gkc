@@ -31,3 +31,4 @@ facebook_consumer_secret
 NAMES.txt
 deployment/
 scripts/backups/
+flashpolicyd/flashpolicy.xml
