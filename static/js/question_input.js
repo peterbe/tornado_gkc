@@ -3,7 +3,8 @@
 
 var Form = (function() {
    function shuffle(o) { //v1.0
-      for(var j, x, i = o.length; i; j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+      for (var j, x, i = o.length; i;
+	   j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
       return o;
    };
 
@@ -34,7 +35,7 @@ var Form = (function() {
          }
       },
       add_shuffler: function() {
-         $('<a>', {href:'#', text:'shuffle!'})
+         $('<a>', {href: '#', text: 'shuffle!'})
            .addClass('shuffler')
 	     .addClass('bold')
              .click(function() {
@@ -46,12 +47,12 @@ var Form = (function() {
              })
                .insertAfter($('input[name="alternatives"]').eq(-1));
       }
-   }
+   };
 })();
 
 var GENRE_NAMES;
 head.js(JS_URLS.jquery_autocomplete, function() {
-   $.getJSON('/questions/genre_names.json', {separate_popular:true}, function(r) {
+   $.getJSON('/questions/genre_names.json', {separate_popular: true}, function(r) {
       var preval = $('#genre').val(), preval_element;
       $('#genre').hide();
       var container = $('#genre').parents('p.field');
@@ -67,9 +68,9 @@ head.js(JS_URLS.jquery_autocomplete, function() {
             preval_element = $('#g_' + i);
          }
          $('<label>',
-           {title:e[0] + ' questions',
-            text:e[1],
-            'for':'g_' + i})
+           {title: e[0] + ' questions',
+            text: e[1],
+            'for': 'g_' + i})
            .addClass('genre')
            .appendTo(container);
       });
@@ -81,22 +82,22 @@ head.js(JS_URLS.jquery_autocomplete, function() {
                $('#id_other_genre').fadeTo(300, 1);
             })
           .appendTo(container);
-      $('<label>', {text:'Other:', 'for':'g_other'})
+      $('<label>', {text: 'Other:', 'for': 'g_other'})
         .addClass('genre')
         .appendTo(container);
       $('<input type="text" name="other_genre" id="id_other_genre">')
         .autocomplete(r.all_names)
           .bind('focus', function() {
-             $('input[value="other"]').attr('checked','checked');
+             $('input[value="other"]').attr('checked', 'checked');
              $('#id_other_genre').fadeTo(300, 1);
           })
         .appendTo(container);
 
       if (preval_element) {
-         preval_element.attr('checked','checked');
+         preval_element.attr('checked', 'checked');
       } else if (preval) {
          $('#id_other_genre').val(preval);
-         $('#g_other').attr('checked','checked');
+         $('#g_other').attr('checked', 'checked');
       }
       //$('input[name="genre"]').autocomplete(r.names);
    });
@@ -122,7 +123,7 @@ head.ready(function() {
       var copy = [];
       case_insensitive = case_insensitive === undefined ? false : true;
       var item;
-      for (var i=0, j=seq.length; i<j; i++) {
+      for (var i = 0, j = seq.length; i < j; i++) {
          item = seq[i];
          if (case_insensitive && typeof(item) == 'string')
            item = item.toLowerCase();
@@ -138,12 +139,12 @@ head.ready(function() {
    $('form[method="post"]', '#content_inner').submit(function() {
       var text = $('input[name="text"]').val();
       if (!$.trim(text)) {
-         alert("Please enter the question");
+         alert('Please enter the question');
          return false;
       }
       var answer = $('input[name="answer"]').val();
       if (!$.trim(answer)) {
-         alert("Please enter the answer");
+         alert('Please enter the answer');
          return false;
       }
       var alternatives = [];
@@ -154,16 +155,16 @@ head.ready(function() {
       });
       if (alternatives.length >= 4) {
          if (-1 == alternatives.indexOf(answer)) {
-            alert("One of the alternatives must be the answer");
+            alert('One of the alternatives must be the answer');
             return false;
          }
 
       } else {
-         alert("Please fill in 4 alternatives");
+         alert('Please fill in 4 alternatives');
          return false;
       }
       if (uniqify(alternatives, true).length < 4) {
-         alert("Please enter 4 *different* alternatives");
+         alert('Please enter 4 *different* alternatives');
          return false;
       }
 
@@ -191,7 +192,7 @@ head.ready(function() {
    });
 
 
-   
+
 
    // on the Edit question page
    //$('input[name="submit_question"]').click(function() {
