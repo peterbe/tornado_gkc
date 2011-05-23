@@ -3,7 +3,7 @@ var L = function() {
      console.log.apply(console, arguments);
 };
 
-function message(obj){
+function message(obj) {
    var el = document.createElement('p');
    if ('announcement' in obj) el.innerHTML = '<em>' + esc(obj.announcement) + '</em>';
    else if ('message' in obj) el.innerHTML = '<b>' + esc(obj.message[0]) + ':</b> ' + esc(obj.message[1]);
@@ -11,7 +11,7 @@ function message(obj){
    document.getElementById('chat').scrollTop = 1000000;
 }
 
-function send(msg){
+function send(msg) {
    __log_message(msg, true);
    socket.send(msg);
    //var val = document.getElementById('text').value;
@@ -20,27 +20,27 @@ function send(msg){
    //document.getElementById('text').value = '';
 }
 
-function esc(msg){
+function esc(msg) {
    return msg.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-};
+}
 
-var Clock = (function () {
+var Clock = (function() {
    var _clock
-     , _callback
-     , _init_seconds
-     , _thinking_time;
+, _callback
+, _init_seconds
+, _thinking_time;
    return {
-      stop: function () {
+      stop: function() {
 	 clearTimeout(_clock);
       },
-      start: function (callback) {
-         if (_thinking_time === null) throw "Thinking time not set";
+      start: function(callback) {
+         if (_thinking_time === null) throw 'Thinking time not set';
 	 Rumbler.stop();
 	 _init_seconds = _thinking_time;
 	 Clock.tick(_thinking_time);
 	 _callback = callback;
       },
-      tick: function (seconds) {
+      tick: function(seconds) {
 	 $('#timer').text(seconds);
 	 if (seconds > 0) {
 	    _clock = setTimeout(function() {
@@ -53,11 +53,11 @@ var Clock = (function () {
 	    if (p < 30) {
 	       rumbleSpeed = 1 * p;
 	       var range;
-	       if      (p < 1) range = 8;
+	       if (p < 1) range = 8;
 	       else if (p < 5) range = 4;
 	       else if (p < 10) range = 3;
-	       else    range = 2;
-	       Rumbler.start($('#timer'), rumbleSpeed, range)
+	       else range = 2;
+	       Rumbler.start($('#timer'), rumbleSpeed, range);
 	    }
 	 } else {
 	    _callback();
@@ -69,15 +69,15 @@ var Clock = (function () {
       set_thinking_time: function(t) {
          _thinking_time = t;
       }
-   }
+   };
 })();
 
 
 var Question = (function() {
    var _current_question
-     , _initialized = false
-     , _timer_callback
-     , _has_answered = false;
+, _initialized = false
+, _timer_callback
+, _has_answered = false;
 
    return {
       initialize: function() {
@@ -115,22 +115,22 @@ var Question = (function() {
 	    $('li.past').eq(-1)
 	      .append($('<img>', {
                  src: IMAGES.HOURGLASS,
-		alt:'Timed out'
+		alt: 'Timed out'
 	      }));
 	 }
       },
       timed_out: function() {
 	 $('#question li.current').addClass('past');
 	 $('#answer').removeAttr('readonly');
-	 var msg = "Both too slow";
+	 var msg = 'Both too slow';
 	 $('li.current')
 	   .append($('<img>', {src: IMAGES.HOURGLASS,
-		alt:msg
+		alt: msg
 	   }));
 	 $('#input').hide();
 	 //$('#alert').text(msg).show(100);
 	 $('#timer').hide();
-	 send({timed_out:true});
+	 send({timed_out: true});
       },
       finish: function(you_won, draw) {
 	 $('#input').hide();
@@ -185,30 +185,30 @@ var Question = (function() {
       },
       send_answer: function(answer) {
          if (_has_answered) {
-            alert("You have already answered this question");
+            alert('You have already answered this question');
          } else {
             Clock.stop();
-            $('#answer').attr('readonly','readonly').attr('disabled','disabled');
-            send({answer:answer});
+            $('#answer').attr('readonly', 'readonly').attr('disabled', 'disabled');
+            send({answer: answer});
             _has_answered = true;
          }
       },
       has_sent_answer: function() {
 	 return _has_answered;
       }
-   }
+   };
 })();
 
 var alternatives = (function() {
    return {
       load: function() {
 	 $('#load-alternatives').hide();
-	 send({alternatives:true});
+	 send({alternatives: true});
       },
       show: function(alts) {
 	 var container = $('#alternatives');
 	 for (var i in alts) {
-	    container.append($('<input>', {name:'alternative', type:'button', value:alts[i]})
+	    container.append($('<input>', {name: 'alternative', type: 'button', value: alts[i]})
 			     .addClass('alternative')
 			     .click(function() {
 				alternatives.answer(this.value);
@@ -218,14 +218,14 @@ var alternatives = (function() {
 	 $('#typed:visible').hide();
       },
       answer: function(ans) {
-	 send({answer:ans});
+	 send({answer: ans});
 	 $('#alternatives input.alternative')
-	   .attr('readonly','readonly')
-	     .attr('disable','disable')
+	   .attr('readonly', 'readonly')
+	     .attr('disable', 'disable')
 	       .unbind('click');
 	 $('#alternatives').fadeTo(300, 0.4);
       }
-   }
+   };
 })();
 
 function __log_message(msg, inbound) {
@@ -259,12 +259,12 @@ var Gossip = (function() {
          $('#gossip').text(msg).show();
          timer = setTimeout(function() {
             $('#gossip:visible').fadeOut(400);
-         }, 3*1000);
+         }, 3 * 1000);
       },
       clear: function() {
          $('#gossip').text('').hide();
       },
-      count_down: function (seconds, message_maker) {
+      count_down: function(seconds, message_maker) {
          Gossip.show(message_maker(seconds));
          seconds--;
          if (seconds > 0) {
@@ -273,7 +273,7 @@ var Gossip = (function() {
             }, 1000);
          }
       }
-   }
+   };
 })();
 
 
@@ -294,7 +294,7 @@ $(function() {
 
    socket.on('connect', function() {
       clearInterval(waiting_message_interval);
-      $('#waiting .message').text("Waiting for an opponent");
+      $('#waiting .message').text('Waiting for an opponent');
       waiting_message_interval = setInterval(function() {
          var text = $('#waiting .message').text();
          if (text.length > 100) {
@@ -312,19 +312,19 @@ $(function() {
          return false;
       });
       $('#load-alternatives').click(function() {
-         $('#answer').attr('readonly','readonly').attr('disabled','disabled');
+         $('#answer').attr('readonly', 'readonly').attr('disabled', 'disabled');
          alternatives.load();
       });
    });
 
-   socket.on('message', function(obj){
+   socket.on('message', function(obj) {
       __log_message(obj, false);
       if (obj.question) {
          clearInterval(waiting_message_interval);
          Question.load_question(obj.question);
       } else if (obj.wait && obj.message) {
          var seconds_left = obj.wait;
-         Gossip.count_down(obj.wait, function (seconds) {
+         Gossip.count_down(obj.wait, function(seconds) {
             return 'Next question in ' + seconds + ' seconds';
          });
          setTimeout(function() {
@@ -365,7 +365,7 @@ $(function() {
          Question.stop();
       } else if (obj.error) {
          Question.stop();
-         alert("Error!\n" + obj.error);
+         alert('Error!\n' + obj.error);
       } else if (obj.your_name) {
          // this is mainly for checking that all is working fine
          $('#your_name strong').text(obj.your_name);

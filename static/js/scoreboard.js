@@ -1,6 +1,6 @@
 var scoreboard = (function() {
    var _player_names
-     , _ids = {}
+, _ids = {}
      , _scores = {};
 
    function _init_table() {
@@ -8,7 +8,7 @@ var scoreboard = (function() {
    }
 
    function _init_row(name) {
-      var container = $('<tr>')
+      var container = $('<tr>');
       var name = $('<td>', {text: name})
         .addClass('player_name')
           .appendTo(container);
@@ -22,7 +22,7 @@ var scoreboard = (function() {
    function _display(id, name, score) {
       $('#scoreboard').html('');
       var name, score, increment, player_name
-        , container, table = $('<table>');
+, container, table = $('<table>');
       for (var i in _player_names) {
          container = $('<tr>');
          player_name = _player_names[i];
@@ -32,13 +32,13 @@ var scoreboard = (function() {
              .appendTo(container);
          if (increment || score >= 0) {
             var cell = $('<td>')
-              .addClass(increment == player_name ? 'increment': 'score')
+              .addClass(increment == player_name ? 'increment' : 'score')
                 .text(score)
                   .appendTo(container);
 	 } else {
             var cell = $('<td>')
               .addClass('disconnected')
-                .text("Disconnected")
+                .text('Disconnected')
                   .appendTo(container);
 	    name.addClass('disconnected');
 	 }
@@ -89,5 +89,5 @@ var scoreboard = (function() {
             });
          }, 1000);
       }
-   }
+   };
 })();
