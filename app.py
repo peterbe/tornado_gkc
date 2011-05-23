@@ -132,8 +132,12 @@ for app_name in settings.APPS:
 def main(): # pragma: no cover
     tornado.options.parse_command_line()
     if options.showurls:
-        for path, class_ in route.get_routes():
-            print path
+        for each in route.get_routes():
+            path = each[0]
+            if len(each) == 3 and 'url' in each[2]:
+                print path, '-->', each[2]['url']
+            else:
+                print path
         return
 
     http_server = tornado.httpserver.HTTPServer(Application())

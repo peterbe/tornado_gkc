@@ -42,7 +42,7 @@ class Client(tornadio.SocketConnection):
         return application.settings
 
     def on_open(self, request, **kwargs):
-        print "Opening", repr(self)
+        #print "Opening", repr(self)
         self.send({'debug': "Connected!"});
         if not hasattr(request, 'headers'):
             self.send({'error': 'Unable to find login information. Try reloading'})
@@ -65,7 +65,7 @@ class Client(tornadio.SocketConnection):
 
     def _initiate(self):
         """called when the client has connected successfully"""
-        print "\tInitiate", repr(self)
+        #print "\tInitiate", repr(self)
         self.send(dict(your_name=self.user_name))
         battle = None
         for created_battle in self.battles:
@@ -89,11 +89,7 @@ class Client(tornadio.SocketConnection):
             battle.send_wait(3, dict(next_question=True))
 
     def on_message(self, message):
-        #print "MESSAGE",
-        #print repr(message)
-        #print
         if not hasattr(self, 'user_id'):
-            print "DUFF client"
             return
         try:
             battle = self.current_client_battles[self.user_id]
@@ -116,8 +112,13 @@ class Client(tornadio.SocketConnection):
                 if battle.has_loaded_alternatives(self):
                     points = 1
                 self.send({'answered': {'right': True}})
-                battle.send_to_everyone_else(self,
-                                             {'answered': {'too_slow': True}})
+                for participant in battle.participants:
+                    if participant is self:
+                        continue
+                    if battle.has_answered(participant):
+                        participant.send({'answered': {'beaten': True}})
+                    else:
+                        participant.send({'answered': {'too_slow': True}})
                 battle.increment_score(self, points)
                 battle.close_current_question()
                 if battle.has_more_questions():
@@ -144,7 +145,6 @@ class Client(tornadio.SocketConnection):
             if not battle.has_loaded_alternatives(self):
                 battle.send_alternatives(self)
         elif message.get('timed_out'):
-            print "Timed out!", repr(self)
             if not battle.current_question:
                 # happens if the timed_out is sent even though someone has
                 # already answered correctly
@@ -159,21 +159,14 @@ class Client(tornadio.SocketConnection):
                 return
 
             battle.remember_timed_out(self)
-            print "battle.timed_out"
-            print battle.timed_out
             if battle.has_everyone_answered_or_timed_out():
-                print "\tALL HAVE TIMED OUT"
                 #print battle.timed_out
                 #print battle.participants
-                print "\n"
                 for participant in battle.participants:
                     if not battle.has_answered(participant):
                         participant.send({'answered': {'too_slow': True}})
-                print "\t\tCLOSING CURRENT QUESTION"
                 battle.close_current_question()
-                print "\t\tHas more?", battle.has_more_questions()
                 if battle.has_more_questions():
-                    print "\t\t\tSending a wait"
                     battle.send_wait(3, dict(next_question=True))
                 else:
                     print "\t\t\tConcluding!"
@@ -183,7 +176,6 @@ class Client(tornadio.SocketConnection):
 
         elif message.get('next_question'):
             # this is going to be hit twice, within nanoseconds of each other.
-            #print (battle.min_wait_delay, time.time())
             if battle.min_wait_delay > time.time():
                 self.send({'error': 'Too soon'})
                 return
@@ -229,9 +221,7 @@ class Client(tornadio.SocketConnection):
         if getattr(self, 'user_id', None) and getattr(self, 'user_name', None):
             try:
                 battle = self.current_client_battles[self.user_id]
-                print "found battle"
             except KeyError:
-                print "cound't find battle"
                 logging.debug('%r not in any battle' % self.user_id)
                 return
 
@@ -259,7 +249,6 @@ class Application(tornado.web.Application):
 
 HERE = op.normpath(op.dirname(__file__))
 from tornado.options import options
-print "options.start_flashpolicy", options.start_flashpolicy
 application = Application(
       database_name=options.database_name,
       debug=options.debug,

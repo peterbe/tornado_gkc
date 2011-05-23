@@ -214,7 +214,7 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-3]['answered']['right'])
 
         self.assertTrue(client2._sent[-3]['answered'])
-        self.assertTrue(client2._sent[-3]['answered']['too_slow'])
+        self.assertTrue(client2._sent[-3]['answered']['beaten'])
 
         self.assertTrue(client._sent[-2]['update_scoreboard'])
         self.assertTrue(client2._sent[-2]['update_scoreboard'])
@@ -229,7 +229,6 @@ class ClientTestCase(BaseTestCase):
 
         client2.on_message(dict(alternatives=1))
 
-        #print client._sent[-1]
         self.assertTrue(client2._sent[-1]['alternatives'])
         self.assertEqual(client2._sent[-1]['alternatives'],
                          question.alternatives)
@@ -407,6 +406,37 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
 
+    def test_first_wrong_second_right(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 3
+        self._create_question()
+        self._create_question()
+        self._create_question()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+
+        client.on_message(dict(answer='WRONG'))
+        self.assertTrue(client._sent[-1]['answered'])
+        self.assertTrue(not client._sent[-1]['answered']['right'])
+        self.assertTrue(client2._sent[-1]['has_answered'])
+
+        client2.on_message(dict(answer='Yes'))
+
+        self.assertTrue(client._sent[-3]['answered']['beaten'])
+        self.assertTrue(client2._sent[-3]['answered']['right'])
+
+        self.assertTrue(client._sent[-2]['update_scoreboard'])
+        self.assertTrue(client2._sent[-2]['update_scoreboard'])
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
+        print client._sent[-3]
+        print client2._sent[-3]
+        print
         print client._sent[-2]
         print client2._sent[-2]
         print

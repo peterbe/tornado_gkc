@@ -26,6 +26,7 @@ function esc(msg) {
 
 var Clock = (function() {
    var _clock
+, _seconds_left
 , _callback
 , _init_seconds
 , _thinking_time;
@@ -41,6 +42,7 @@ var Clock = (function() {
 	 _callback = callback;
       },
       tick: function(seconds) {
+         _seconds_left = seconds;
 	 $('#timer').text(seconds);
 	 if (seconds > 0) {
 	    _clock = setTimeout(function() {
@@ -68,6 +70,9 @@ var Clock = (function() {
       },
       set_thinking_time: function(t) {
          _thinking_time = t;
+      },
+      get_seconds_left: function() {
+         return _seconds_left;
       }
    };
 })();
@@ -105,7 +110,8 @@ var Question = (function() {
 				).addClass('current')
 			      .append($('<span>', {text: question.text})));
 	 $('#alternatives').fadeTo(0, 1.0);
-	 $('#alert:visible').hide(400);
+	 $('#alert').hide();
+	 $('#gossip').hide();
 	 Clock.stop();
 	 Clock.start(this.timed_out);
 	 $('#answer').focus();
@@ -128,11 +134,12 @@ var Question = (function() {
 		alt: msg
 	   }));
 	 $('#input').hide();
-	 //$('#alert').text(msg).show(100);
 	 $('#timer').hide();
 	 send({timed_out: true});
       },
       finish: function(you_won, draw) {
+         $('#alert').hide();
+         $('#gossip').hide();
 	 $('#input').hide();
 	 Question.stop();
 	 draw = draw || false;
@@ -173,6 +180,12 @@ var Question = (function() {
 		alt: msg
 	   }));
 	 $('#alert').text(msg).show(100);
+         var left = Clock.get_seconds_left();
+         if ((left - 1) > 0) {
+            Gossip.count_down(left - 1, function (s) {
+               return 'Opponent has ' + (s + 1) + ' seconds left. Be patient!';
+            });
+         }
       },
       too_slow: function() {
 	 var msg = 'Sorry. You were too slow';
@@ -255,17 +268,24 @@ function __log_message(msg, inbound) {
 var Gossip = (function() {
    var timer;
    return {
-      show: function(msg) {
+      show: function(msg, delay) {
          $('#gossip').text(msg).show();
-         timer = setTimeout(function() {
-            $('#gossip:visible').fadeOut(400);
-         }, 3 * 1000);
+         if (delay) {
+            timer = setTimeout(function() {
+               $('#gossip:visible').fadeOut(400);
+            }, delay * 1000);
+         }
       },
       clear: function() {
          $('#gossip').text('').hide();
       },
       count_down: function(seconds, message_maker) {
-         Gossip.show(message_maker(seconds));
+         if (seconds == 1) {
+            Gossip.show(message_maker(seconds), 1);
+         } else {
+            Gossip.show(message_maker(seconds));
+         }
+
          seconds--;
          if (seconds > 0) {
             setTimeout(function() {
@@ -356,6 +376,8 @@ $(function() {
             Question.right_answer();
          } else if (obj.answered.too_slow) {
             Question.too_slow();
+         } else if (obj.answered.beaten) {
+            Question.beaten();
          } else {
             Clock.stop();
             Question.wrong_answer();

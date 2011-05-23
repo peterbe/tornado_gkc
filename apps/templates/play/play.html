@@ -29,7 +29,7 @@
       <h1>You won!</h1>
       <p>
         Well done! But can you repeat it?<br>
-        <a href="{{ reverse_url('start_play') }}">Play again</a>
+        <a href="{{ reverse_url('start_play') }}" target="_top">Play again</a>
       </p>
 
     </div>
@@ -37,14 +37,14 @@
     <div id="you_lost" class="finish" style="display:none">
       <h2>You lost :(</h2>
       <p>
-        <a href="{{ reverse_url('start_play') }}">Play again</a> Good luck next time!
+        <a href="{{ reverse_url('start_play') }}" target="_top">Play again</a> Good luck next time!
       </p>
     </div>
 
     <div id="you_drew" class="finish" style="display:none">
       <h2>You drew</h2>
       <p>
-        <a href="{{ reverse_url('start_play') }}">Play again</a> Good luck next time!
+        <a href="{{ reverse_url('start_play') }}" target="_top">Play again</a> Good luck next time!
       </p>
     </div>
 
@@ -86,13 +86,14 @@ var IMAGES = {
 , HOURGLASS: '{{ static_url('images/hourglass.png') }}'
 };
 var CONFIG = {{ config_json }};
-//WEB_SOCKET_DEBUG = false;
-WEB_SOCKET_DEBUG=1;
+WEB_SOCKET_DEBUG = false;
+//WEB_SOCKET_DEBUG=1;
 // it's important this appears *after* loading socket.io.js
 //WEB_SOCKET_SWF_LOCATION = 'http://cdn.socket.io/stable/WebSocketMain.swf';
 WEB_SOCKET_SWF_LOCATION = '{{ static_url("js/ext/WebSocketMain.swf") }}';
 </script>
-{{ modules.Static("js/ext/jquery-1.6.1.min.js", "js/scoreboard.js", "js/rumbler.js", "js/play.js") }}
+{{ modules.Static("js/ext/jquery-1.6.1.min.js") }}
+{{ modules.Static("js/scoreboard.js", "js/rumbler.js", "js/play.js") }}
 <script>
 $(function () {
    if (CONFIG.DEBUG) {
