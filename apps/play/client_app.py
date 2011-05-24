@@ -87,6 +87,7 @@ class Client(tornadio.SocketConnection):
               'thinking_time': battle.thinking_time,
             })
             battle.send_wait(3, dict(next_question=True))
+            battle.save_play(self.db, started=True)
 
     def on_message(self, message):
         if not hasattr(self, 'user_id'):
@@ -106,7 +107,7 @@ class Client(tornadio.SocketConnection):
                 self.send({'error': 'You have already answered this question'})
                 return
             battle.remember_answered(self)
-            if battle.check_answer(message.get('answer')):
+            if battle.check_answer(message['answer']):
                 # client got it right!!
                 points = 3
                 if battle.has_loaded_alternatives(self):
@@ -120,17 +121,25 @@ class Client(tornadio.SocketConnection):
                     else:
                         participant.send({'answered': {'too_slow': True}})
                 battle.increment_score(self, points)
+                battle.save_played_question(self.db, self,
+                                            answer=message['answer'],
+                                            right=True)
                 battle.close_current_question()
                 if battle.has_more_questions():
                     battle.send_wait(3, dict(next_question=True))
                 else:
                     battle.conclude()
+                    battle.save_play(self.db, finished=True)
+
             else:
                 # you suck!
                 self.send({'answered': {'right': False}})
                 battle.send_to_everyone_else(self,
                   {'has_answered': self.user_name}
                 )
+                battle.save_played_question(self.db, self,
+                                            answer=message['answer'],
+                                            right=False)
 
                 if battle.has_everyone_answered():
                     battle.close_current_question()
@@ -139,11 +148,15 @@ class Client(tornadio.SocketConnection):
                         battle.send_wait(3, dict(next_question=True))
                     else:
                         battle.conclude()
+                        battle.save_play(self.db, finished=True)
+
 
         elif message.get('alternatives'):
             assert battle.current_question
             if not battle.has_loaded_alternatives(self):
                 battle.send_alternatives(self)
+                battle.save_played_question(self.db, self, alternatives=True)
+
         elif message.get('timed_out'):
             if not battle.current_question:
                 # happens if the timed_out is sent even though someone has
@@ -159,6 +172,7 @@ class Client(tornadio.SocketConnection):
                 return
 
             battle.remember_timed_out(self)
+            battle.save_played_question(self.db, self, timed_out=True)
             if battle.has_everyone_answered_or_timed_out():
                 #print battle.timed_out
                 #print battle.participants
@@ -169,10 +183,9 @@ class Client(tornadio.SocketConnection):
                 if battle.has_more_questions():
                     battle.send_wait(3, dict(next_question=True))
                 else:
-                    print "\t\t\tConcluding!"
                     battle.conclude()
-            else:
-                print "\tStill waiting for more to time out"
+                    battle.save_play(self.db, finished=True,
+                                     winner=battle.get_winner())
 
         elif message.get('next_question'):
             # this is going to be hit twice, within nanoseconds of each other.
@@ -187,8 +200,10 @@ class Client(tornadio.SocketConnection):
                 if question:
                     battle.current_question = question
                     battle.send_question(battle.current_question)
+                    battle.save_played_question(self.db)
                 else:
                     battle.send_to_all({'error':"No more questions! Run out!"})
+                    battle.save_play(self.db, halted=True)
                     battle.stop()
         else:
             print message
@@ -217,7 +232,6 @@ class Client(tornadio.SocketConnection):
                     search['_id']['$nin'].append(question._id)
 
     def on_close(self):
-        print repr(self), "closed connection"
         if getattr(self, 'user_id', None) and getattr(self, 'user_name', None):
             try:
                 battle = self.current_client_battles[self.user_id]
@@ -227,8 +241,9 @@ class Client(tornadio.SocketConnection):
 
             battle.remove_participant(self)
             battle.send_to_all({'disconnected': self.user_name})
-            print "Stopping battle because", self.user_name, "disconnected"
             battle.stop()
+            battle.save_play(self.db, halted=True)
+
 
 
 class Application(tornado.web.Application):

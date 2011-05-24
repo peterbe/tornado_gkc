@@ -1,3 +1,5 @@
+import datetime
+from pymongo.objectid import ObjectId
 import time
 from collections import defaultdict
 from utils.edit_distance import EditDistance
@@ -31,6 +33,7 @@ class Battle(object):
         self.current_question_sent = None
         self.genres_only = genres_only
         self.language = language
+        self.play_id = None
 
     def __repr__(self):
         vs = ' vs. '.join(['%s:%r' % (x.user_id, x.user_name) for x in self.participants])
@@ -69,9 +72,7 @@ class Battle(object):
                 p.send(msg)
 
     def send_to_all(self, msg):
-        #print repr(msg)
         for p in self.participants:
-            #print "\t", time.time(), repr(p)
             p.send(msg)
 
     def has_more_questions(self):
@@ -81,9 +82,6 @@ class Battle(object):
         self.sent_questions.add(question)
         self.current_question = question
         self.current_question_sent = time.time()
-        #print "SENDING", repr(self.current_question.text)
-        #print self.current_question_sent
-        #print
         packaged_question = {
           'id': str(question._id),
           'text': question.text,
@@ -175,7 +173,6 @@ class Battle(object):
     def increment_score(self, client, points):
         self.scores[client] += points
         self.send_to_all({'update_scoreboard': [client.user_name, points]})
-        print self.scores
 
     def get_winner(self):
         best_points = -1
@@ -203,3 +200,75 @@ class Battle(object):
             winner.send({'winner': {'you_won': True}})
             self.send_to_everyone_else(winner, {'winner': {'you_won': False}})
         self.stop()
+
+    ## Saving
+
+    def save_play(self, db, started=False, halted=False, finished=False,
+                  winner=None):
+        assert started or halted or finished
+        play = self._get_play(db)
+        if started:
+            play.started = datetime.datetime.now()
+        elif halted:
+            play.halted = datetime.datetime.now()
+        elif finished:
+            play.finished = datetime.datetime.now()
+        if winner is not None:
+            if winner:
+                user = db.User.one({'_id': ObjectId(winner.user_id)})
+                assert user
+                play.winner = user
+            else:
+                play.draw = True
+        play.save()
+        self.play_id = play._id
+
+    def _get_play(self, db):
+        if self.play_id:
+            play = db.Play.one({'_id': self.play_id})
+        else:
+            play = db.Play()
+            play.no_questions = self.no_questions
+            play.no_players = 0
+            for participant in self.participants:
+                user = db.User.one({'_id': ObjectId(participant.user_id)})
+                assert user
+                play.users.append(user)
+                play.no_players += 1
+        return play
+
+    def save_played_question(self, db, participant=None,
+                             right=None,
+                             answer=None,
+                             alternatives=None,
+                             timed_out=None):
+        play = self._get_play(db)
+        if participant is None:
+            # just setting up the played question
+            for participant in self.participants:
+                user = db.User.one({'_id': ObjectId(participant.user_id)})
+                assert user
+                played_question = db.PlayedQuestion()
+                played_question.play = play
+                played_question.user = user
+                played_question.question = self.current_question
+                played_question.save()
+            return
+        user = db.User.one({'_id': ObjectId(participant.user_id)})
+        assert user
+        played_question = db.PlayedQuestion.one({
+          'play.$id': play._id,
+          'user.$id': user._id,
+          'question.$id': self.current_question._id,
+        })
+        if right is not None:
+            assert answer is not None
+            played_question.right = bool(right)
+            played_question.answer = unicode(answer)
+        elif alternatives is not None:
+            played_question.alternatives = bool(alternatives)
+        elif timed_out is not None:
+            played_question.timed_out = bool(timed_out)
+        else:
+            raise Exception("Invalid parameters. Has to be something")
+        played_question.save()

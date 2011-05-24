@@ -3,10 +3,12 @@ import time
 import base64
 import Cookie
 import unittest
+from pprint import pprint
 from apps.main.models import User
 from apps.questions.models import Question, Genre
 from apps.play.cookies import CookieParser
 from apps.play.client_app import Client
+from apps.play.models import Play, PlayedQuestion
 
 class BaseTestCase(unittest.TestCase):
     _once = False
@@ -15,7 +17,7 @@ class BaseTestCase(unittest.TestCase):
             self._once = True
             from mongokit import Connection
             self.con = Connection()
-            self.con.register([User, Question, Genre])
+            self.con.register([User, Question, Genre, Play, PlayedQuestion])
             self.db = self.con.test
             self._emptyCollections()
 
@@ -115,6 +117,32 @@ class ClientTestCase(BaseTestCase):
 
         return q
 
+    def _create_two_connected_clients(self):
+        client = MockClient(self)
+        request = MockRequest()
+        cookie = Cookie.BaseCookie()
+        cookie_maker = CookieMaker(request)
+
+        user = self.db.User()
+        user.username = u'peterbe'
+        user.save()
+        cookie['user'] = cookie_maker.create_signed_value('user', str(user._id))
+        request.headers['Cookie'] = cookie.output()
+        client.on_open(request)
+
+        user2 = self.db.User()
+        user2.username = u'chris'
+        user2.save()
+
+        client2 = MockClient(self)
+        request = MockRequest()
+        cookie = Cookie.BaseCookie()
+        cookie_maker = CookieMaker(request)
+        cookie['user'] = cookie_maker.create_signed_value('user', str(user2._id))
+        request.headers['Cookie'] = cookie.output()
+        client2.on_open(request)
+
+        return (user, client), (user2, client2)
 
     def test_basic_client(self):
         client = MockClient(self)
@@ -163,6 +191,18 @@ class ClientTestCase(BaseTestCase):
         self.assertEqual(len(client.current_client_battles), 2)
         assert battle.current_question is None
 
+        play = self.db.Play.one()
+        assert play
+        self.assertEqual(len(play.users), 2)
+        self.assertEqual(len(play.users), play.no_players)
+
+        self.assertTrue(play.no_questions)
+        self.assertTrue(play.started)
+        self.assertTrue(not play.halted)
+        self.assertTrue(not play.finished)
+        self.assertTrue(not play.draw)
+        self.assertTrue(not play.winner)
+
         # two clients have joined, the next question can be asked for in about
         # 3 seconds.
         last_message = client._sent[-1]
@@ -192,15 +232,32 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(question['id'])
         self.assertTrue(question['text'])
 
+        self.assertEqual(
+          self.db.PlayedQuestion.find({'play.$id': play._id}).count(),
+          2)
+        for played in self.db.PlayedQuestion.find():
+            assert played.play._id == play._id
+            self.assertEqual(str(played.question._id), question['id'])
+            self.assertEqual(played.question.text, question['text'])
+            self.assertEqual(played.question.genre.name, question['genre'])
+
         # nothing happens when when second client sends the 'next_question'
         _count_before = (len(client._sent), len(client2._sent))
         client2.on_message(dict(next_question='me too'))
         _count_after = (len(client._sent), len(client2._sent))
         self.assertEqual(_count_before, _count_after)
 
+        self.assertEqual(
+          self.db.PlayedQuestion.find({'play.$id': play._id}).count(),
+          2)
+
         # client2 sends an answer and gets it wrong
         client2.on_message(dict(answer='WRONG'))
-
+        played = self.db.PlayedQuestion.one({'user.$id': user2._id})
+        self.assertEqual(played.answer, u'WRONG')
+        self.assertTrue(not played.right)
+        played = self.db.PlayedQuestion.one({'user.$id': user._id})
+        self.assertEqual(played.answer, None)
 
         self.assertTrue(client._sent[-1]['has_answered'])
         self.assertTrue(client2._sent[-1]['answered'])
@@ -222,17 +279,30 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
 
+        played = self.db.PlayedQuestion.one({'user.$id': user._id})
+        self.assertEqual(played.answer, u'Yes  ')
+        self.assertTrue(played.right)
+
+        self.assertEqual(
+          self.db.PlayedQuestion.find({'play.$id': play._id}).count(), 2)
+
         battle.min_wait_delay -= 10 # anything
         client.on_message(dict(next_question=1))
         assert client._sent[-1] == client2._sent[-1]
         assert client._sent[-1]['question']['text'] == question.text
+
+        self.assertEqual(
+          self.db.PlayedQuestion.find({'play.$id': play._id}).count(), 4)
 
         client2.on_message(dict(alternatives=1))
 
         self.assertTrue(client2._sent[-1]['alternatives'])
         self.assertEqual(client2._sent[-1]['alternatives'],
                          question.alternatives)
-
+        played = (self.db.PlayedQuestion
+          .one({'user.$id': user2._id,
+                'question.$id': battle.current_question._id}))
+        self.assertTrue(played.alternatives)
 
         # suppose that client2 gets it right then
         alternative = [x for x in question.alternatives if x == question.answer][0]
@@ -244,10 +314,11 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
 
-        self._create_question()
+        self._create_question(text=u"Is this no 2?")
         # let both people get it wrong this time
         battle.min_wait_delay -= 10 # anything
         client.on_message(dict(next_question=1))
+        last_question_id = battle.current_question._id
         client.on_message(dict(answer='WRONG'))
         self.assertTrue(client2._sent[-1]['has_answered'])
         client2.on_message(dict(answer='ALSO WRONG'))
@@ -255,6 +326,10 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(not client2._sent[-3]['answered']['right'])
         self.assertTrue(client2._sent[-2]['answered']['both_wrong'])
         self.assertTrue(client._sent[-2]['answered']['both_wrong'])
+
+        for played in (self.db.PlayedQuestion
+                       .find({'question.$id': last_question_id})):
+            self.assertTrue(not played.right)
 
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
@@ -282,9 +357,20 @@ class ClientTestCase(BaseTestCase):
         _after = len(client._sent) + len(client2._sent)
         self.assertEqual(_before, _after)
 
+        last_question_id = battle.current_question._id
+        played = (self.db.PlayedQuestion
+          .one({'user.$id': user._id,
+                'question.$id': last_question_id}))
+        self.assertTrue(played.timed_out)
+
         client2.on_message(dict(timed_out=1))
         _after_2 = len(client._sent) + len(client2._sent)
         self.assertNotEqual(_after, _after_2)
+
+        played = (self.db.PlayedQuestion
+          .one({'user.$id': user2._id,
+                'question.$id': last_question_id}))
+        self.assertTrue(played.timed_out)
 
         self.assertTrue(client._sent[-2]['answered']['too_slow'])
         self.assertTrue(client2._sent[-2]['answered']['too_slow'])
@@ -292,32 +378,6 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
 
-    def _create_two_connected_clients(self):
-        client = MockClient(self)
-        request = MockRequest()
-        cookie = Cookie.BaseCookie()
-        cookie_maker = CookieMaker(request)
-
-        user = self.db.User()
-        user.username = u'peterbe'
-        user.save()
-        cookie['user'] = cookie_maker.create_signed_value('user', str(user._id))
-        request.headers['Cookie'] = cookie.output()
-        client.on_open(request)
-
-        user2 = self.db.User()
-        user2.username = u'chris'
-        user2.save()
-
-        client2 = MockClient(self)
-        request = MockRequest()
-        cookie = Cookie.BaseCookie()
-        cookie_maker = CookieMaker(request)
-        cookie['user'] = cookie_maker.create_signed_value('user', str(user2._id))
-        request.headers['Cookie'] = cookie.output()
-        client2.on_open(request)
-
-        return (user, client), (user2, client2)
 
     def test_both_too_slow_on_last_question(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
@@ -346,6 +406,7 @@ class ClientTestCase(BaseTestCase):
 
         # now pretend that both people are too slow
         battle.current_question_sent -= battle.thinking_time # fake time
+        last_question_id = battle.current_question._id
         client.on_message(dict(timed_out=1))
         from time import sleep
         sleep(0.1)
@@ -356,7 +417,21 @@ class ClientTestCase(BaseTestCase):
 
         self.assertTrue(client._sent[-1]['winner']['you_won'])
         self.assertTrue(not client2._sent[-1]['winner']['you_won'])
+        assert self.db.PlayedQuestion.one({
+          'timed_out': True,
+          'user.$id': user._id,
+          'question.$id': last_question_id,
+        })
+        assert self.db.PlayedQuestion.one({
+          'timed_out': True,
+          'user.$id': user2._id,
+          'question.$id': last_question_id,
+        })
 
+        play = self.db.Play.one()
+        self.assertTrue(not play.draw)
+        self.assertTrue(play.finished)
+        self.assertEqual(play.winner._id, user._id)
 
     def test_timed_out_after_correct_answer(self):
         """if one client sends the correct answer, that will close the current
