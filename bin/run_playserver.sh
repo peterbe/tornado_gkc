@@ -1,2 +1,2 @@
 #!/bin/bash
-sudo ./playserver.py --start_flashpolicy
+sudo ./playserver.py --flashpolicy=flashpolicyd/flashpolicy.xml

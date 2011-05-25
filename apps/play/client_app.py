@@ -262,7 +262,6 @@ class Application(tornado.web.Application):
         return self.con[self.database_name]
 
 
-HERE = op.normpath(op.dirname(__file__))
 from tornado.options import options
 application = Application(
       database_name=options.database_name,
@@ -272,8 +271,8 @@ application = Application(
                          'xhr-multipart',
                          'xhr-polling'
                          ],
-      flash_policy_port=options.start_flashpolicy and 843 or None,
-      flash_policy_file=(options.start_flashpolicy and
-                         op.join(HERE, 'flashpolicy.xml') or None),
+      flash_policy_port=options.flashpolicy and 843 or None,
+      flash_policy_file=(options.flashpolicy and
+                        op.abspath(options.flashpolicy) or None),
       socket_io_port=options.port,
     )
