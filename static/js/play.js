@@ -196,6 +196,15 @@ var Question = (function() {
 	   }));
 	 $('#alert').text(msg).show(100);
       },
+      beaten: function() {
+	 var msg = 'Sorry. Opponent beat you on that question';
+	 /*$('li.current')
+	   .append($('<img>', {
+              src: IMAGES.WRONG,
+		alt: msg
+	   }));*/
+	 $('#alert').text(msg).show(100);
+      },
       send_answer: function(answer) {
          if (_has_answered) {
             alert('You have already answered this question');
