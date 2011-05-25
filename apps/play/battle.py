@@ -1,4 +1,5 @@
 import datetime
+from pprint import pprint
 from pymongo.objectid import ObjectId
 import time
 from collections import defaultdict
@@ -58,6 +59,9 @@ class Battle(object):
     def is_open(self):
         return (len(self.participants) < self.min_no_people
                 and not self.stopped)
+
+    def __contains__(self, client):
+        return client.user_id in [x.user_id for x in self.participants]
 
     def send_wait(self, seconds, next_message):
         self.min_wait_delay = time.time() + seconds
@@ -210,10 +214,13 @@ class Battle(object):
         if started:
             play.started = datetime.datetime.now()
         elif halted:
+            assert self.play_id
             play.halted = datetime.datetime.now()
         elif finished:
+            assert self.play_id
             play.finished = datetime.datetime.now()
         if winner is not None:
+            assert self.play_id
             if winner:
                 user = db.User.one({'_id': ObjectId(winner.user_id)})
                 assert user
@@ -224,10 +231,12 @@ class Battle(object):
         self.play_id = play._id
 
     def _get_play(self, db):
+        print "SELF.PLAY_ID", self.play_id
         if self.play_id:
             play = db.Play.one({'_id': self.play_id})
         else:
             play = db.Play()
+            print "*\n*CREATING NEW PLAY\n*"
             play.no_questions = self.no_questions
             play.no_players = 0
             for participant in self.participants:
@@ -242,11 +251,18 @@ class Battle(object):
                              answer=None,
                              alternatives=None,
                              timed_out=None):
+        assert self.play_id
         play = self._get_play(db)
         if participant is None:
             # just setting up the played question
+            #print "BATTLE"
+            #print repr(self)
             for participant in self.participants:
+                #print "PARTICIPANT", repr(participant)
                 user = db.User.one({'_id': ObjectId(participant.user_id)})
+                #print "-->USER"
+                #print user
+                #print "\n"
                 assert user
                 played_question = db.PlayedQuestion()
                 played_question.play = play
@@ -256,6 +272,15 @@ class Battle(object):
             return
         user = db.User.one({'_id': ObjectId(participant.user_id)})
         assert user
+        #print " ** FINDING **"
+        #print "PLAY"
+        #pprint(play)
+        #print "USER"
+        #pprint (user)
+        #print "QUESTION"
+        #pprint(self.current_question)
+        #print "\n"
+
         played_question = db.PlayedQuestion.one({
           'play.$id': play._id,
           'user.$id': user._id,

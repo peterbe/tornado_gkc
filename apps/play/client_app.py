@@ -45,6 +45,7 @@ class Client(tornadio.SocketConnection):
         #print "Opening", repr(self)
         self.send({'debug': "Connected!"});
         if not hasattr(request, 'headers'):
+            logging.debug("No headers :(")
             self.send({'error': 'Unable to find login information. Try reloading'})
             return
 
@@ -52,16 +53,26 @@ class Client(tornadio.SocketConnection):
         user_id = cookie_parser.get_secure_cookie('user')
 
         if not user_id:
+            logging.debug(
+              "No secure user_id (cookie_parser.get_cookie('user')=%r)" %
+              cookie_parser.get_cookie('user')
+            )
             self.send({'error': 'Unable to log you in. Try reloading'})
             return
 
         self.user_id = user_id
         user = self.db.User.one({'_id': ObjectId(user_id)})
-        if user:
-            assert user.username
-            self.user_name = user.username
-            self.send({'debug': "Your name is %s" % self.user_name})
-            self._initiate()
+        if not user:
+            logging.debug(
+              "No user by that id %r" % user_id
+            )
+            self.send({'error': 'Unable to find your user account. Try reloading.'})
+            return
+
+        assert user.username
+        self.user_name = user.username
+        self.send({'debug': "Your name is %s" % self.user_name})
+        self._initiate()
 
     def _initiate(self):
         """called when the client has connected successfully"""
@@ -70,6 +81,9 @@ class Client(tornadio.SocketConnection):
         battle = None
         for created_battle in self.battles:
             if created_battle.is_open():
+                if self in created_battle:
+                    self.send({'error':'Already in an open battle'})
+                    return
                 battle = created_battle
                 logging.debug("Joining battle: %r" % battle)
                 break
@@ -96,7 +110,6 @@ class Client(tornadio.SocketConnection):
             battle = self.current_client_battles[self.user_id]
         except KeyError:
             logging.debug('%r not in any battle' % self)
-            print "No battle :("
             return
 
         if message.get('answer'):
@@ -175,8 +188,6 @@ class Client(tornadio.SocketConnection):
             battle.remember_timed_out(self)
             battle.save_played_question(self.db, self, timed_out=True)
             if battle.has_everyone_answered_or_timed_out():
-                #print battle.timed_out
-                #print battle.participants
                 for participant in battle.participants:
                     if not battle.has_answered(participant):
                         participant.send({'answered': {'too_slow': True}})
@@ -269,8 +280,8 @@ application = Application(
       debug=options.debug,
       enabled_protocols=['websocket',
                          'flashsocket',
-                         'xhr-multipart',
-                         'xhr-polling'
+                         #'xhr-multipart',
+                         #'xhr-polling'
                          ],
       flash_policy_port=options.flashpolicy and 843 or None,
       flash_policy_file=(options.flashpolicy and

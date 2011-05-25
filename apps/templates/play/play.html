@@ -25,6 +25,16 @@
     <div id="timer" style="display:none"></div>
     </div>
 
+    <div id="error_warning" style="display:none">
+      <h2>Error :(</h2>
+      <p>
+        Depending on the error, sometimes you can just
+        <a href="{{ reverse_url('start_play') }}" target="_top">try again</a>.
+      </p>
+      <pre>
+      </pre>
+    </div>
+
     <div id="you_won" class="finish" style="display:none">
       <h1>You won!</h1>
       <p>

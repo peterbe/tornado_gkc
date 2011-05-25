@@ -396,7 +396,11 @@ $(function() {
          Question.stop();
       } else if (obj.error) {
          Question.stop();
+	 $('#waiting').hide();
+	 $('#your_name').hide();
          alert('Error!\n' + obj.error);
+         $('#error_warning').show();
+         $('#error_warning pre').text(obj.error);
       } else if (obj.your_name) {
          // this is mainly for checking that all is working fine
          $('#your_name strong').text(obj.your_name);

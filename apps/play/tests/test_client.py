@@ -509,11 +509,34 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
 
-        print client._sent[-3]
-        print client2._sent[-3]
-        print
-        print client._sent[-2]
-        print client2._sent[-2]
-        print
-        print client._sent[-1]
-        print client2._sent[-1]
+    def test_joining_same_user_different_clients(self):
+        client = MockClient(self)
+        request = MockRequest()
+        cookie = Cookie.BaseCookie()
+        cookie_maker = CookieMaker(request)
+
+        user = self.db.User()
+        user.username = u'peterbe'
+        user.save()
+        cookie['user'] = cookie_maker.create_signed_value('user', str(user._id))
+        request.headers['Cookie'] = cookie.output()
+        client.on_open(request)
+
+        client2 = MockClient(self)
+        request = MockRequest()
+        cookie = Cookie.BaseCookie()
+        cookie_maker = CookieMaker(request)
+        cookie['user'] = cookie_maker.create_signed_value('user', str(user._id))
+        request.headers['Cookie'] = cookie.output()
+        client2.on_open(request)
+
+        self.assertTrue(client2._sent[-1]['error'])
+
+#        print client._sent[-3]
+#        print client2._sent[-3]
+#        print
+#        print client._sent[-2]
+#        print client2._sent[-2]
+#        print
+#        print client._sent[-1]
+#        print client2._sent[-1]
