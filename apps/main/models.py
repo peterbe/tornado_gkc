@@ -37,6 +37,8 @@ class User(BaseDocument):
     #  {'fields': 'username',
     #   'unique': True},
     #]
+    def __unicode__(self):
+        return self.username
 
     def set_password(self, raw_password):
         self.password = encrypt_password(raw_password)

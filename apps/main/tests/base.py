@@ -80,9 +80,9 @@ class BaseHTTPTestCase(AsyncHTTPTestCase, LogTrapTestCase, HTTPClientMixin):
     def _login(self, username=u'peterbe', email='mail@peterbe.com',
                client=None):
         user = self.db.User.one(dict(username=username))
-        if user:
-            raise NotImplementedError
-        else:
+        if client is None:
+            client = self.client
+        if not user:
             data = dict(username=username,
                         email=email,
                         first_name="Peter",
@@ -93,12 +93,8 @@ class BaseHTTPTestCase(AsyncHTTPTestCase, LogTrapTestCase, HTTPClientMixin):
             user.first_name = u"Peter"
             user.last_name = u"Bengtsson"
             user.save()
-            if client is None:
-                client = self.client
-            client.cookies['user'] = \
-              self.create_signed_value('user', str(user._id))
-        user = self.db.User.one(dict(username=username))
-        assert user
+        client.cookies['user'] = \
+          self.create_signed_value('user', str(user._id))
         return user
 
     ## these two are shamelessly copied from tornado.web.RequestHandler

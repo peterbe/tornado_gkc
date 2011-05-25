@@ -129,7 +129,8 @@ class Client(tornadio.SocketConnection):
                     battle.send_wait(3, dict(next_question=True))
                 else:
                     battle.conclude()
-                    battle.save_play(self.db, finished=True)
+                    battle.save_play(self.db, finished=True,
+                                     winner=battle.get_winner())
 
             else:
                 # you suck!
@@ -148,8 +149,8 @@ class Client(tornadio.SocketConnection):
                         battle.send_wait(3, dict(next_question=True))
                     else:
                         battle.conclude()
-                        battle.save_play(self.db, finished=True)
-
+                        battle.save_play(self.db, finished=True,
+                                         winner=battle.get_winner())
 
         elif message.get('alternatives'):
             assert battle.current_question

@@ -1,6 +1,6 @@
 # this is needed for test_client
 from tornado.options import define
-define("start_flashpolicy", default=False, type=bool)
+define("flashpolicy")
 
 from test_handlers import *
 from test_battle import *

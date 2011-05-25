@@ -1,0 +1,79 @@
+{% extends "../base.html" %}
+
+{% block extra_head %}
+<style>
+th { text-align:left; color: #FFEA00; }
+th.points, td.points { text-align:right; }
+h2 { float:right; }
+</style>
+{% end %}
+
+{% block content_inner %}
+{% if play.winner %}
+<h2>Winner: {{ play.winner }}</h2>
+{% else %}
+<h2>It's a draw</h2>
+{% end %}
+
+<h1>{{ page_title }}</h1>
+<table>
+  <thead>
+    <tr>
+      <th>&nbsp;</th>
+      <th>Question</th>
+      <th>Answer</th>
+      <!--<th>Category</th>-->
+      {% for player_name in player_names %}
+      <th colspan="2">{{ player_name }}</th>
+      {% end %}
+    </tr>
+  </thead>
+  <tfoot>
+    <tr>
+      <th colspan="3">TOTAL:</th>
+      {% for player_name in player_names %}
+      <th>&nbsp;</th>
+      <th class="points">
+          {{ totals[player_name] }}
+      </th>
+      {% end %}
+    </tr>
+  <tfoot>
+{% for i, question in enumerate(questions) %}
+  <tbody>
+    <tr>
+      <td>{{ i + 1 }}.</td>
+      <td>{{ question.text }}</td>
+      <td>{{ question.answer }}</td>
+      <!--<td>{{ question.genre.name }}</td>-->
+      {% for player_name in player_names %}
+      <td>{% set outcome=outcomes[question._id][player_name] %}
+        {% if outcome.right %}
+          <img src="{{ static_url('images/right.png') }}" alt="right!">
+        {% elif outcome.answer %}
+          <img src="{{ static_url('images/wrong.png') }}" alt="wrong">
+        {% elif outcome.timed_out %}
+          <img src="{{ static_url('images/hourglass.png') }}" alt="too slow">
+        {% else %}
+          <img src="{{ static_url('images/wrong.png') }}" alt="beaten">
+        {% end %}
+      </td>
+      <td class="points">
+        {% if outcome.right %}
+          {% if outcome.alternatives %}
+          +1
+          {% else %}
+          +3
+          {% end %}
+        {% end %}
+      </td>
+      {% end %}
+    </tr>
+  </tbody>
+{% end %}
+</table>
+
+{% end %}
+
+{% block extra_js %}
+{% end %}
