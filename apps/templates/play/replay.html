@@ -10,7 +10,7 @@ h2 { float:right; }
 
 {% block content_inner %}
 {% if play.winner %}
-<h2>Winner: {{ play.winner }}</h2>
+<h2>Winner: {{ play.winner.username }}</h2>
 {% else %}
 <h2>It's a draw</h2>
 {% end %}

@@ -40,6 +40,8 @@
       <p>
         Well done! But can you repeat it?<br>
         <a href="{{ reverse_url('start_play') }}" target="_top">Play again</a>
+        or
+        <a href="#" class="replay" target="_top">see all correct answers</a>
       </p>
 
     </div>
@@ -48,13 +50,19 @@
       <h2>You lost :(</h2>
       <p>
         <a href="{{ reverse_url('start_play') }}" target="_top">Play again</a> Good luck next time!
+        <br>
+        Or if you'd like, <a href="#" class="replay" target="_top">see all correct answers</a>
       </p>
     </div>
 
     <div id="you_drew" class="finish" style="display:none">
       <h2>You drew</h2>
       <p>
-        <a href="{{ reverse_url('start_play') }}" target="_top">Play again</a> Good luck next time!
+        Good luck next time!
+        <br>
+        <a href="{{ reverse_url('start_play') }}" target="_top">Play again</a>
+        or if you'd like, <a href="#" class="replay" target="_top">see all correct answers</a>
+
       </p>
     </div>
 

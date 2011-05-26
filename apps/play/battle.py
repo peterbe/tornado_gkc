@@ -197,12 +197,14 @@ class Battle(object):
     ## Concluding
 
     def conclude(self):
+        self.send_to_all({'play_id': str(self.play_id)})
         winner = self.get_winner()
         if not winner:
             self.send_to_all({'winner': {'draw': True}})
         else:
             winner.send({'winner': {'you_won': True}})
-            self.send_to_everyone_else(winner, {'winner': {'you_won': False}})
+            self.send_to_everyone_else(winner,
+                                       {'winner': {'you_won': False}})
         self.stop()
 
     ## Saving
@@ -210,7 +212,7 @@ class Battle(object):
     def save_play(self, db, started=False, halted=False, finished=False,
                   winner=None):
         assert started or halted or finished
-        play = self._get_play(db)
+        play = self.get_play(db)
         if started:
             play.started = datetime.datetime.now()
         elif halted:
@@ -230,13 +232,11 @@ class Battle(object):
         play.save()
         self.play_id = play._id
 
-    def _get_play(self, db):
-        print "SELF.PLAY_ID", self.play_id
+    def get_play(self, db):
         if self.play_id:
             play = db.Play.one({'_id': self.play_id})
         else:
             play = db.Play()
-            print "*\n*CREATING NEW PLAY\n*"
             play.no_questions = self.no_questions
             play.no_players = 0
             for participant in self.participants:
@@ -252,17 +252,11 @@ class Battle(object):
                              alternatives=None,
                              timed_out=None):
         assert self.play_id
-        play = self._get_play(db)
+        play = self.get_play(db)
         if participant is None:
             # just setting up the played question
-            #print "BATTLE"
-            #print repr(self)
             for participant in self.participants:
-                #print "PARTICIPANT", repr(participant)
                 user = db.User.one({'_id': ObjectId(participant.user_id)})
-                #print "-->USER"
-                #print user
-                #print "\n"
                 assert user
                 played_question = db.PlayedQuestion()
                 played_question.play = play
@@ -272,15 +266,6 @@ class Battle(object):
             return
         user = db.User.one({'_id': ObjectId(participant.user_id)})
         assert user
-        #print " ** FINDING **"
-        #print "PLAY"
-        #pprint(play)
-        #print "USER"
-        #pprint (user)
-        #print "QUESTION"
-        #pprint(self.current_question)
-        #print "\n"
-
         played_question = db.PlayedQuestion.one({
           'play.$id': play._id,
           'user.$id': user._id,

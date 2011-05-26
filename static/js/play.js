@@ -162,6 +162,7 @@ var Question = (function() {
 	    $('#information p').text(information.message);
 	    $('#information').show();
 	 }
+         socket.disconnect();
       },
       right_answer: function() {
 	 var msg = 'Yay! you got it right';
@@ -398,9 +399,13 @@ $(function() {
          Question.stop();
 	 $('#waiting').hide();
 	 $('#your_name').hide();
-         alert('Error!\n' + obj.error);
+         //alert('Error!\n' + obj.error);
          $('#error_warning').show();
          $('#error_warning pre').text(obj.error);
+         try {
+            socket.disconnect();
+         } catch (e) {
+         }
       } else if (obj.your_name) {
          // this is mainly for checking that all is working fine
          $('#your_name strong').text(obj.your_name);
@@ -414,6 +419,9 @@ $(function() {
       if (obj.init_scoreboard) {
          scoreboard.init_players(obj.init_scoreboard);
          $('#scoreboard:hidden').show(500);
+      }
+      if (obj.play_id) {
+         $('a.replay').attr('href', '/play/replay/' + obj.play_id  + '/');
       }
    });
 
