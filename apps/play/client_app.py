@@ -166,6 +166,9 @@ class Client(tornadio.SocketConnection):
                                          winner=battle.get_winner())
 
         elif message.get('alternatives'):
+            if not battle.current_question:
+                assert battle.is_waiting()
+                return
             assert battle.current_question
             if not battle.has_loaded_alternatives(self):
                 battle.send_alternatives(self)

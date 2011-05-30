@@ -1,3 +1,4 @@
+from pymongo.objectid import ObjectId
 import datetime
 import time
 import base64
@@ -412,8 +413,16 @@ class ClientTestCase(BaseTestCase):
         sleep(0.1)
         client2.on_message(dict(timed_out=1))
 
-        self.assertTrue(client._sent[-2]['answered']['too_slow'])
-        self.assertTrue(client2._sent[-2]['answered']['too_slow'])
+        self.assertTrue(client._sent[-3]['answered']['too_slow'])
+        self.assertTrue(client2._sent[-3]['answered']['too_slow'])
+
+        self.assertTrue(client._sent[-2]['play_id'])
+        self.assertTrue(client2._sent[-2]['play_id'])
+        self.assertEqual(client._sent[-2]['play_id'],
+                         client2._sent[-2]['play_id'])
+        play_id = client2._sent[-2]['play_id']
+        play = self.db.Play.one({'_id': ObjectId(play_id)})
+        self.assertEqual(play.winner.username, client.user_name)
 
         self.assertTrue(client._sent[-1]['winner']['you_won'])
         self.assertTrue(not client2._sent[-1]['winner']['you_won'])
@@ -532,11 +541,32 @@ class ClientTestCase(BaseTestCase):
 
         self.assertTrue(client2._sent[-1]['error'])
 
-#        print client._sent[-3]
-#        print client2._sent[-3]
-#        print
-#        print client._sent[-2]
-#        print client2._sent[-2]
-#        print
-#        print client._sent[-1]
-#        print client2._sent[-1]
+    def test_loading_alternatives_too_late(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 3
+        self._create_question()
+        self._create_question()
+        self._create_question()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        client.on_message(dict(answer='yes'))
+        client2.on_message(dict(alternatives=1))
+
+        self.assertTrue(client._sent[-3]['answered']['right'])
+        self.assertTrue(client2._sent[-3]['answered']['too_slow'])
+
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
+        print client._sent[-3]
+        print client2._sent[-3]
+        print
+        print client._sent[-2]
+        print client2._sent[-2]
+        print
+        print client._sent[-1]
+        print client2._sent[-1]
