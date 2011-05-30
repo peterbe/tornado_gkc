@@ -4,6 +4,7 @@ html, body {
   padding: 0;
 }
 body {
+  background: #ffffff url("../images/black-back3.png") repeat;
   background: -webkit-gradient(radial, 50% 50%, 10, 50% 50%, 900, from(rgba(0,0,0,0)), to(rgba(0,0,0,1))), url("../images/black-back3.png") repeat;
   background: -moz-radial-gradient(50% 50% 360deg, circle closest-corner, transparent 5%, #000) repeat scroll 0 10%, url("../images/black-back3.png") repeat scroll 0 0 transparent;
 }
