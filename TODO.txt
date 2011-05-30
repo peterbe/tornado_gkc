@@ -1,3 +1,6 @@
+* Linkify question comments when reviewing questions
+
+* play not in a fancybox
 
 * SMTP details from elastic needs to be read in from a git ignored
   files instead.

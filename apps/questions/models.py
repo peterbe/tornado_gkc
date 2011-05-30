@@ -46,9 +46,9 @@ class Question(BaseDocument):
       'publish_date': datetime.datetime,
     }
 
-    indexes = [
-      {'fields': 'state'},
-    ]
+    #indexes = [
+    #  {'fields': 'state'},
+    #]
 
     validators = {
       'state': lambda x: x in STATES,
@@ -103,9 +103,7 @@ class QuestionPoints(BaseDocument):
 
     def update_highscore_position(self):
         # how many has better points?
-        #print "Out of", self.db.QuestionPoints.find().count()
         c = self.db.QuestionPoints.find({'points':{'$gte': self.points}}).count()
-        #print "C", c
         self.highscore_position = max(c, 1)
         self.save()
 
@@ -114,10 +112,3 @@ class QuestionPoints(BaseDocument):
           {'$inc': {'highscore_position': 1}},
           multi=True # multi
         )
-        #for each in self.db.QuestionPoints.find({'points':{'$lt': self.points}}):
-        #    print "BUMPING"
-        #    print repr(each)
-        #    print "\t", repr(each.highscore_position)
-        #    each.highscore_position += 1
-        #    each.save()
-        #    print
