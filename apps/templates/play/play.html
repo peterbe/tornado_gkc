@@ -25,6 +25,17 @@
     <div id="timer" style="display:none"></div>
     </div>
 
+    <div id="error_disconnected" style="display:none">
+      <h2><span class="user_name"></span> has disappeared!</h2>
+      <p>
+        Because <span class="user_name"></span> is now disconnected, the
+        play has to be stopped.
+      </p>
+      <p>To start a new play, click to
+        <a href="{{ reverse_url('start_play') }}" target="_top">start a new play</a>.
+      </p>
+    </div>
+
     <div id="error_warning" style="display:none">
       <h2>Error :(</h2>
       <p>
@@ -34,6 +45,7 @@
       <pre>
       </pre>
     </div>
+
 
     <div id="error_run_out" style="display:none">
       <h3>We need your help!</h3>

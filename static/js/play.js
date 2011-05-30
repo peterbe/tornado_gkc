@@ -395,6 +395,8 @@ $(function() {
       } else if (obj.disconnected) {
          scoreboard.drop_score(obj.disconnected);
          Question.stop();
+         $('#error_disconnected').show();
+	 $('#error_disconnected .user_name').text(obj.disconnected);
          dead_battle = true;
       } else if (obj.error) {
          Question.stop();
