@@ -162,7 +162,6 @@ var Question = (function() {
 	    $('#information p').text(information.message);
 	    $('#information').show();
 	 }
-         socket.disconnect();
       },
       right_answer: function() {
 	 var msg = 'Yay! you got it right';
@@ -307,9 +306,9 @@ var Gossip = (function() {
 })();
 
 
-
 // Let the madness begin!
-var socket;
+var socket, dead_battle = false;
+
 $(function() {
    socket = new io.Socket(null, {port: CONFIG.SOCKET_PORT, rememberTransport: false});
    socket.connect();
@@ -348,6 +347,7 @@ $(function() {
    });
 
    socket.on('message', function(obj) {
+      if (dead_battle) return;
       __log_message(obj, false);
       if (obj.question) {
          clearInterval(waiting_message_interval);
@@ -395,17 +395,18 @@ $(function() {
       } else if (obj.disconnected) {
          scoreboard.drop_score(obj.disconnected);
          Question.stop();
+         dead_battle = true;
       } else if (obj.error) {
          Question.stop();
 	 $('#waiting').hide();
 	 $('#your_name').hide();
          //alert('Error!\n' + obj.error);
          $('#error_warning').show();
-         $('#error_warning pre').text(obj.error);
-         try {
-            socket.disconnect();
-         } catch (e) {
+         $('#error_warning pre').text(obj.error.message);
+         if (obj.error.code == 200) {
+            $('#error_run_out').show();
          }
+         dead_battle = true;
       } else if (obj.your_name) {
          // this is mainly for checking that all is working fine
          $('#your_name strong').text(obj.your_name);

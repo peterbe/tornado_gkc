@@ -10,6 +10,7 @@ from apps.questions.models import Question, Genre
 from apps.play.cookies import CookieParser
 from apps.play.client_app import Client
 from apps.play.models import Play, PlayedQuestion
+from apps.play import errors
 
 class BaseTestCase(unittest.TestCase):
     _once = False
@@ -29,11 +30,16 @@ class BaseTestCase(unittest.TestCase):
 
     def tearDown(self):
         self._emptyCollections()
-        del self.battles
-        del self.current_client_battles
+        try:
+            del self.battles
+            del self.current_client_battles
+        except AttributeError:
+            pass
+
 
 class MockProtocol:
     pass
+
 
 class MockClient(Client):
     def __init__(self, test):
@@ -68,6 +74,8 @@ class MockRequest:
     def __init__(self):
         self.headers = {}
 
+class MockHeaderlessRequest:
+    pass
 
 class CookieMaker(CookieParser):
    def create_signed_value(self, name, value):
@@ -145,6 +153,17 @@ class ClientTestCase(BaseTestCase):
 
         return (user, client), (user2, client2)
 
+    def test_connecting_without_headers_error(self):
+        client = MockClient(self)
+        request = MockHeaderlessRequest()
+        cookie = Cookie.BaseCookie()
+        cookie_maker = CookieMaker(request)
+
+        client.on_open(request)
+        self.assertTrue(client._sent[-1]['error'])
+        self.assertEqual(client._sent[-1]['error']['code'],
+                         errors.ERROR_NOT_LOGGED_IN)
+
     def test_basic_client(self):
         client = MockClient(self)
         request = MockRequest()
@@ -219,6 +238,8 @@ class ClientTestCase(BaseTestCase):
         client.on_message(dict(next_question=1))
         assert battle.current_question is None
         self.assertTrue(client._sent[-1]['error'])
+        self.assertEqual(client._sent[-1]['error']['code'],
+                         errors.ERROR_NEXT_QUESTION_TOO_SOON)
 
         self._create_question()
 
@@ -562,6 +583,38 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
 
+    def test_no_questions__author(self):
+        # 3 questions, 1 written by client1 and 1 written by client2
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 3
+        q1 = self._create_question()
+        q2 = self._create_question()
+        q3 = self._create_question()
+
+        q1.author = user
+        q1.save()
+        q2.author = user2
+        q2.save()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        self.assertEqual(client._sent[-1]['question']['text'], q3.text)
+        client.on_message(dict(answer='yes'))
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+
+        self.assertTrue(client._sent[-1]['error'])
+        self.assertTrue(client2._sent[-1]['error'])
+
+        self.assertEqual(client._sent[-1]['error']['code'],
+                         errors.ERROR_NO_MORE_QUESTIONS)
+
+        return
         print client._sent[-3]
         print client2._sent[-3]
         print

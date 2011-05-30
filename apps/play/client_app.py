@@ -9,6 +9,7 @@ from apps.main.models import User
 from apps.play.battle import Battle
 from apps.questions.models import Question, Genre
 from apps.play.models import Play, PlayedQuestion
+from apps.play import errors
 from mongokit import Connection
 from cookies import CookieParser
 import settings
@@ -46,7 +47,8 @@ class Client(tornadio.SocketConnection):
         self.send({'debug': "Connected!"});
         if not hasattr(request, 'headers'):
             logging.debug("No headers :(")
-            self.send({'error': 'Unable to find login information. Try reloading'})
+            self.send(dict(error={'message': 'Unable to find login information. Try reloading',
+                                  'code': errors.ERROR_NOT_LOGGED_IN}))
             return
 
         cookie_parser = CookieParser(request)
@@ -205,7 +207,8 @@ class Client(tornadio.SocketConnection):
         elif message.get('next_question'):
             # this is going to be hit twice, within nanoseconds of each other.
             if battle.min_wait_delay > time.time():
-                self.send({'error': 'Too soon'})
+                self.send(dict(error={'message': 'Too soon',
+                                      'code': errors.ERROR_NEXT_QUESTION_TOO_SOON}))
                 return
             if battle.stopped:
                 #self.send({'error': 'Battle already stopped'})
@@ -217,7 +220,10 @@ class Client(tornadio.SocketConnection):
                     battle.send_question(battle.current_question)
                     battle.save_played_question(self.db)
                 else:
-                    battle.send_to_all({'error':"No more questions! Run out!"})
+                    battle.send_to_all(
+                      dict(error={'message': "No more questions! Run out!",
+                                  'code': errors.ERROR_NO_MORE_QUESTIONS})
+                    )
                     battle.save_play(self.db, halted=True)
                     battle.stop()
         else:
@@ -235,16 +241,17 @@ class Client(tornadio.SocketConnection):
             if not count:
                 return
             rand = random.randint(0, count)
+            battle_user_ids = [x.user_id for x in battle.participants]
             for question in self.db.Question.find(search).limit(1).skip(rand):
                 # XXX at this point we might want to check that the question
                 # hasn't been
                 #   a) written by any of the participants of the battle
                 #   b) hasn't been reviewed by any of the participants
                 #   c) questions played in the past
-                if 1: # too few questions in db for this at the moment
-                    return question
-                else:
+                if question.author and str(question.author._id) in battle_user_ids:
                     search['_id']['$nin'].append(question._id)
+                else:
+                    return question
 
     def on_close(self):
         if getattr(self, 'user_id', None) and getattr(self, 'user_name', None):
