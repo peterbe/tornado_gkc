@@ -298,6 +298,13 @@ class HomeHandler(BaseHandler):
         user = options['user']
         options['count_published_questions'] = \
           self.db.Question.find({'state': 'PUBLISHED'}).count()
+
+        past_plays = 0
+        if user:
+            past_plays = (self.db.Play
+                  .find({'users.$id': user._id})
+                  .count())
+        options['past_plays'] = past_plays
         self.render("home.html", **options)
 
 

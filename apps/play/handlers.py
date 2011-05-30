@@ -1,5 +1,6 @@
+import datetime
 from collections import defaultdict
-from pymongo import ASCENDING
+from pymongo import ASCENDING, DESCENDING
 from pymongo.objectid import InvalidId, ObjectId
 import tornado.web
 from tornado.web import HTTPError
@@ -26,6 +27,7 @@ class BasePlayHandler(BaseHandler):
                 raise HTTPError(403, "Not your play")
         return play
 
+
 route_redirect('/play/start$', '/play/start/', name='start_play_redirect')
 @route('/play/start/$', name='start_play')
 class StartPlayingHandler(BasePlayHandler):
@@ -38,7 +40,8 @@ class StartPlayingHandler(BasePlayHandler):
         #self.set_cookie('user_id', str(user._id))
         self.render("play/start_play.html", **options)
 
-@route('/play/$', name='play')
+
+@route('/play/battle$', name='play')
 class PlayHandler(BasePlayHandler):
 
     @tornado.web.authenticated
@@ -53,6 +56,7 @@ class PlayHandler(BasePlayHandler):
         }
         options['config_json'] = tornado.escape.json_encode(config)
         self.render("play/play.html", **options)
+
 
 @route('/play/replay/(\w{24})/$', name='replay_play')
 class ReplayPlayHandler(BasePlayHandler):
@@ -91,3 +95,33 @@ class ReplayPlayHandler(BasePlayHandler):
         options['totals'] = totals
         options['page_title'] = ' vs. '.join(player_names)
         self.render("play/replay.html", **options)
+
+@route('/play/replay/$', name='play_replays')
+class ReplaysHandler(BasePlayHandler):
+
+    @tornado.web.authenticated
+    def get(self):
+        options = self.get_base_options()
+        search_base = {'users.$id': options['user']._id}
+        plays_base = (self.db.Play
+                  .find(search_base)
+                  )
+        stats = dict(wins=0,
+                     draws=0,
+                     losses=0)
+        long_ago = datetime.datetime(2011,1,1,0,0,0)
+        for play in (self.db.Play
+          .find(dict(search_base, finished={'$gte': long_ago}))):
+            if play.winner == options['user']:
+                stats['wins'] += 1
+            elif play.draw:
+                stats['draws'] += 1
+            else:
+                stats['losses'] += 1
+
+        options['stats'] = stats
+        options['plays'] = (self.db.Play.find(search_base)
+                             .sort('add_date', DESCENDING))
+        options['page_title'] = "Past plays"
+
+        self.render("play/replays.html", **options)

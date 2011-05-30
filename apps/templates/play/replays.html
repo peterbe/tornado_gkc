@@ -1,0 +1,83 @@
+{% extends "../base.html" %}
+
+{% block extra_head %}
+<style>
+.won { color:green; font-weight: bold; }
+.draw { color:orange; }
+.loss { color:red }
+table#stats {
+  float:right;
+  margin-right:50px;
+}
+table#stats td {
+  font-size:1.6em;
+  padding-right:25px;
+}
+</style>
+{% end %}
+
+{% block content_inner %}
+<h1>{{ page_title }}</h1>
+
+<table id="stats">
+  <tr>
+    <td>Wins:</td>
+    <td>{{ stats['wins'] }}</td>
+  </tr>
+  <tr>
+    <td>Draws:</td>
+    <td>{{ stats['draws'] }}</td>
+  </tr>
+  <tr>
+    <td>Losses:</td>
+    <td>{{ stats['losses'] }}</td>
+  </tr>
+</table>
+
+<table>
+  <thead>
+    <tr>
+      <th>When</th>
+      <th>Against</th>
+      <th>Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for play in plays %}
+    <tr>
+      <td>{{ modules.TimeSince(play.add_date) }} ago</td>
+      <td>{% for user_ in play.users %}
+      {% if user_._id != user._id %}{{ user_.username }}{% end %}
+      {% end %}
+      </td>
+      <td>
+        <a href="{{ reverse_url('replay_play', play._id) }}">
+        {% if play.halted %}
+        halted
+        {% else %}
+          {% if play.finished %}
+            {% if play.winner == user %}
+              <span class="won">won!</span>
+            {% else %}
+              {% if play.draw %}
+                <span class="draw">draw</span>
+              {% else %}
+                <span class="loss">loss</span>
+              {% end %}
+            {% end %}
+
+          {% else %}
+          unfinished
+          {% end %}
+        {% end %}
+        </a>
+      </td>
+    </tr>
+    {% end %}
+  </tbody>
+</table>
+
+{% end %}
+
+{% block extra_js %}
+{% end %}

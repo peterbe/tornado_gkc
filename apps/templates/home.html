@@ -15,12 +15,17 @@ There are current <strong>{{ count_published_questions }}</strong> published
 </p>
 
 <p>
-<a href="{{ reverse_url('start_play') }}">Play!</a>
+<a href="{{ reverse_url('start_play') }}" style="font-size:1.8em">Play!</a>
+{% if past_plays %}
+<br>You have played <a href="{{ reverse_url('play_replays') }}">{{ past_plays }} times before</a>
+{% end %}
 </p>
 
+<!--
 <p>
 <a href="{{ reverse_url('chat') }}">Chat</a>  - to see if there are more people around
 </p>
+-->
 {% else %}
 
 <p style="margin-top:60px">
