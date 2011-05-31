@@ -8,7 +8,7 @@ suitable for aggressive HTTP caching.
 (c) mail@peterbe.com
 """
 
-__version__ = '1.1'
+__version__ = '1.2'
 
 import os
 import cPickle
@@ -240,12 +240,17 @@ class StaticURL(tornado.web.UIModule):
 
 class Static(StaticURL):
     """given a list of static resources, return the whole HTML tag"""
-    def render(self, *static_urls):
+    def render(self, *static_urls, **options):
         extension = static_urls[0].split('.')[-1]
         if extension == 'css':
             template = '<link rel="stylesheet" type="text/css" href="%(url)s">'
         elif extension == 'js':
-            template = '<script type="text/javascript" src="%(url)s"></script>'
+            template = '<script '
+            if 'defer' in options:
+                template += 'defer '
+            elif 'async' in options:
+                template += 'async '
+            template += 'src="%(url)s"></script>'
         else:
             raise NotImplementedError
         url = super(Static, self).render(*static_urls)
@@ -320,12 +325,17 @@ class PlainStatic(tornado.web.UIModule):
     or combing.
     """
 
-    def render(self, *static_urls):
+    def render(self, *static_urls, **options):
         extension = static_urls[0].split('.')[-1]
         if extension == 'css':
             template = '<link rel="stylesheet" type="text/css" href="%(url)s">'
         elif extension == 'js':
-            template = '<script type="text/javascript" src="%(url)s"></script>'
+            template = '<script '
+            if 'defer' in options:
+                template += 'defer '
+            elif 'async' in options:
+                template += 'async '
+            template += 'src="%(url)s"></script>'
         else:
             raise NotImplementedError
 

@@ -147,7 +147,10 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
     def get_user_settings(self, user, fast=False):
         return self.get_current_user_settings(user=user, fast=fast)
 
-    def get_current_user_settings(self, user=None, fast=False):
+    def get_current_user_settings(self,
+                                  user=None,
+                                  fast=False,
+                                  create_if_necessary=False):
         if user is None:
             user = self.get_current_user()
 
@@ -157,7 +160,12 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         if fast:
             return self.db.UserSettings.collection.one(_search) # skip mongokit
         else:
-            return self.db.UserSettings.one(_search)
+            user_settings = self.db.UserSettings.one(_search)
+            if create_if_necessary and not user_settings:
+                user_settings = self.db.UserSettings()
+                user_settings.user = user
+                user_settings.save()
+            return user_settings
 
     def create_user_settings(self, user, **default_settings):
         user_settings = self.db.UserSettings()
@@ -708,6 +716,8 @@ class HelpHandler(BaseHandler):
             else:
                 link, label = each
             yield dict(link=link, label=label)
+
+
 @route('/settings/toggle/', name='user_settings_toggle')
 class UserSettingsToggle(BaseHandler):
 
@@ -716,13 +726,14 @@ class UserSettingsToggle(BaseHandler):
 
     @tornado.web.authenticated
     def post(self):
-        user_settings = self.get_current_user_settings()
+        user_settings = self.get_current_user_settings(create_if_necessary=True)
         sound = self.get_argument('sound', None)
+        _save = False
         if sound is not None:
-            if sound == 'off':
-                user_settings.disable_sound = True
-            else:
-                user_settings.disable_sound = False
+            user_settings.disable_sound = not user_settings.disable_sound
+            _save = True
+        if _save:
             user_settings.save()
-
+        else:
+            raise HTTPError(400, "No valid settings toggled")
         self.write("OK")

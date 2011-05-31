@@ -54,7 +54,7 @@ class PlayHandler(BasePlayHandler):
           'HIGHSCORE_URL': '/play/highscore/',
           'HOMEPAGE_URL': '/',
           'DEBUG': self.application.settings['debug'],
-          'ENABLE_SOUNDS': not user_settings.disable_sound,
+          'ENABLE_SOUNDS': not getattr(user_settings, 'disable_sound', False),
         }
         options['config_json'] = tornado.escape.json_encode(config)
         self.render("play/play.html", **options)

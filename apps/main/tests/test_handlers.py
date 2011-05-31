@@ -141,6 +141,24 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(user.last_name, 'Noval')
         self.assertTrue(not user.email)
 
+    def test_toggle_user_settings(self):
+        url = self.reverse_url('user_settings_toggle')
+        response = self.client.get(url, {'sound':'anything'})
+        self.assertEqual(response.code, 405)
+        response = self.client.post(url, {'sound':'anything'})
+        self.assertEqual(response.code, 403)
+        self._login()
+        response = self.client.post(url, {'stuff':'anything'})
+        self.assertEqual(response.code, 400)
+        response = self.client.post(url, {'sound':'anything'})
+        self.assertEqual(response.code, 200)
+        user_settings = self.db.UserSettings.one()
+        self.assertTrue(user_settings.disable_sound)
+        response = self.client.post(url, {'sound':'anything'})
+        self.assertEqual(response.code, 200)
+        user_settings = self.db.UserSettings.one()
+        self.assertTrue(not user_settings.disable_sound)
+
 
 
 def facebook_get_authenticated_user(self, callback, **k):

@@ -137,7 +137,6 @@ WEB_SOCKET_SWF_LOCATION = '{{ static_url("js/ext/WebSocketMain.swf") }}';
 </script>
 {{ modules.Static("js/ext/jquery-1.6.1.min.js") }}
 {{ modules.Static("js/scoreboard.js", "js/rumbler.js", "js/play.js") }}
-
 <script>
 $(function () {
    if (CONFIG.DEBUG) {
@@ -146,43 +145,18 @@ $(function () {
     }
 });
 </script>
-{{ modules.Static("js/ext/soundmanager/soundmanager2-nodebug-jsmin.js") }}
-<script>
-soundManager.url = '{{ modules.StaticURL("swf/soundmanager2.swf") }}';
-soundManager.onready(function(status) {
-   if (status.success) {
-      CONFIG.SOUNDS = {};
-      soundManager.createSound('applause', '{{ modules.StaticURL("sounds/applause.mp3") }}');
-      CONFIG.SOUNDS['you_won'] = 'applause';
-      soundManager.createSound('fake_applause', '{{ modules.StaticURL("sounds/fake_applause.mp3") }}');
-      CONFIG.SOUNDS['you_lost'] = 'fake_applause';
-      soundManager.createSound('sword', '{{ modules.StaticURL("sounds/sword.mp3") }}');
-      CONFIG.SOUNDS['be_ready'] = 'sword';
-      if (CONFIG.ENABLE_SOUNDS) {
-        $('#sound-enabled').show();
-      } else {
-        $('#sound-disabled').show();
-      }
-      $('#sound-enabled').click(function() {
-         CONFIG.ENABLE_SOUNDS = false;
-         $(this).hide();
-         $('#sound-disabled').show();
-         $.post('{{ reverse_url('user_settings_toggle') }}', {sound:'off'});
-         return false;
-      });
-      $('#sound-disabled').click(function() {
-         CONFIG.ENABLE_SOUNDS = true;
-         $(this).hide();
-         $('#sound-enabled').show();
-         $.post('{{ reverse_url('user_settings_toggle') }}', {sound:'on'});
-         return false;
-      });
 
-   } else {
-      CONFIG.ENABLE_SOUNDS = false;
-      $('#sound-switch').hide();
-   }
-});
+<script>
+var SOUND_CONFIG = {
+  url: '{{ modules.StaticURL("swf/soundmanager2.swf") }}',
+  sounds: {
+    applause: '{{ modules.StaticURL("sounds/applause.mp3") }}',
+    fake_applause: '{{ modules.StaticURL("sounds/fake_applause.mp3") }}',
+    sword: '{{ modules.StaticURL("sounds/sword.mp3") }}'
+  },
+  settings_toggle_url: '{{ reverse_url('user_settings_toggle') }}'
+};
 </script>
+{{ modules.Static("js/ext/soundmanager/soundmanager2-nodebug-jsmin.js", "js/playsound.js", defer=True) }}
 </body>
 </html>
