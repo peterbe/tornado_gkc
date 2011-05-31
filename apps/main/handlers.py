@@ -708,3 +708,21 @@ class HelpHandler(BaseHandler):
             else:
                 link, label = each
             yield dict(link=link, label=label)
+@route('/settings/toggle/', name='user_settings_toggle')
+class UserSettingsToggle(BaseHandler):
+
+    def check_xsrf_cookie(self):
+        pass
+
+    @tornado.web.authenticated
+    def post(self):
+        user_settings = self.get_current_user_settings()
+        sound = self.get_argument('sound', None)
+        if sound is not None:
+            if sound == 'off':
+                user_settings.disable_sound = True
+            else:
+                user_settings.disable_sound = False
+            user_settings.save()
+
+        self.write("OK")

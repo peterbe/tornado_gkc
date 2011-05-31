@@ -14,6 +14,11 @@
   <body>
     <div id="body">
 
+    <div id="sound-switch">
+      <a style="display:none" href="#" id="sound-enabled" title="Click to disable sound"><img src="{{ static_url('images/sound-on.png') }}" alt="on"></a>
+      <a style="display:none" href="#" id="sound-disabled" title="Click to enable sound"><img src="{{ static_url('images/sound-off.png') }}" alt="off"></a>
+    </div>
+
     <div id="scoreboard" style="display:none"></div>
     <div id="your_name" style="display:none">
       <p>Hi there <strong></strong>!<br>
@@ -132,12 +137,51 @@ WEB_SOCKET_SWF_LOCATION = '{{ static_url("js/ext/WebSocketMain.swf") }}';
 </script>
 {{ modules.Static("js/ext/jquery-1.6.1.min.js") }}
 {{ modules.Static("js/scoreboard.js", "js/rumbler.js", "js/play.js") }}
+
 <script>
 $(function () {
    if (CONFIG.DEBUG) {
       $('#log').show();
       WEB_SOCKET_DEBUG = true;
     }
+});
+</script>
+{{ modules.Static("js/ext/soundmanager/soundmanager2-nodebug-jsmin.js") }}
+<script>
+soundManager.url = '{{ modules.StaticURL("swf/soundmanager2.swf") }}';
+soundManager.onready(function(status) {
+   if (status.success) {
+      CONFIG.SOUNDS = {};
+      soundManager.createSound('applause', '{{ modules.StaticURL("sounds/applause.mp3") }}');
+      CONFIG.SOUNDS['you_won'] = 'applause';
+      soundManager.createSound('fake_applause', '{{ modules.StaticURL("sounds/fake_applause.mp3") }}');
+      CONFIG.SOUNDS['you_lost'] = 'fake_applause';
+      soundManager.createSound('sword', '{{ modules.StaticURL("sounds/sword.mp3") }}');
+      CONFIG.SOUNDS['be_ready'] = 'sword';
+      if (CONFIG.ENABLE_SOUNDS) {
+        $('#sound-enabled').show();
+      } else {
+        $('#sound-disabled').show();
+      }
+      $('#sound-enabled').click(function() {
+         CONFIG.ENABLE_SOUNDS = false;
+         $(this).hide();
+         $('#sound-disabled').show();
+         $.post('{{ reverse_url('user_settings_toggle') }}', {sound:'off'});
+         return false;
+      });
+      $('#sound-disabled').click(function() {
+         CONFIG.ENABLE_SOUNDS = true;
+         $(this).hide();
+         $('#sound-enabled').show();
+         $.post('{{ reverse_url('user_settings_toggle') }}', {sound:'on'});
+         return false;
+      });
+
+   } else {
+      CONFIG.ENABLE_SOUNDS = false;
+      $('#sound-switch').hide();
+   }
 });
 </script>
 </body>

@@ -48,11 +48,13 @@ class PlayHandler(BasePlayHandler):
     def get(self):
         options = self.get_base_options()
         user = self.get_current_user()
+        user_settings = self.get_user_settings(user)
         config = {
           'SOCKET_PORT': 8888,
           'HIGHSCORE_URL': '/play/highscore/',
           'HOMEPAGE_URL': '/',
           'DEBUG': self.application.settings['debug'],
+          'ENABLE_SOUNDS': not user_settings.disable_sound,
         }
         options['config_json'] = tornado.escape.json_encode(config)
         self.render("play/play.html", **options)
