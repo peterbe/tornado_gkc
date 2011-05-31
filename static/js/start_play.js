@@ -8,6 +8,7 @@ head.js(JS_URLS.fancybox, function() {
       transitionIn: 'none',
       transitionOut: 'none',
       showCloseButton: false,
+      enableEscapeButton: false,
       onClosed: function() {
          location.href = '/';
       }

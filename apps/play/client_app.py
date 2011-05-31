@@ -264,9 +264,10 @@ class Client(tornadio.SocketConnection):
             battle.remove_participant(self)
             battle.send_to_all({'disconnected': self.user_name})
             battle.stop()
-            battle.save_play(self.db, halted=True)
 
-
+            # did it ever even start?
+            if battle.play_id:
+                battle.save_play(self.db, halted=True)
 
 class Application(tornado.web.Application):
     battles = set()

@@ -681,6 +681,7 @@ class HelpHandler(BaseHandler):
       ['/', u"Help"],
       u"About",
       ['/a-good-question', u"Writing a good question"],
+      ['/rules', u"Rules"],
       #u"News",
       #['/API', u"Developers' API"],
       #u"Bookmarklet",

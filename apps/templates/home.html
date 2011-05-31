@@ -16,6 +16,7 @@ There are current <strong>{{ count_published_questions }}</strong> published
 
 <p>
 <a href="{{ reverse_url('start_play') }}" style="font-size:1.8em">Play!</a>
+<br><a href="/help/rules">Rules are simple</a>
 {% if past_plays %}
 <br>You have played <a href="{{ reverse_url('play_replays') }}">{{ past_plays }} times before</a>
 {% end %}
@@ -36,7 +37,7 @@ There are current <strong>{{ count_published_questions }}</strong> published
   <li><a href="{{ reverse_url('login') }}" class="account">Sign in</a></li>
   <li>Click on "Play!" on the home page</li>
   <li>Wait for someone to play against</li>
-  <li>Battle! You get 3 points if you answer right, 1 point if you get it by alternative</li>
+  <li>Battle! You get 3 points if you answer right, 1 point if you get it by alternative (see <a href="/help/rules">Rules</a>)</li>
   <li>Bask in the glory!</li>
 </ol>
 

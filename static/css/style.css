@@ -15,7 +15,7 @@ body {
   color:#f1f1f1;
   font-family:'Trebuchet MS','Lucida Grande',Verdana,Arial,Sans-Serif;
 }
-h1,h2,h3,h4 {
+h1,h2,h3,h4, .yellow {
   /*font-family: "Droid Sans",Arial,Helvetica,sans-serif;*/
   color:#ffea00;
 }

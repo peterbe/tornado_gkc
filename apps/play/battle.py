@@ -20,16 +20,12 @@ class Battle(object):
         self.max_no_people = max_no_people
         self.no_questions = no_questions
         self.participants = set()
-        #self.user_ids = set()
-        #self.ready_to_play = False
         self.sent_questions = set()
         self.stopped = False
         self.scores = defaultdict(int)
         self.loaded_alternatives = set()
         self.attempted = set()
         self.timed_out = set()
-        #self._checking_answer = set()
-        #self._ready_to_play = False
         self.current_question = None
         self.current_question_sent = None
         self.genres_only = genres_only
@@ -45,8 +41,6 @@ class Battle(object):
             raise BattleError("can't add more participants. it's full")
         assert client.user_id and client.user_name
         self.participants.add(client)
-        #if len(self.participants) >= self.min_no_people:
-        #    self._ready_to_play = True
 
     def ready_to_play(self):
         return len(self.participants) >= self.min_no_people
