@@ -67,7 +67,7 @@ class QuestionForm(BaseForm):
                                  widget=MultilinesWidget(length=4))
     genre = TextField("Category", [validators.Required()],
                       description='Try to use big groups like "Geography" instead of "European capitals"')
-    spell_correct = BooleanField("Spell correct", description="Whether small spelling mistakes should be accepted")
+    spell_correct = BooleanField("Allow spelling mistakes", description="Whether small spelling mistakes should be accepted")
     comment = TextAreaField("Comment",
                             description="Any references or links to strengthen your answer")
 
