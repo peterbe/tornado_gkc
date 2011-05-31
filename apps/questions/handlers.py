@@ -147,6 +147,7 @@ class QuestionPointsHighscoreHandler(QuestionsBaseHandler):
         options['your_position'] = your_position
         options['is_admin_user'] = options['user'] and \
           self.is_admin_user(options['user'])
+        options['page_title'] = "Question Points Highscore"
         self.render('questions/highscore.html', **options)
 
 @route('/questions/points/update/', name='update_question_points')

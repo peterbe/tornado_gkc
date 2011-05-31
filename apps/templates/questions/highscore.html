@@ -43,7 +43,7 @@ tfoot td.total { font-size:150%; }
     <td>{{ qp.highscore_position }}</td>
     <td>{{ qp.user.username }}
       {% if qp.highscore_position == your_position and user and user.username == qp.user.username %}
-      &larr; you you you!
+      <span class="yellow">&larr; you you you!</span>
       {% end %}
     </td>
     <td class="points">{{ qp.points }}</td>
