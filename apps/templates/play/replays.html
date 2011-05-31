@@ -52,9 +52,6 @@ table#stats td {
       </td>
       <td>
         <a href="{{ reverse_url('replay_play', play._id) }}">
-        {% if play.halted %}
-        halted
-        {% else %}
           {% if play.finished %}
             {% if play.winner == user %}
               <span class="won">won!</span>
@@ -69,7 +66,6 @@ table#stats td {
           {% else %}
           unfinished
           {% end %}
-        {% end %}
         </a>
       </td>
     </tr>
