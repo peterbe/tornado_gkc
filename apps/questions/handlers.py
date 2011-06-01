@@ -400,8 +400,8 @@ class EditQuestionHandler(QuestionsBaseHandler):
                 question_url = 'http://%s%s' % \
                   (self.request.host, self.reverse_url('view_question', question._id))
                 try:
-                    email_body = "New question submitted:\n%s\n\n--\n%s\n" % \
-                      (question_url, settings.PROJECT_TITLE)
+                    email_body = "New question submitted:\n%s\n\"%s\"\n\n--\n%s\n" % \
+                      (question_url, question.text, settings.PROJECT_TITLE)
                     send_email(self.application.settings['email_backend'],
                                "%s has submitted a question" % user.username,
                                email_body,
@@ -492,8 +492,8 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
         question_url = 'http://%s%s' % \
                   (self.request.host, self.reverse_url('view_question', question._id))
         try:
-            email_body = "New question submitted:\n%s\n\n--\n%s\n" % \
-              (question_url, settings.PROJECT_TITLE)
+            email_body = "New question submitted:\n%s\n\"%s\"\n\n--\n%s\n" % \
+              (question_url, question.text, settings.PROJECT_TITLE)
             send_email(self.application.settings['email_backend'],
                        "%s has submitted a question" % user.username,
                        email_body,
@@ -546,7 +546,7 @@ class RejectQuestionHandler(QuestionsBaseHandler):
                 )
         except:
             logging.error("Unable to send email about rejected question %s"\
-              % question_url, exc_info=True)
+              % edit_question_url, exc_info=True)
 
         url = self.reverse_url('questions')
         self.redirect(url)
