@@ -5,19 +5,12 @@
         <title>{% block title %}{{ page_title }}{% end %}</title>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=Edge;chrome=1">
-        <meta name="description" content="">
-        <meta name="keywords" content="">
+        <meta name="description" content="Kwissle is an real-time general knowledge quiz battle game.">
+        <meta name="keywords" content="quiz,battle,realtime,real-time,general knowledge,play,websockets,socket.io">
         {{ modules.Static("css/ext/fancybox/jquery.fancybox-1.3.4.css", "css/ext/jquery.gritter.css", "css/style.css") }}
         {% block extra_head_outer %}
         {% block extra_head %}{% end %}
         {% end %}
-
-{% block google_analytics %}
-{% if not debug %}
-<script type="text/javascript">
-</script>
-{% end %}
-{% end %}
 
     </head>
     <body>
@@ -83,6 +76,22 @@ head.js(JS_URLS.jquery, JS_URLS.gritter, JS_URLS.base, function() {
 {% block extra_js %}{% end %}
 
 
+{% block google_analytics %}
+{% if not debug %}
+<script>
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-94373-12']);
+  _gaq.push(['_trackPageview']);
+  _gaq.push(['_trackPageLoadTime']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+{% end %}
+{% end %}
+
+{% if debug %}<p style="float:right;font-size:70%;color:#ccc">{% else %}<!--{% end %}Wow! this page only took {{ request.request_time() * 1000 }} milliseconds to render {% if debug %}</p>{% else %}-->{% end %}
     </body>
-<!-- Wow! this page only took {{ request.request_time() }} seconds to render -->
 </html>

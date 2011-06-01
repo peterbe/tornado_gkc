@@ -99,10 +99,11 @@ class ReplayPlayHandler(BasePlayHandler):
         self.render("play/replay.html", **options)
 
 @route('/play/replay/$', name='play_replays')
+@route('/play/replay/(all)/$', name='all_play_replays')
 class ReplaysHandler(BasePlayHandler):
 
     @tornado.web.authenticated
-    def get(self):
+    def get(self, all=None):
         options = self.get_base_options()
         search_base = {'users.$id': options['user']._id}
         plays_base = (self.db.Play
