@@ -22,7 +22,7 @@ Do you want to
 or perhaps <a href="{{ reverse_url('settings') }}">change your settings</a>?
 
 {% else %}
-<h3>Choose your weapon soldier!</h3>
+<h3>Kwissle will NOT post things into your account. Ever!</h3>
 
 <div id="authenticators">
 <p>
@@ -37,6 +37,13 @@ or perhaps <a href="{{ reverse_url('settings') }}">change your settings</a>?
 <a href="/auth/facebook/" title="Facebook"><img src="{{ modules.StaticURL("images/facebook.png") }}" alt="Facebook"></a>
 </p>
 </div>
+
+<div class="clearer">&nbsp;</div>
+
+<p>Using any of the services above mean that you <span class="yellow">don't</span>
+have to have <span class="yellow">yet another password to
+remember</span>.<br>
+All <span class="yellow">accounts are</span> used in <span class="yellow">READ-ONLY</span> mode.</p>
 
 <div class="clearer">&nbsp;</div>
 {% end %}

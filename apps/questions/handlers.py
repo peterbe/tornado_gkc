@@ -506,6 +506,71 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
         url = self.reverse_url('submitted_question', question._id)
         self.redirect(url)
 
+@route('/questions/(\w{24})/comment/$', name="comment_question")
+class CommentQuestionHandler(QuestionsBaseHandler):
+
+    @tornado.web.authenticated
+    def post(self, question_id):
+        user = self.get_current_user()
+        question = self.must_find_question(question_id, user)
+        assert question.author.email, "author doesn't haven an email address"
+        comment = self.get_argument('comment').strip()
+
+        subject = 'A comment on your question "%s"' % question.text
+        email_body = ('Your question: "%s" (answer: %s)\n' %
+                       (question.text, question.answer))
+        ago = (datetime.datetime.now() - question.add_date).seconds
+        if ago > 3600:
+            email_body += question.add_date.strftime('Added %d %b %Y.')
+        elif ago > 60:
+            email_body += 'Added %s minutes ago.' % int(ago / 60.0)
+        else:
+            email_body += 'Added %s seconds ago.' % ago
+        email_body += '\n\n'
+        if user.first_name:
+            user_name = '%s %s' % (user.first_name, user.last_name)
+        else:
+            user_name = user.username
+        if self.is_admin_user(user):
+            user_name += ' (administrator)'
+        email_body += '%s sent the following comment:\n\n' % user_name
+
+        indent = 4 * ' '
+        email_body += indent
+        email_body += ('\n' + indent).join(comment.splitlines())
+
+        email_body += '\n\n'
+
+        if question.state == DRAFT:
+            email_body += 'To edit the question:\n'
+            question_url = self.reverse_url('edit_question', question._id)
+        else:
+            email_body += 'To view the question:\n'
+            question_url = self.reverse_url('view_question', question._id)
+        base_url = 'http://%s' % self.request.host
+        email_body += base_url + question_url
+
+        email_body += '\n'
+
+        send_email(
+          self.application.settings['email_backend'],
+          subject,
+          email_body,
+          self.application.settings['webmaster'],
+          [question.author.email],
+        )
+
+        if self.is_admin_user(user):
+            sent_to = question.author.email
+        else:
+            sent_to = question.author.username
+        self.push_flash_message("Comment sent",
+            "Your comment has been sent to %s" % sent_to)
+
+        url = self.reverse_url('view_question', question._id)
+        self.redirect(url)
+
+
 @route('/questions/(\w{24})/reject/$', name="reject_question")
 class RejectQuestionHandler(QuestionsBaseHandler):
 

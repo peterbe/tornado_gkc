@@ -13,7 +13,7 @@ NODE_DOMAIN = 'kwissle.com'
 
 COOKIE_SECRET = "12orTzK2XQAGUYdkL5gmueJIFuY37EQn92XsTo1v/Vo="
 
-WEBMASTER = 'peterbe@gmail.com'
+WEBMASTER = 'webmaster@kwissle.com'
 ADMIN_EMAILS = ['peterbe@gmail.com']
 
 TWITTER_CONSUMER_KEY = 'UcZ80RJk7x4FVWE0d93ig'

@@ -25,6 +25,7 @@ def smartertimesince(d, now=None):
 
     if not now:
         if d.tzinfo:
+            raise NotImplementedError
             from django.utils.tzinfo import LocalTimezone
             now = datetime.datetime.now(LocalTimezone(d))
         else:
@@ -131,5 +132,3 @@ def timeSince(firstdate, seconddate, afterword=None,
             return wrap_afterword("%s" % (string.join(s,' %s '%AND)))
         else:
             return wrap_afterword("%s" % s[0])
-
-

@@ -19,6 +19,13 @@
     </div>
     <div><input type="submit" value="Reject"></div>
   </form>
+  <form action="{{ reverse_url('comment_question', question._id) }}" method="post" id="comment">
+    {{ xsrf_form_html() }}
+    <div id="send_comment" style="display:none">Comment:<br>
+    <textarea name="comment" cols="50" rows="6"></textarea>
+    </div>
+    <div><input type="submit" value="Send comment"></div>
+  </form>
   {% if question.accept_date %}
     {% if skip is not None %}
       <form action="{{ reverse_url('review_accepted') }}" method="post" id="skip">
