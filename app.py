@@ -85,7 +85,9 @@ class Application(tornado.web.Application):
             git_revision=get_git_revision(),
             email_backend=options.debug and \
                  'utils.send_mail.backends.console.EmailBackend' \
-              or 'utils.send_mail.backends.smtp.EmailBackend',
+#                 'utils.send_mail.backends.pickle.EmailBackend' \
+#              or 'utils.send_mail.backends.smtp.EmailBackend',
+              or 'utils.send_mail.backends.pickle.EmailBackend',
             webmaster=settings.WEBMASTER,
             admin_emails=settings.ADMIN_EMAILS,
             CLOSURE_LOCATION=os.path.join(os.path.dirname(__file__),

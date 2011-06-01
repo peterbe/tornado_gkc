@@ -22,5 +22,5 @@ class EmailBackend(BaseEmailBackend):
 
     def send_messages(self, messages):
         """Redirect messages to the dummy outbox"""
-        mail.outbox.extend(messages)
+        mail.outbox.extend(message)
         return len(messages)
