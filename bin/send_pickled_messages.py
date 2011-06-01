@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+import os, sys
+parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if parent not in sys.path:
+    sys.path.insert(0, parent)
+
 import time
 import cPickle
 import os.path
