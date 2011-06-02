@@ -15,6 +15,7 @@
   <form action="{{ reverse_url('reject_question', question._id) }}" method="post" id="reject">
     {{ xsrf_form_html() }}
     <div id="reject_comment" style="display:none">Comment:<br>
+    {% if skip is not None %}<input type="hidden" name="skip" value="{{ skip }}">{% end %}
     <textarea name="reject_comment" cols="30" rows="3"></textarea>
     </div>
     <div><input type="submit" value="Reject"></div>
@@ -22,6 +23,7 @@
   <form action="{{ reverse_url('comment_question', question._id) }}" method="post" id="comment">
     {{ xsrf_form_html() }}
     <div id="send_comment" style="display:none">Comment:<br>
+    {% if skip is not None %}<input type="hidden" name="skip" value="{{ skip }}">{% end %}
     <textarea name="comment" cols="50" rows="6"></textarea>
     </div>
     <div><input type="submit" value="Send comment"></div>
@@ -37,6 +39,7 @@
 
     <form action="{{ reverse_url('publish_question', question._id) }}" method="post" id="publish">
       {{ xsrf_form_html() }}
+      {% if skip is not None %}<input type="hidden" name="skip" value="{{ skip }}">{% end %}
       <div><input type="submit" value="Publish!"></div>
     </form>
 

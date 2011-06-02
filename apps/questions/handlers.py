@@ -568,6 +568,8 @@ class CommentQuestionHandler(QuestionsBaseHandler):
             "Your comment has been sent to %s" % sent_to)
 
         url = self.reverse_url('view_question', question._id)
+        if self.get_argument('skip', None):
+            url += '?skip=%s' % self.get_argument('skip')
         self.redirect(url)
 
 
@@ -614,6 +616,8 @@ class RejectQuestionHandler(QuestionsBaseHandler):
               % edit_question_url, exc_info=True)
 
         url = self.reverse_url('questions')
+        if self.get_argument('skip', None):
+            url += '?skip=%s' % self.get_argument('skip')
         self.redirect(url)
 
 
@@ -679,6 +683,8 @@ class PublishQuestionHandler(QuestionsBaseHandler):
             url = self.reverse_url('review_accepted')
         else:
             url = self.reverse_url('questions')
+        if self.get_argument('skip', None):
+            url += '?skip=%s' % self.get_argument('skip')
         self.redirect(url)
 
 @route('/questions/review/random/$', name="review_random")
@@ -934,6 +940,10 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler): # pragma: no cover
         options['page_title'] = "All %s questions (admin eyes only)" %\
           options['total_count']
 
+        filter_count = None
+        if _filter:
+            filter_count = qs.count()
+        options['filter_count'] = filter_count
         try:
             from pygooglechart import PieChart2D
             chart = PieChart2D(400, 250)

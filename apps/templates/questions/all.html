@@ -7,6 +7,9 @@
 <img src="{{ state_counts_pie }}" alt="pie">
 </p>
 {% end %}
+{% if filter_count is not None %}
+<h3>{{ filter_count }} filtered</h3>
+{% end %}
 <form action="">
 <table>
   <thead>

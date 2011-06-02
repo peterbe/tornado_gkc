@@ -60,12 +60,12 @@ class QuestionForm(BaseForm):
                       description="Make it reasonably short and easy to type",
                       widget=TextInputWithMaxlength(15),
                       id="id_answer")
-    accept = TextAreaField("Also accept", widget=MultilinesWidget(length=3, vertical=True),
+    accept = TextAreaField("Also accept (aliases for the correct answer)", widget=MultilinesWidget(length=3, vertical=True),
                            description="Other answers that are also correct")
-    alternatives = TextAreaField("Alternatives (exactly 4)", [validators.Required()],
+    alternatives = TextAreaField("Alternatives (1 correct, 3 incorrect ones)", [validators.Required()],
                                  description="The answer has to be one of the alternatives",
                                  widget=MultilinesWidget(length=4))
-    genre = TextField("Category", [validators.Required()],
+    genre = TextField("Category (most popular ones, feel free to use Other)", [validators.Required()],
                       description='Try to use big groups like "Geography" instead of "European capitals"')
     spell_correct = BooleanField("Allow spelling mistakes", description="Whether small spelling mistakes should be accepted")
     comment = TextAreaField("Comment",
