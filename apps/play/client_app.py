@@ -46,7 +46,7 @@ class Client(tornadio.SocketConnection):
         #print "Opening", repr(self)
         self.send({'debug': "Connected!"});
         if not hasattr(request, 'headers'):
-            logging.debug("No headers :(")
+            logging.info("No headers :(")
             self.send(dict(error={'message': 'Unable to find login information. Try reloading',
                                   'code': errors.ERROR_NOT_LOGGED_IN}))
             return
@@ -86,13 +86,13 @@ class Client(tornadio.SocketConnection):
                     self.send({'error':'Already in an open battle'})
                     return
                 battle = created_battle
-                logging.debug("Joining battle: %r" % battle)
+                logging.info("Joining battle: %r" % battle)
                 break
         if not battle:
             battle = Battle(15, # specify how long the waiting delay is
                             no_questions=self.application_settings['debug'] and 5 or 10
                             )
-            logging.debug("Creating new battle")
+            logging.info("Creating new battle")
             self.battles.add(battle)
         battle.add_participant(self)
         self.current_client_battles[self.user_id] = battle
