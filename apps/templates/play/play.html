@@ -20,8 +20,37 @@
     </div>
 
     <div id="scoreboard" style="display:none"></div>
+
+    {% if user_settings and (user_settings.twitter or user_settings.facebook or user_settings.google) %}
+    <div id="besocial" style="display:none">
+      <p><span class="yellow">No one to play against?</span><br>
+      Then challenge your friends in some way!</p>
+      {% if user_settings.twitter %}
+      <div class="twitter">
+      <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://kwissle.com" data-text="Come and challenge me in a game of Kwissle! I'm there right now" data-count="none" data-via="kwissle">Tweet</a>
+      <span class="tiny">&larr; confirmation opens in a new window</span>
+      <script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
+      </div>
+      {% end %}
+      {% if user_settings.facebook %}
+      <div class="facebook">
+        <div id="fb-root"></div><fb:comments href="http://kwissle.com" num_posts="2" width="400"></fb:comments>
+        <script src="http://connect.facebook.net/en_US/all.js#xfbml=1"></script>
+      </div>
+      {% end %}
+      {% if user_settings.google %}
+      <div class="google">
+          <!-- from http://toric.blogspot.com/2005/07/gmail-compose-link.html -->
+          <!-- at the time of writing, it appears the subject doesn't work -->
+          <a href="javascript:popw='';S='Wanna Kwissle?';B='Hi,\nWanna play a game of Kwissle?\nIt\'s an online real-time general knowledge quiz game.\n\nhttp://kwissle.com';x=document;y=window;popw%20=%20y.open('http://mail.google.com/mail/?view=cm&fs=1&tf=1&subject=Wanna%20Kwissle&body='%20+%20escape(B),'Compose%20Mail','scrollbars=auto,width=600,height=700,top=175,left=175,status=yes,resizable=yes,toolbar=no');if%20(!document.all)%20T%20=%20setTimeout('popw.focus()',50);void(0);">Send an email on Gmail</a>
+          <br><span class="tiny">&uarr; opens in a new window</span>
+      </div>
+      {% end %}
+    </div>
+    {% end %}
+
     <div id="your_name" style="display:none">
-      <p>Hi there <strong></strong>!<br>
+      <p><span class="yellow">Hi there <strong></strong>!</span><br>
       We're about to begin playing shortly.<br>
       Just waiting for someone to play against.
     </div>
@@ -30,7 +59,7 @@
     <div id="timer" style="display:none"></div>
     </div>
 
-    <div id="error_disconnected" style="display:none">
+    <div id="error_disconnected" class="error" style="display:none">
       <h2><span class="user_name"></span> has disappeared!</h2>
       <p>
         Because <span class="user_name"></span> is now disconnected, the
@@ -41,7 +70,7 @@
       </p>
     </div>
 
-    <div id="error_warning" style="display:none">
+    <div id="error_warning" class="error" style="display:none">
       <h2>Error :(</h2>
       <p>
         Depending on the error, sometimes you can just
@@ -92,7 +121,7 @@
     </div>
 
     <div id="waiting">
-      <p><img src="{{ static_url("images/loading.gif") }}" alt="Waiting..."></p>
+      <!--<p><img src="{{ static_url("images/loading.gif") }}" alt="Waiting..."></p>-->
       <p class="message">Connecting</p>
     </div>
 

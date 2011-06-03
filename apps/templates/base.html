@@ -92,6 +92,6 @@ head.js(JS_URLS.jquery, JS_URLS.gritter, JS_URLS.base, function() {
 {% end %}
 {% end %}
 
-{% if debug %}<p style="float:right;font-size:70%;color:#ccc">{% else %}<!--{% end %}Wow! this page only took {{ request.request_time() * 1000 }} milliseconds to render {% if debug %}</p>{% else %}-->{% end %}
+{% if debug %}<p style="float:right;" class="tiny">{% else %}<!--{% end %}Wow! this page only took {{ request.request_time() * 1000 }} milliseconds to render {% if debug %}</p>{% else %}-->{% end %}
     </body>
 </html>

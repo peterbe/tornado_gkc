@@ -50,7 +50,6 @@ class Client(tornadio.SocketConnection):
             self.send(dict(error={'message': 'Unable to find login information. Try reloading',
                                   'code': errors.ERROR_NOT_LOGGED_IN}))
             return
-
         cookie_parser = CookieParser(request)
         user_id = cookie_parser.get_secure_cookie('user')
 

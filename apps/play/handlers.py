@@ -56,6 +56,7 @@ class PlayHandler(BasePlayHandler):
           'DEBUG': self.application.settings['debug'],
           'ENABLE_SOUNDS': not getattr(user_settings, 'disable_sound', False),
         }
+        options['user_settings'] = user_settings
         options['config_json'] = tornado.escape.json_encode(config)
         self.render("play/play.html", **options)
 

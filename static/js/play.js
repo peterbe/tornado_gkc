@@ -338,6 +338,13 @@ $(function() {
          $('#waiting .message').text(text + '.');
       }, 1000);
 
+
+      setTimeout(function() {
+         if (!$('.error:visible').size()) {
+            $('#besocial').show(900);
+         }
+      }, 5 * 1000);
+
       $('form#respond').submit(function() {
          var answer = $.trim($('#answer').val());
          if (!answer.length || Question.has_sent_answer()) {
@@ -364,6 +371,7 @@ $(function() {
             if (CONFIG.ENABLE_SOUNDS && soundManager) {
                soundManager.play(CONFIG.SOUNDS['be_ready']);
             }
+            $('#besocial').remove();
          }
          var seconds_left = obj.wait;
          Gossip.count_down(obj.wait, function(seconds) {

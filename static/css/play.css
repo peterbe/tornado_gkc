@@ -38,7 +38,7 @@ h3 { margin-top:0; margin-bottom:2px; }
     left:265px;
     top:0;
  }
-
+#besocial { float:right; width:400px; }
 #error_warning h2,
 #error_disconnected h2 { color:red; }
 #error_warning { text-align:center; }

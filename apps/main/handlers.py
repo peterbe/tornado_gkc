@@ -358,6 +358,21 @@ class SettingsHandler(BaseHandler):
           "Your changes have been successfully saved")
         self.redirect('/')
 
+
+@route('/settings/social_media.json$', name='social_media_json')
+class SocialMediaUserHandler(BaseHandler):
+
+    def get(self):
+        user_settings = self.get_current_user_settings()
+        data = {}
+        if user_settings:
+            if user_settings.twitter:
+                data['twitter'] = 1
+            if user_settings.facebook:
+                data['facebook'] = 1
+        self.write_json(data)
+
+
 class BaseAuthHandler(BaseHandler):
 
     def get_next_url(self, default='/'):
@@ -461,14 +476,8 @@ class AuthLoginHandler(BaseAuthHandler):
         except CredentialsError, msg:
             return self.write("Error: %s" % msg)
 
-        #self.set_secure_cookie("guid", str(user.guid), expires_days=100)
         self.set_secure_cookie("user", str(user._id), expires_days=100)
-
         self.redirect(self.get_next_url())
-        #if self.request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        #    return str(user.guid)
-        #else:
-        #    self.redirect(self.get_next_url())
 
 
 @route('/auth/google/')
@@ -482,17 +491,15 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
             # because this is going to get lost when we get back from Google
             # stick it in a cookie
             self.set_cookie('next', self.get_argument('next'))
-        print "REDIRECTE!"
         self.authenticate_redirect()
 
     def _on_auth(self, user):
-        print "IN _on_auth"
         if not user:
-            print "\tNot user"
             raise HTTPError(500, "Google auth failed")
         if not user.get('email'):
-            print "\tNot email"
             raise HTTPError(500, "No email provided")
+
+        user_struct = user
         locale = user.get('locale') # not sure what to do with this yet
         first_name = user.get('first_name')
         last_name = user.get('last_name')
@@ -519,9 +526,13 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
 
             self.notify_about_new_user(user, extra_message="Used Google OpenID")
 
-        print "SETTING secure cookie"
-        self.set_secure_cookie("user", str(user._id), expires_days=100)
+        user_settings = self.get_user_settings(user)
+        if not user_settings:
+            user_settings = self.create_user_settings(user)
+        user_settings.google = user_struct
+        user_settings.save()
 
+        self.set_secure_cookie("user", str(user._id), expires_days=100)
         self.redirect(self.get_next_url())
 
 @route('/poop/')
