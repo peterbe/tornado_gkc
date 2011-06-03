@@ -2,9 +2,17 @@
 
 {% block title %}{{ modules.HelpPageTitle() }}{% end %}
 
-{% block sidebar %}
-<h3>See also</h3>
-<ul>
-  {{ modules.HelpSeeAlsoLinks() }}
-</ul>
+
+{% block content_outer %}
+
+      <div id="content_inner">
+      {% block content_inner %}
+      {% end %}
+
+      {% block index_link %}
+      <p style="margin-top:40px"><a href="/help/">&larr; Back to help index</a></p>
+      {% end %}
+      </div>
+
+
 {% end %}

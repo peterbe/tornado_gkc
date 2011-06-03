@@ -7,7 +7,7 @@ from urlparse import urlparse
 from pprint import pprint
 from collections import defaultdict
 from pymongo.objectid import InvalidId, ObjectId
-from time import mktime, sleep
+from time import mktime, sleep, time
 import datetime
 from urllib import quote
 import os.path
@@ -693,6 +693,7 @@ class HelpHandler(BaseHandler):
       u"About",
       ['/a-good-question', u"Writing a good question"],
       ['/rules', u"Rules"],
+      ['/question-workflow', u"Question workflow"],
       #u"News",
       #['/API', u"Developers' API"],
       #u"Bookmarklet",
@@ -712,22 +713,31 @@ class HelpHandler(BaseHandler):
         if os.path.isfile(os.path.join(self.application.settings['template_path'],
                                        filename)):
             if page.lower() == 'api':
+                raise NotImplementedError
                 self._extend_api_options(options)
             elif page.lower() == 'bookmarklet':
+                raise NotImplementedError
                 self._extend_bookmarklet_options(options)
+            elif page == 'index':
+                self._extend_index_options(options)
 
             return self.render(filename, **options)
 
         raise HTTPError(404, "Unknown page")
 
-    def get_see_also_links(self):
+    def get_see_also_links(self, exclude_index=False):
         for each in self.SEE_ALSO:
             if isinstance(each, basestring):
                 link = '/%s' % each.replace(' ','-')
                 label = each
             else:
                 link, label = each
+            if exclude_index and '/help' + link == self.request.path:
+                continue
             yield dict(link=link, label=label)
+
+    def _extend_index_options(self, options):
+        options['see_also_links'] = self.get_see_also_links(exclude_index=True)
 
 
 @route('/settings/toggle/', name='user_settings_toggle')

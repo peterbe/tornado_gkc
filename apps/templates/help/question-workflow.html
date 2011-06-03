@@ -1,0 +1,57 @@
+{% extends "help_base.html" %}
+{% block extra_head %}
+<style type="text/css">
+th.state { width:25%; }
+th { font-weight:bold; text-align:center; }
+td { font-size:90%; }
+</style>
+{% end %}
+{% block content_inner %}
+
+<h1>Help: {{ modules.HelpPageTitle() }}</h1>
+
+<table>
+  <tr>
+    <th class="state yellow">Draft</th>
+    <th>&rarr;</th>
+    <th class="state yellow">Submitted</th>
+    <th>&rarr;</th>
+    <th class="state yellow">Accepted</th>
+    <th>&rarr;</th>
+    <th class="state yellow">Published</th>
+  </tr>
+  <tr>
+    <td>
+      <ul>
+        <li>Only you can see it</li>
+        <li>You can edit it</li>
+      </ul>
+    </td>
+    <td>&nbsp;</td>
+    <td>
+      <ul>
+        <li>You can no longer edit it</li>
+        <li>Moderator can accept it</li>
+      </ul>
+    </td>
+    <td>&nbsp;</td>
+    <td>
+      <ul>
+        <li>Other people can review it</li>
+        <li>You can't review your own</li>
+        <li>Moderator can publish it</li>
+      </ul>
+    <td>&nbsp;</td>
+    <td>
+      <ul>
+        <li>No more reviews</li>
+        <li>Ready to be used in game play!</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<p>Not mentioned above is that a question can also be reject if it's
+totally wrong or inappropriate.</p>
+
+{% end %}

@@ -102,13 +102,15 @@ class HelpPageTitle(tornado.web.UIModule):
         links = []
         current_path = self.request.path
         for each in self.handler.get_see_also_links():
+            print each
             link = each['link']
             if not link.startswith('/help'):
                 link = '/help' + link
+            print repr(link), repr(current_path)
             if link == current_path:
                 return each['label']
 
-        return "Help on GKC"
+        return "Help"
 
 
 class Messages(object):

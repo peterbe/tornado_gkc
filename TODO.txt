@@ -1,3 +1,6 @@
+* Link at the bottom of replayed play to scream out "we need more
+  questions! _contribte_"
+
 * Linkify question comments when reviewing questions
 
 * play not in a fancybox
