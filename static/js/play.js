@@ -85,6 +85,9 @@ var Question = (function() {
 , _has_answered = false;
 
    return {
+      is_initialized: function() {
+	 return _initialized;
+      },
       initialize: function() {
 	 $('#respond').show();
 	 $('#waiting').hide();
@@ -159,6 +162,9 @@ var Question = (function() {
                $('#you_lost').fadeIn(400);
 	    }
 	 }
+	 setTimeout(function() {
+	    $('#questions_ad:hidden').show(500);
+	 }, 3 * 1000);
       },
       stop: function(information) { // the whole battle is over
 	 Clock.stop();
@@ -313,7 +319,7 @@ var Gossip = (function() {
 
 
 // Let the madness begin!
-var socket, dead_battle = false;
+var socket, dead_battle = false, confirm_exit = true;
 
 $(function() {
    socket = new io.Socket(null, {port: CONFIG.SOCKET_PORT, rememberTransport: false});
@@ -340,7 +346,7 @@ $(function() {
 
 
       setTimeout(function() {
-         if (!$('.error:visible').size()) {
+         if (!$('.error:visible').size() && !Question.is_initialized()) {
             $('#besocial').show(900);
          }
       }, 5 * 1000);
@@ -449,5 +455,15 @@ $(function() {
          $('a.replay').attr('href', '/play/replay/' + obj.play_id  + '/');
       }
    });
+
+   $('a').click(function() {
+      confirm_exit = false;
+      $(window).unbind('beforeunload');
+   });
+   
+   $(window).bind('beforeunload', function() {
+      return "Sure you want to exit? Hit Escape to stay.";
+   });
+   
 
 });
