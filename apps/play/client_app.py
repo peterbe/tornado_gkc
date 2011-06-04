@@ -89,7 +89,7 @@ class Client(tornadio.SocketConnection):
                 logging.info("Joining battle: %r" % battle)
                 break
         if not battle:
-            battle = Battle(15, # specify how long the waiting delay is
+            battle = Battle(10, # specify how long the waiting delay is
                             no_questions=self.application_settings['debug'] and 5 or 10
                             )
             logging.info("Creating new battle")
