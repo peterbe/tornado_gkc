@@ -1,4 +1,4 @@
-#body { padding:15px; }
+#body { padding:0; }
 #log { height: 200px; overflow: auto; width: 750px; border: 1px solid #eee; font: 11px Helvetica, Arial; }
 #log p { padding: 4px; margin: 0; }
 #log p.inbound { text-align:right; }
@@ -35,8 +35,8 @@ h3 { margin-top:0; margin-bottom:2px; }
 #gossip {
     font-style:italic;
     position:absolute;
-    left:265px;
-    top:0;
+    left:365px;
+    top:35px;
  }
 #besocial { float:right; width:400px; }
 #error_warning h2,
@@ -44,3 +44,18 @@ h3 { margin-top:0; margin-bottom:2px; }
 #error_warning { text-align:center; }
 #error_disconnected { margin-bottom:20px; }
 #sound-switch { }
+#exit {
+  padding:10px;
+  margin-bottom:30px;
+  /*
+  border-left:1px solid #333;
+  border-right:1px solid #333;
+  border-bottom:1px solid #666;
+
+  border-radius-bottomright: 15px;
+  -moz-border-radius-bottomright:15px;
+  border-radius-bottomleft: 15px;
+  -moz-border-radius-bottomleft:15px;
+  -webkit-border-radius:0 0 15px 0;
+  */
+}

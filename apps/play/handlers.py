@@ -34,6 +34,8 @@ class StartPlayingHandler(BasePlayHandler):
 
     @tornado.web.authenticated
     def get(self):
+        self.redirect(self.reverse_url('play'))
+        return
         options = self.get_base_options()
         iframe_url = self.reverse_url('play')
         options['iframe_url'] = iframe_url
