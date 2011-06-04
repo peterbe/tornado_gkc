@@ -8,6 +8,7 @@ from apps.main.handlers import BaseHandler
 from utils.routes import route, route_redirect
 import settings
 
+
 class BasePlayHandler(BaseHandler):
 
     def find_play(self, play_id):
@@ -99,6 +100,7 @@ class ReplayPlayHandler(BasePlayHandler):
         options['outcomes'] = outcomes
         options['totals'] = totals
         options['page_title'] = ' vs. '.join(player_names)
+        options['message_sent'] = None
         self.render("play/replay.html", **options)
 
 @route('/play/replay/$', name='play_replays')
@@ -131,3 +133,40 @@ class ReplaysHandler(BasePlayHandler):
         options['page_title'] = "Past plays"
 
         self.render("play/replays.html", **options)
+
+
+@route('/play/(\w{24})/send-message/$', name='send_play_message')
+class SendPlayMessageHandler(BasePlayHandler):
+
+    @tornado.web.authenticated
+    def post(self, play_id):
+        options = self.get_base_options()
+        play = self.must_find_play(play_id, options['user'])
+        message = self.get_argument('message').strip()
+        if not message:
+            raise HTTPError(400, "message can't be empty")
+        to = self.get_argument('to', None)
+        if to:
+            try:
+                to_user = self.db.User.one({'_id': ObjectId(to)})
+            except InvalidId:
+                raise HTTPError(400, "Invalid to user")
+        else:
+            to_user = play.get_other_user(options['user'])
+
+        play_message = self.db.PlayMessage()
+        play_message.message = message
+        play_message['from'] = options['user']
+        play_message.to = to_user
+        play_message.save()
+
+        self.push_flash_message(
+            "Message from %s" % options['user'].username,
+            message,
+            user=to_user,
+            #url=self.reverse_url('play_message', play_message._id),
+            )
+
+        url = self.reverse_url('replay_play', play._id)
+        url += '#message_sent'
+        self.redirect(url)

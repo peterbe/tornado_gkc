@@ -5,6 +5,9 @@
 th { text-align:left; color: #FFEA00; }
 th.points, td.points { text-align:right; }
 h2 { float:right; }
+span.maxlength-countdown { padding-left:5px; font-size:80%; }
+span.maxlength-maxed { color:red; }
+#id_message { width:300px; }
 </style>
 {% end %}
 
@@ -73,7 +76,24 @@ h2 { float:right; }
 {% end %}
 </table>
 
+<p id="message_sent" style="display:none">Cool! Message sent</p>
+<div id="send_message" style="display:none">
+{{ modules.SendPlayMessageForm(play) }}
+</div>
+
+<p><a href="{{ reverse_url('play_replays') }}">&larr; Back to all past plays</a></p>
+
 {% end %}
 
 {% block extra_js %}
+<script>
+head.js(JS_URLS.maxlength_countdown, function() {
+  if (location.hash.search(/message_sent/) > -1) {
+    $('#message_sent').show();
+  } else {
+    $('input[maxlength]').maxlength_countdown();
+    $('#send_message').show(900);
+  }
+});
+</script>
 {% end %}

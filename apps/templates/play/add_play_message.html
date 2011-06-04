@@ -1,0 +1,28 @@
+{% if form.errors %}
+    <ul class="errors general-errors">
+        {% for field_name, field_errors in [(n,form.errors[n]) for n in form.errors if form.errors[n]] %}
+            {% for error in field_errors %}
+                <li>{{ form[field_name].label }} {{ error }}</li>
+            {% end %}
+        {% end %}
+    </ul>
+{% end %}
+
+<form action="{{ reverse_url('send_play_message', play._id) }}" method="post">{{ xsrf_form_html() }}
+
+{% for field in form %}
+  <p class="field">
+    {% if field.label.text == 'Message' %}
+      Wanna send <span class="yellow">{{ other_user.username }}</span> a message?:
+    {% else %}
+      '{{ field.label }}'
+    {% end %}
+    {{ modules.RenderField(field) }}
+    {% if field.errors %}
+       <ul class="errors">{% for error in field.errors %}<li>{{ error }}</li>{% end %}</ul>
+    {% end %}
+    <input type="submit" value="Send">
+  </p>
+{% end %}
+
+</form>

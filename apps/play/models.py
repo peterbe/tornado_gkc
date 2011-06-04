@@ -24,6 +24,9 @@ class Play(BaseDocument):
       'draw': False,
     }
 
+    def get_other_user(self, this_user):
+        return [x for x in self.users if x != this_user][0]
+
 
 class PlayedQuestion(BaseDocument):
     __collection__ = 'played_questions'
@@ -41,4 +44,19 @@ class PlayedQuestion(BaseDocument):
       'right': False,
       'timed_out': False,
       'alternatives': False,
+    }
+
+
+class PlayMessage(BaseDocument):
+    __collection__ = 'play_messages'
+    structure = {
+      'play': Play,
+      'from': User,
+      'to': User,
+      'message': unicode,
+      'read': bool,
+    }
+
+    default_values = {
+      'read': False,
     }

@@ -11,9 +11,9 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         self._login()
         response = self.client.get(url)
-        self.assertEqual(response.code, 200)
+        self.assertEqual(response.code, 302)
         play_url = self.reverse_url('play')
-        self.assertTrue(play_url in response.body)
+        self.assertTrue(play_url in response.headers['Location'])
 
     def test_play_homepage(self):
         url = self.reverse_url('play')

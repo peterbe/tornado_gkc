@@ -2,7 +2,7 @@ from wtforms import Form, BooleanField, TextField, TextAreaField, validators
 from wtforms.widgets import html_params, escape, TextInput
 from cgi import escape
 
-from apps.main.forms import BaseForm
+from apps.main.forms import BaseForm, TextInputWithMaxlength
 
 class MultilinesWidget(object):
     def __init__(self, length=4, vertical=False):
@@ -40,14 +40,6 @@ class MultilinesWidget(object):
                 htmls.append('<br/>')
         return '\n'.join(htmls)
 
-class TextInputWithMaxlength(TextInput):
-    def __init__(self, maxlength, *args, **kwargs):
-        self.maxlength = maxlength
-        super(TextInputWithMaxlength, self).__init__(*args, **kwargs)
-
-    def __call__(self, *args, **kwargs):
-        kwargs.update(dict(maxlength=self.maxlength))
-        return super(TextInputWithMaxlength, self).__call__(*args, **kwargs)
 
 class QuestionForm(BaseForm):
     text = TextField("Question", [validators.Required(),

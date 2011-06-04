@@ -349,7 +349,7 @@ $(function() {
          if (!$('.error:visible').size() && !Question.is_initialized()) {
             $('#besocial').show(900);
          }
-      }, 5 * 1000);
+      }, 7 * 1000);
 
       $('form#respond').submit(function() {
          var answer = $.trim($('#answer').val());
@@ -394,6 +394,7 @@ $(function() {
             Question.finish(obj.winner.you_won);
          }
          dead_battle = true;
+         $(window).unbind('beforeunload');
       } else if (obj.update_scoreboard) {
          if (-1 == obj.update_scoreboard[1]) {
             scoreboard.drop_score(obj.update_scoreboard[0]);
@@ -426,6 +427,7 @@ $(function() {
          $('#error_disconnected').show();
 	 $('#error_disconnected .user_name').text(obj.disconnected);
          dead_battle = true;
+         $(window).unbind('beforeunload');
       } else if (obj.error) {
          Question.stop();
 	 $('#waiting').hide();
@@ -437,6 +439,7 @@ $(function() {
             $('#error_run_out').show();
          }
          dead_battle = true;
+         $(window).unbind('beforeunload');
       } else if (obj.your_name) {
          // this is mainly for checking that all is working fine
          $('#your_name strong').text(obj.your_name);
@@ -460,10 +463,10 @@ $(function() {
       confirm_exit = false;
       $(window).unbind('beforeunload');
    });
-   
+
    $(window).bind('beforeunload', function() {
       return "Sure you want to exit? Hit Escape to stay.";
    });
-   
+
 
 });

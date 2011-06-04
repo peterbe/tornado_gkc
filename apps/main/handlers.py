@@ -291,7 +291,6 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
             _search['read'] = False
         return self.db.FlashMessage.find(_search).sort('add_date', 1)
 
-
     def get_total_battle_points(self, user):
         return 0
 
