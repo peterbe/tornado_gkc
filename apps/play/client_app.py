@@ -86,7 +86,7 @@ class Client(tornadio.SocketConnection):
                     self.send({'error':'Already in an open battle'})
                     return
                 battle = created_battle
-                logging.info("Joining battle: %r" % battle)
+                logging.info("%r joining battle: %r" % (self.user_name, battle))
                 break
         if not battle:
             battle = Battle(10, # specify how long the waiting delay is

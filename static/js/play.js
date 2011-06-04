@@ -327,8 +327,8 @@ $(function() {
 
    var waiting_message_interval = setInterval(function() {
       var text = $('#waiting .message').text();
-      if (text.length > 70) {
-         text = text.replace(/\.{3,70}/, '...');
+      if (text.length > 50) {
+         text = text.replace(/\.{3,50}/, '...');
       }
       $('#waiting .message').text(text + '.');
    }, 1000);
