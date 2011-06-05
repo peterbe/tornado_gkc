@@ -614,6 +614,32 @@ class ClientTestCase(BaseTestCase):
         self.assertEqual(client._sent[-1]['error']['code'],
                          errors.ERROR_NO_MORE_QUESTIONS)
 
+    def test_disconnect_twice(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 3
+        q1 = self._create_question()
+        q2 = self._create_question()
+        q3 = self._create_question()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        client.on_message(dict(answer='yes'))
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
+        client.on_close()
+        self.assertTrue(client2._sent[-1]['disconnected'])
+        self.assertEqual(client2._sent[-1]['disconnected'],
+                         user.username)
+        client2_msgs = client2._sent[:]
+        client.on_close()
+        self.assertEqual(len(client2_msgs),
+                         len(client2._sent))
+
+
         return
         print client._sent[-3]
         print client2._sent[-3]

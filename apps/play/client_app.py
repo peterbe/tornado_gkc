@@ -46,7 +46,7 @@ class Client(tornadio.SocketConnection):
         #print "Opening", repr(self)
         self.send({'debug': "Connected!"});
         if not hasattr(request, 'headers'):
-            logging.info("No headers :(")
+            logging.debug("No headers :(")
             self.send(dict(error={'message': 'Unable to find login information. Try reloading',
                                   'code': errors.ERROR_NOT_LOGGED_IN}))
             return
@@ -86,13 +86,13 @@ class Client(tornadio.SocketConnection):
                     self.send({'error':'Already in an open battle'})
                     return
                 battle = created_battle
-                logging.info("%r joining battle: %r" % (self.user_name, battle))
+                logging.debug("%r joining battle: %r" % (self.user_name, battle))
                 break
         if not battle:
             battle = Battle(10, # specify how long the waiting delay is
                             no_questions=self.application_settings['debug'] and 5 or 10
                             )
-            logging.info("Creating new battle")
+            logging.debug("Creating new battle")
             self.battles.add(battle)
         battle.add_participant(self)
         self.current_client_battles[self.user_id] = battle
@@ -182,8 +182,7 @@ class Client(tornadio.SocketConnection):
                 assert battle.is_waiting()
                 return
             if battle.timed_out_too_soon():
-                print "current_question:", repr(battle.current_question.text)
-                logging.warning("time.time():%s current_question_sent+thinking_time:%s"
+                logging.debug("time.time():%s current_question_sent+thinking_time:%s"
                                 % (time.time(),
                                 battle.current_question_sent+battle.thinking_time))
                 self.send({'error': 'Timed out too soon'})
@@ -260,7 +259,11 @@ class Client(tornadio.SocketConnection):
                 logging.debug('%r not in any battle' % self.user_id)
                 return
 
-            battle.remove_participant(self)
+            try:
+                battle.remove_participant(self)
+            except KeyError:
+                # for some bizarre reason this client has already disconnected
+                return
             battle.send_to_all({'disconnected': self.user_name})
             battle.stop()
 
