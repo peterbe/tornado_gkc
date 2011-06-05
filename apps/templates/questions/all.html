@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<style type="text/css">
+td { font-size: 80%; }
+</style>
+{% end %}
+
 {% block content_inner %}
 
 {% if state_counts_pie %}
@@ -19,7 +25,7 @@
       <th>Category</th>
       <th>By</th>
       <th><a href="{{ modules.SortKey('age') }}">Age</a></th>
-      <th>&nbsp;</th>
+      <th>Question</th>
     </tr>
   <thead>
   <tfoot>
@@ -49,10 +55,11 @@
           {% end %}
         </select>
       </td>
-      <td colspan="2">
+      <td>
       &nbsp;
       <input type="submit" value="Filter">
       </td>
+      <td>&nbsp;</td>
     </tr>
   </tfoot>
   {% for question in all_questions %}
@@ -64,8 +71,8 @@
       <td>{{ modules.ShowUser(question.author) }}</td>
       <td>{{ modules.TimeSince(question.add_date) }}</td>
       <td>
-        <a href="{{ reverse_url('view_question', question._id) }}">view</a>
-        <a href="{{ reverse_url('edit_question', question._id) }}">edit</a>
+        <a href="{{ reverse_url('view_question', question._id) }}">{{ question.text }}</a>
+	(<a href="{{ reverse_url('edit_question', question._id) }}">edit</a>)
       </td>
     </tr>
   </tbody>
