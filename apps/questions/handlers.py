@@ -943,19 +943,21 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler): # pragma: no cover
         options['page_title'] = "All %s questions (admin eyes only)" %\
           options['total_count']
 
-        filter_count = None
         if _filter:
             filter_count = qs.count()
-        options['filter_count'] = filter_count
-        try:
-            from pygooglechart import PieChart2D
-            chart = PieChart2D(400, 250)
-            chart.fill_solid(PieChart2D.BACKGROUND, '000000')
-            chart.add_data([x[1] for x in state_counts])
-            chart.set_pie_labels([x[0] for x in state_counts])
-            options['state_counts_pie'] = chart.get_url()
-        except ImportError:
+            options['filter_count'] = filter_count
             options['state_counts_pie'] = None
+        else:
+            options['filter_count'] = None
+            try:
+                from pygooglechart import PieChart2D
+                chart = PieChart2D(400, 250)
+                chart.fill_solid(PieChart2D.BACKGROUND, '000000')
+                chart.add_data([x[1] for x in state_counts])
+                chart.set_pie_labels([x[0] for x in state_counts])
+                options['state_counts_pie'] = chart.get_url()
+            except ImportError:
+                options['state_counts_pie'] = None
 
         options['all_genres'] = self.db.Genre.find().sort('name', 1)
         options['all_users'] = []
