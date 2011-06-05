@@ -81,7 +81,10 @@ span.maxlength-maxed { color:red; }
 {{ modules.SendPlayMessageForm(play) }}
 </div>
 
-<p><a href="{{ reverse_url('play_replays') }}">&larr; Back to all past plays</a></p>
+<p><a href="{{ reverse_url('play_replays') }}">&larr; Back to all past plays</a>
+&nbsp;
+<a href="{{ reverse_url('play') }}">Play another battle! &rarr;</a>
+</p>
 
 {% end %}
 

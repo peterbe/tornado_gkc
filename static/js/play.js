@@ -14,15 +14,31 @@ function message(obj) {
 function send(msg) {
    __log_message(msg, true);
    socket.send(msg);
-   //var val = document.getElementById('text').value;
-   //socket.send(val);
-   //message({ message: ['you', val] });
-   //document.getElementById('text').value = '';
 }
 
 function esc(msg) {
    return msg.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+var Title = (function() {
+   var current_title = document.title
+     , timer;
+   
+   return {
+      show_temporarily: function (msg, msec) {
+         msec = typeof(msec) !== 'undefined' ? msec : 3000;
+	 if (msec < 100) msec *= 1000;
+         if (timer) {
+            clearTimeout(timer);
+         }
+         document.title = msg;
+         timer = setTimeout(function() {
+            document.title = current_title;
+         }, msec);
+      }
+   }
+})();
+
 
 var Clock = (function() {
    var _clock
@@ -148,17 +164,20 @@ var Question = (function() {
 	 draw = draw || false;
 	 $('#question li.current').removeClass('current').addClass('past');
 	 if (draw) {
+	    Title.show_temporarily("You drew!", 30);
             $('#you_drew').fadeIn(400);
 	 } else {
 	    if (you_won) {
                if (CONFIG.ENABLE_SOUNDS && soundManager) {
                   soundManager.play(CONFIG.SOUNDS['you_won']);
                }
+	       Title.show_temporarily("You won!! Congratulations!", 30);
                $('#you_won').fadeIn(400);
 	    } else {
                if (CONFIG.ENABLE_SOUNDS && soundManager) {
                   soundManager.play(CONFIG.SOUNDS['you_lost']);
                }
+	       Title.show_temporarily("You lost. Sorry(?)", 30);
                $('#you_lost').fadeIn(400);
 	    }
 	 }
@@ -182,6 +201,7 @@ var Question = (function() {
               src: IMAGES.RIGHT,
 		alt: msg
 	   }));
+	 Title.show_temporarily(msg);
 	 $('#alert').text(msg).show(100);
       },
       wrong_answer: function() {
@@ -191,6 +211,7 @@ var Question = (function() {
               src: IMAGES.WRONG,
 		alt: msg
 	   }));
+	 Title.show_temporarily(msg);
 	 $('#alert').text(msg).show(100);
          var left = Clock.get_seconds_left();
          if ((left - 1) > 0) {
@@ -206,6 +227,7 @@ var Question = (function() {
               src: IMAGES.WRONG,
 		alt: msg
 	   }));
+	 Title.show_temporarily(msg);
 	 $('#alert').text(msg).show(100);
       },
       beaten: function() {
@@ -215,6 +237,7 @@ var Question = (function() {
               src: IMAGES.WRONG,
 		alt: msg
 	   }));*/
+	 Title.show_temporarily(msg);
 	 $('#alert').text(msg).show(100);
       },
       send_answer: function(answer) {
@@ -377,6 +400,7 @@ $(function() {
             if (CONFIG.ENABLE_SOUNDS && soundManager) {
                soundManager.play(CONFIG.SOUNDS['be_ready']);
             }
+	    Title.show_temporarily("Ready!? Game about to start!!");
             $('#besocial').remove();
          }
          var seconds_left = obj.wait;
@@ -406,7 +430,9 @@ $(function() {
       } else if (obj.stop) {
          Question.stop(obj.stop);
       } else if (obj.has_answered) {
-         Gossip.show(obj.has_answered + ' has answered but was wrong');
+	 var msg = obj.has_answered + ' has answered but was wrong';
+	 Title.show_temporarily(msg, delay * 1000);
+         Gossip.show(msg);
       } else if (obj.answered) {
          $('#timer').hide();
          $('#input').hide();
@@ -432,7 +458,6 @@ $(function() {
          Question.stop();
 	 $('#waiting').hide();
 	 $('#your_name').hide();
-         //alert('Error!\n' + obj.error);
          $('#error_warning').show();
          $('#error_warning pre').text(obj.error.message);
          if (obj.error.code == 200) {
