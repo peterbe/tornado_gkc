@@ -312,6 +312,9 @@ class HomeHandler(BaseHandler):
                   .find({'users.$id': user._id})
                   .count())
         options['past_plays'] = past_plays
+        options['page_title'] = ("%s - %s" %
+                                 (settings.PROJECT_TITLE,
+                                  settings.TAG_LINE))
         self.render("home.html", **options)
 
 

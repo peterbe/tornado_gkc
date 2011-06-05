@@ -136,8 +136,11 @@ class QuestionPointsHighscoreHandler(QuestionsBaseHandler):
 
     def get(self):
         options = self.get_base_options()
-        options['question_points'] = self.db.QuestionPoints.find()\
+        options['question_points'] = (
+          self.db.QuestionPoints
+          .find({'points':{'$gt': 0}})
           .sort('highscore_position')
+          )
 
         your_position = None
         if options['user']:
