@@ -13,6 +13,7 @@ TEST_MODULES = [
     'apps.play.tests.test_handlers',
     'apps.play.tests.test_models',
     'apps.play.tests.test_client',
+    'apps.play.tests.test_battle',
 ]
 
 def all():

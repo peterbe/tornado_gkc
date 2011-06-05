@@ -36,12 +36,6 @@ class StartPlayingHandler(BasePlayHandler):
     @tornado.web.authenticated
     def get(self):
         self.redirect(self.reverse_url('play'))
-        return
-        options = self.get_base_options()
-        iframe_url = self.reverse_url('play')
-        options['iframe_url'] = iframe_url
-        #self.set_cookie('user_id', str(user._id))
-        self.render("play/start_play.html", **options)
 
 
 @route('/play/battle$', name='play')
@@ -145,6 +139,8 @@ class SendPlayMessageHandler(BasePlayHandler):
         message = self.get_argument('message').strip()
         if not message:
             raise HTTPError(400, "message can't be empty")
+        elif len(message) > 100:
+            raise HTTPError(400, "message too long")
         to = self.get_argument('to', None)
         if to:
             try:

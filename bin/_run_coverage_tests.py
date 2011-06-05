@@ -11,6 +11,9 @@ COVERAGE_MODULES = [
     'apps.questions.models',
     'apps.questions.handlers',
     'apps.play.handlers',
+    'apps.play.battle',
+    'apps.play.client_app',
+    'apps.play.models',
 ]
 
 def all():

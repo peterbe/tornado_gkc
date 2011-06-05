@@ -436,7 +436,7 @@ class LoginHandler(BaseAuthHandler):
 
 
 @route('/login/fake/', name='fake_login')
-class FakeLoginHandler(LoginHandler):
+class FakeLoginHandler(LoginHandler): # pragma: no cover
     def get(self):
         assert self.application.settings['debug']
         if self.get_argument('username', None):
@@ -451,10 +451,11 @@ class FakeLoginHandler(LoginHandler):
 class CredentialsError(Exception):
     pass
 
-@route('/auth/login/')
-class AuthLoginHandler(BaseAuthHandler):
+@route('/auth/login/', name='auth_login')
+class AuthLoginHandler(BaseAuthHandler): # pragma: no cover
 
     def check_credentials(self, username, password):
+        logging.warn("Deprecated method")
         user = self.find_user(username)
         if not user:
             # The reason for this sleep is that if a hacker tries every single
@@ -471,6 +472,7 @@ class AuthLoginHandler(BaseAuthHandler):
 
 
     def post(self):
+        logging.warn("Deprecated method. Use social login tools")
         username = self.get_argument('username')
         password = self.get_argument('password')
         try:
@@ -482,7 +484,7 @@ class AuthLoginHandler(BaseAuthHandler):
         self.redirect(self.get_next_url())
 
 
-@route('/auth/google/')
+@route('/auth/google/', name='auth_google')
 class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
     @tornado.web.asynchronous
     def get(self):
@@ -623,7 +625,7 @@ class FacebookAuthHandler(BaseAuthHandler, tornado.auth.FacebookMixin):
         else:
             self.redirect(self.get_next_url())
 
-@route('/auth/twitter/')
+@route('/auth/twitter/', name='auth_twitter')
 class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
     @tornado.web.asynchronous
     def get(self):
@@ -635,8 +637,8 @@ class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
     def _on_auth(self, user_struct):
         if not user_struct:
             raise HTTPError(500, "Twitter auth failed")
-        from pprint import pprint
-        pprint(user_struct)
+        #from pprint import pprint
+        #pprint(user_struct)
         #if not user_struct.get('email'):
         #    raise HTTPError(500, "No email provided")
         username = user_struct.get('username')

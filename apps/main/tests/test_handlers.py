@@ -92,6 +92,49 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(fixture_user.first_name, u'Fred')
         self.assertEqual(fixture_user.last_name, u'')
 
+    def test_login_page(self):
+        url = self.reverse_url('login')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+
+    def test_google_login(self):
+        url = self.reverse_url('auth_google')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 302)
+        self.assertTrue('google.com' in response.headers['location'])
+
+        from apps.main.handlers import GoogleAuthHandler
+        GoogleAuthHandler.get_authenticated_user = \
+          google_get_authenticated_user
+        response = self.client.get(url, {'openid.mode':'xxx'})
+        self.assertEqual(response.code, 302)
+
+        user = self.db.User.one()
+        self.assertEqual(user.username, 'peterbe')
+        self.assertEqual(user.first_name, 'Peter')
+        self.assertEqual(user.last_name, None)
+        self.assertTrue(user.email)
+
+    def test_twitter_login(self):
+        from apps.main.handlers import TwitterAuthHandler
+        TwitterAuthHandler.get_authenticated_user = \
+          twitter_get_authenticated_user
+        TwitterAuthHandler.authenticate_redirect = \
+          twitter_authenticate_redirect
+        url = self.reverse_url('auth_twitter')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 302)
+        self.assertTrue('twitter.com' in response.headers['location'])
+
+        response = self.client.get(url, {'oauth_token':'xxx'})
+        self.assertEqual(response.code, 302)
+
+        user = self.db.User.one()
+        self.assertEqual(user.username, 'peterbe')
+        self.assertEqual(user.first_name, 'Peter Bengtsson')
+        self.assertEqual(user.last_name, None)
+        self.assertTrue(not user.email)
+
     def test_facebook_login(self):
         url = self.reverse_url('auth_facebook')
         response = self.client.get(url)
@@ -160,6 +203,23 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertTrue(not user_settings.disable_sound)
 
 
+def google_get_authenticated_user(self, callback, **kw):
+    callback({
+      'locale': u'en-US',
+      'first_name': u'Peter',
+      'username': u'peterbe',
+      'email': u'peterbe@gmail.com',
+    })
+
+def twitter_get_authenticated_user(self, callback, **kw):
+    callback({
+      'name': u'Peter Bengtsson',
+      'username': u'peterbe',
+      'email': None,
+    })
+
+def twitter_authenticate_redirect(self):
+    self.redirect(self._OAUTH_AUTHENTICATE_URL)
 
 def facebook_get_authenticated_user(self, callback, **k):
     session = self.get_argument('session')

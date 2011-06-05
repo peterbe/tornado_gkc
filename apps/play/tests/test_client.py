@@ -153,6 +153,12 @@ class ClientTestCase(BaseTestCase):
 
         return (user, client), (user2, client2)
 
+    def test_client_repr(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        r = repr(client)
+        self.assertTrue(user.username in r)
+        self.assertTrue(MockProtocol.__name__ in r)
+
     def test_connecting_without_headers_error(self):
         client = MockClient(self)
         request = MockHeaderlessRequest()
@@ -613,6 +619,44 @@ class ClientTestCase(BaseTestCase):
 
         self.assertEqual(client._sent[-1]['error']['code'],
                          errors.ERROR_NO_MORE_QUESTIONS)
+
+    def test_battle_draw(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 4
+        self._create_question()
+        self._create_question()
+        self._create_question()
+        self._create_question()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        client.on_message(dict(alternatives=1))
+        client.on_message(dict(answer='yes'))
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        client.on_message(dict(alternatives=1))
+        client.on_message(dict(answer='YES'))
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        client.on_message(dict(alternatives=1))
+        client.on_message(dict(answer='YEs '))
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        client2.on_message(dict(answer='YES'))
+
+        self.assertTrue(client._sent[-1]['winner']['draw'])
+        self.assertTrue(client2._sent[-1]['winner']['draw'])
+
+        play = self.db.Play.one()
+        self.assertEqual(play.winner, None)
+
 
     def test_disconnect_twice(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
