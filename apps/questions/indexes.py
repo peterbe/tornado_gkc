@@ -7,26 +7,20 @@ con.register([Question, Genre, QuestionReview, QuestionPoints])
 db = con[settings.DATABASE_NAME]
 
 def run(**options):
+    def ensure(coll, arg):
+        coll.ensure_index(arg,
+                          background=options.get('background', False))
+
     collection = db.Question.collection
     if options.get('clear_all_first'):
         collection.drop_indexes()
 
-    collection.ensure_index('state')
+    ensure(collection, 'state')
     yield 'state'
-    #collection.ensure_index('tags')
-    #yield 'tags'
-    collection.ensure_index('author.$id')
+    ensure(collection, 'author.$id')
     yield 'author.$id'
-    collection.ensure_index('genre.$id')
+    ensure(collection, 'genre.$id')
     yield 'genre.$id'
-
-#    collection = db.Comment.collection
-#    collection.ensure_index('user.$id')
-#    yield 'user.$id'
-#    collection.ensure_index('gist.$id')
-#    yield 'gist.$id'
-#    collection.ensure_index([('add_date',DESCENDING)])
-#    yield 'add_date'
 
     test()
 

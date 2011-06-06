@@ -7,38 +7,26 @@ con.register([Play, PlayedQuestion])
 db = con[settings.DATABASE_NAME]
 
 def run(**options):
+    def ensure(collection, arg):
+        collection.ensure_index(arg, background=options.get('background', False))
+
     collection = db.Play.collection
     if options.get('clear_all_first'):
         collection.drop_indexes()
 
-    collection.ensure_index('users.$id')
+    ensure(collection, 'users.$id')
     yield 'users'
 
     collection = db.PlayedQuestion.collection
     if options.get('clear_all_first'):
         collection.drop_indexes()
 
-    collection.ensure_index('user.$id')
+    ensure(collection, 'user.$id')
     yield 'played_question.user'
-    collection.ensure_index('play.$id')
+    ensure(collection, 'play.$id')
     yield 'played_question.play'
-    collection.ensure_index('question.$id')
+    ensure(collection, 'question.$id')
     yield 'played_question.question'
-
-    #collection.ensure_index('tags')
-    #yield 'tags'
-#    collection.ensure_index('author.$id')
-#    yield 'author.$id'
-#    collection.ensure_index('genre.$id')
-#    yield 'genre.$id'
-
-#    collection = db.Comment.collection
-#    collection.ensure_index('user.$id')
-#    yield 'user.$id'
-#    collection.ensure_index('gist.$id')
-#    yield 'gist.$id'
-#    collection.ensure_index([('add_date',DESCENDING)])
-#    yield 'add_date'
 
     test()
 
