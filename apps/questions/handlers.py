@@ -84,14 +84,16 @@ class QuestionsBaseHandler(BaseHandler):
     def update_total_questions_points(self, user):
         self.get_total_questions_points(user, force_refresh=True)
 
-    def get_total_questions_points(self, user, force_refresh=False):
+    def get_total_questions_points(self, user, force_refresh=False,
+                                   update_highscore_position=False):
         user_points = self.db.QuestionPoints.one({'user.$id': user._id})
         if not user_points or force_refresh:
             if not user_points:
                 user_points = self.db.QuestionPoints()
                 user_points.user = user
             user_points.points = self._get_total_questions_points(user)
-            user_points.update_highscore_position()
+            if update_highscore_position:
+                user_points.update_highscore_position()
             user_points.save()
         return user_points.points
 
@@ -139,7 +141,7 @@ class QuestionPointsHighscoreHandler(QuestionsBaseHandler):
         options['question_points'] = (
           self.db.QuestionPoints
           .find({'points':{'$gt': 0}})
-          .sort('highscore_position')
+          .sort('points', -1)
           )
 
         your_position = None
@@ -163,6 +165,21 @@ class UpdateQuestionPointsHandler(QuestionsBaseHandler):
             raise HTTPError(403)
         for user in self.db.User.find():
             self.get_total_questions_points(user, force_refresh=True)
+        qps = (
+          self.db.QuestionPoints
+          .find({'points':{'$gt': 0}})
+          .sort('points', -1)
+          )
+        position = 0
+        _prev_points = -1
+        for qp in qps:
+            if _prev_points != qp.points:
+                position += 1
+            if position != qp.highscore_position:
+                qp.highscore_position = position
+                qp.save()
+            _prev_points = qp.points
+
         self.redirect(self.reverse_url('question_points_highscore'))
 
 
