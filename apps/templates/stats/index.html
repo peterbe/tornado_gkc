@@ -1,0 +1,10 @@
+{% extends "../base.html" %}
+
+{% block content_inner %}
+<h1>{{ page_title }}</h1>
+
+<ul>
+  <li><a href="{{ reverse_url('stats_login_method') }}">Login method</a></li>
+</ul>
+
+{% end %}

@@ -1,0 +1,71 @@
+{% extends "../base.html" %}
+
+{% block content_inner %}
+
+<h2>Stats: {{ page_title }}</h2>
+
+<p><a href="{{ reverse_url('stats') }}">&larr; Back to statistics index</a></p>
+
+<div id="login-method" class="stat">
+
+</div>
+<p>The reason the sum of all can become more than 100% is that some people
+log in with different methods but have the same username.</p>
+
+{% end %}
+
+{% block extra_js %}
+<script>
+head.js('{{ modules.StaticURL('js/ext/highcharts/highcharts.js') }}', function() {
+
+  var PERCENTAGES = {{ percentages }};
+  var colors = Highcharts.getOptions().colors;
+  var categories = ['Google', 'Twitter', 'Facebook'];
+  var SERIES = [{
+  name: 'methods',
+  color:'anything',
+  data:  [
+    {y: PERCENTAGES.google, color:colors[0]},
+    {y: PERCENTAGES.twitter, color:colors[1]},
+    {y: PERCENTAGES.facebook, color:colors[2]}
+    ]
+  }];
+
+  new Highcharts.Chart({
+      chart: {
+         renderTo: 'login-method',
+         type: 'column'
+      },
+      title: {
+         text: '{{ page_title }}'
+      },
+      subtitle: {
+         text: 'How people prefer to sign in'
+      },
+      yAxis: {
+         min: 0,
+         title: {
+            text: '% of all users'
+         }
+      },
+      xAxis: {
+        categories: categories
+      },
+      tooltip: {
+         formatter: function() {
+            return ''+
+               this.x +': '+ this.y +'%';
+         }
+      },
+      plotOptions: {
+         column: {
+            pointPadding: 0.2,
+            borderWidth: 0
+         }
+      },
+           series: SERIES
+   });
+
+});
+</script>
+{% end %}

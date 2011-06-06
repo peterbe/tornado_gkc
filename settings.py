@@ -5,6 +5,7 @@ APPS = (
   'questions',
   'play',
   'chat',
+  'stats',
 )
 DATABASE_NAME = "gkc"
 
