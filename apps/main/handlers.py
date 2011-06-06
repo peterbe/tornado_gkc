@@ -512,9 +512,11 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
         if not username:
             username = email.split('@')[0]
 
-        user = self.db.User.one(dict(email=email))
-        if user is None:
-            user = self.db.User.one(dict(email=re.compile(re.escape(email), re.I)))
+        user = self.db.User.one(dict(username=username))
+        if not user:
+            user = self.db.User.one(dict(email=email))
+            if user is None:
+                user = self.db.User.one(dict(email=re.compile(re.escape(email), re.I)))
 
         if not user:
             # create a new account

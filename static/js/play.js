@@ -23,7 +23,7 @@ function esc(msg) {
 var Title = (function() {
    var current_title = document.title
      , timer;
-   
+
    return {
       show_temporarily: function (msg, msec) {
          msec = typeof(msec) !== 'undefined' ? msec : 3000;
@@ -342,7 +342,11 @@ var Gossip = (function() {
 
 
 // Let the madness begin!
-var socket, dead_battle = false, confirm_exit = true;
+var socket
+, dead_battle = false
+, confirm_exit = true
+, has_connected = false
+;
 
 $(function() {
    socket = new io.Socket(null, {port: CONFIG.SOCKET_PORT, rememberTransport: false});
@@ -357,6 +361,22 @@ $(function() {
    }, 1000);
 
    socket.on('connect', function() {
+      /*
+       * Commented out because it breaks things horribly.
+       * It would be better if re-connection just worked without
+       * creating a new battle.
+      if (has_connected) {
+         // don't allow it to re-connect if
+         $('#error_warning').show();
+         $('#error_warning pre').text("Re-connected");
+         dead_battle = true;
+         $(window).unbind('beforeunload');
+         return;
+      } else {
+         has_connected = true;
+      }
+       */
+
       clearInterval(waiting_message_interval);
       $('#waiting .message').text('Waiting for an opponent');
       waiting_message_interval = setInterval(function() {
@@ -401,6 +421,9 @@ $(function() {
                soundManager.play(CONFIG.SOUNDS['be_ready']);
             }
 	    Title.show_temporarily("Ready!? Game about to start!!");
+            $('#your_name').hide();
+            $('#your_name').hide();
+            $('#waiting').hide();
             $('#besocial').remove();
          }
          var seconds_left = obj.wait;

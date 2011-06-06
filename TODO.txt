@@ -1,9 +1,9 @@
+* Consider http://stanlemon.net/projects/jgrowl.html
+
 * Link at the bottom of replayed play to scream out "we need more
   questions! _contribte_"
 
 * Linkify question comments when reviewing questions
-
-* play not in a fancybox
 
 * SMTP details from elastic needs to be read in from a git ignored
   files instead.
