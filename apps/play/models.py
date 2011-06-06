@@ -1,3 +1,4 @@
+from pprint import pprint
 import datetime
 from apps.main.models import BaseDocument, User
 from apps.questions.models import Question
@@ -60,3 +61,74 @@ class PlayMessage(BaseDocument):
     default_values = {
       'read': False,
     }
+
+
+class PlayPoints(BaseDocument):
+    __collection__ = 'play_points'
+    structure = {
+      'user': User,
+      'points': int,
+      'wins': int,
+      'losses': int,
+      'draws': int,
+      'highscore_position': int,
+    }
+
+    required_fields = ['user','points']
+
+    @staticmethod
+    def calculate(user):
+        search = {
+          'users.$id': user._id,
+          'finished': {'$ne': None},
+          #'halted': None,
+        }
+        play_points = user.db.PlayPoints.one({'user.$id': user._id})
+        if not play_points:
+            play_points = user.db.PlayPoints()
+            play_points.user = user
+        # reset all because we're recalculating
+        play_points.points = 0
+        play_points.wins = 0
+        play_points.losses = 0
+        play_points.draws = 0
+        for play in user.db.Play.find(search):
+            #print play.finished
+            #print "Against", play.get_other_user(user).username
+            if play.winner == user:
+                play_points.wins += 1
+            elif play.draw:
+                play_points.draws += 1
+            else:
+                try:
+                    assert play.winner
+                    assert play.winner != user
+                except AssertionError:
+                    print "BROKEN - no winner"
+
+                    #pprint(dict(play))
+                    continue
+
+                play_points.losses += 1
+            #print
+            try:
+                for played in (user.db.PlayedQuestion
+                                 .find({'play.$id': play._id,
+                                        'user.$id': user._id})):
+                    #pprint(played)
+                    if played.right:
+                        if played.alternatives:
+                            play_points.points += 1
+                        else:
+                            play_points.points += 3
+            except:
+                print "BROKEN!!!"
+                print user.username,
+                print "Against", play.get_other_user(user).username
+                print "PLAY", play._id
+                print "USER", user._id
+                raise
+
+                return play_points
+        play_points.save()
+        return play_points
