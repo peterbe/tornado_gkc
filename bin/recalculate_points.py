@@ -8,6 +8,7 @@ from tornado.options import define, options
 
 define("verbose", default=False, help="be louder", type=bool)
 define("all", default=False, help="recalculate all users", type=bool)
+define("users", default=10, help="no. recent plays", type=int)
 
 def main(*args):
     tornado.options.parse_command_line()
@@ -20,24 +21,23 @@ def main(*args):
     if options.all:
         max_users = 999999
     else:
-        max_users = 10
+        max_users = options.users
     finished = (db.Play.find({'finished': {'$ne':None}})
                 .sort('finished', -1))
-    recent_users = set()
+    recent_users = []
     _broken = False
     for play in finished:
         if _broken:
             break
         for user in play.users:
-            recent_users.add(user)
+            if user not in recent_users:
+                recent_users.append(user)
             if len(recent_users) >= max_users:
                 _broken = True
                 break
 
     for user in recent_users:
-        print user.username
         play_points = PlayPoints.calculate(user)
-        #print "\n"
         if options.verbose and not options.all:
             print user.username.ljust(20), play_points.points
 

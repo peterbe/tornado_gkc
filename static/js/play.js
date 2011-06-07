@@ -454,7 +454,7 @@ $(function() {
          Question.stop(obj.stop);
       } else if (obj.has_answered) {
 	 var msg = obj.has_answered + ' has answered but was wrong';
-	 Title.show_temporarily(msg, delay * 1000);
+	 Title.show_temporarily(msg, 3 * 1000);
          Gossip.show(msg);
       } else if (obj.answered) {
          $('#timer').hide();
@@ -480,6 +480,7 @@ $(function() {
       } else if (obj.error) {
          Question.stop();
 	 $('#waiting').hide();
+         $('#besocial').hide();
 	 $('#your_name').hide();
          $('#error_warning').show();
          $('#error_warning pre').text(obj.error.message);

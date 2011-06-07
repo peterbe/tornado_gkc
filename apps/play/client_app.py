@@ -83,7 +83,8 @@ class Client(tornadio.SocketConnection):
         for created_battle in self.battles:
             if created_battle.is_open():
                 if self in created_battle:
-                    self.send({'error':'Already in an open battle'})
+                    self.send(dict(error={'message':'Already in an open battle',
+                                          'code': errors.ERROR_ALREADY_IN_OPEN_BATTLE}))
                     return
                 battle = created_battle
                 logging.debug("%r joining battle: %r" % (self.user_name, battle))
