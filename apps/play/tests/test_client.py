@@ -656,6 +656,7 @@ class ClientTestCase(BaseTestCase):
 
         play = self.db.Play.one()
         self.assertEqual(play.winner, None)
+        self.assertTrue(play.draw)
 
 
     def test_disconnect_twice(self):

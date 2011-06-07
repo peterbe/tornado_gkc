@@ -144,6 +144,8 @@ class Client(tornadio.SocketConnection):
                 else:
                     battle.conclude()
                     winner = battle.get_winner()
+                    if winner is None:
+                        winner = False
                     battle.save_play(self.db, finished=True,
                                      winner=winner)
 
