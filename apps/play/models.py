@@ -1,4 +1,5 @@
 from pprint import pprint
+from collections import defaultdict
 import datetime
 from apps.main.models import BaseDocument, User
 from apps.questions.models import Question
@@ -78,21 +79,22 @@ class PlayPoints(BaseDocument):
 
     @staticmethod
     def calculate(user):
+        db = user.db
         search = {
           'users.$id': user._id,
           'finished': {'$ne': None},
           #'halted': None,
         }
-        play_points = user.db.PlayPoints.one({'user.$id': user._id})
+        play_points = db.PlayPoints.one({'user.$id': user._id})
         if not play_points:
-            play_points = user.db.PlayPoints()
+            play_points = db.PlayPoints()
             play_points.user = user
         # reset all because we're recalculating
         play_points.points = 0
         play_points.wins = 0
         play_points.losses = 0
         play_points.draws = 0
-        for play in user.db.Play.find(search):
+        for play in db.Play.find(search):
             #print play.finished
             #print "Against", play.get_other_user(user).username
             if play.winner == user:
@@ -104,8 +106,38 @@ class PlayPoints(BaseDocument):
                     assert play.winner
                     assert play.winner != user
                 except AssertionError:
-                    print "BROKEN - no winner"
+                    # This happens because of a bug in the game, where a draw
+                    # isn't saved properly.
 
+                    points = defaultdict(int)
+                    for u in play.users:
+                        for pq in db.PlayedQuestion.find({'play.$id':play._id, 'user.$id':u._id}):
+                            if pq.right:
+                                if pq.alternatives:
+                                    p = 1
+                                else:
+                                    p = 3
+                            else:
+                                p = 0
+                            points[u.username] += p
+                    if sum(points.values()) == 0:
+                        for pq in db.PlayedQuestion.find({'play.$id':play._id}):
+                            pq.delete()
+                        play.delete()
+                        continue
+
+                    if len(points) == 2 and len(set(points.values())):
+                        play.draw = True
+                        play.save()
+                        play_points.draws += 1
+                        continue
+
+                    print "WINNER", repr(play.winner)
+                    print "USERS", [x.username for x in play.users]
+                    print "DRAW", repr(play.draw)
+                    print "FINISHED", repr(play.finished)
+                    print "HALTED", repr(play.halted)
+                    print "\n"
                     #pprint(dict(play))
                     continue
 

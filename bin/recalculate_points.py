@@ -20,12 +20,9 @@ def main(*args):
     if options.all:
         max_users = 999999
     else:
-        max_users = 2
+        max_users = 10
     finished = (db.Play.find({'finished': {'$ne':None}})
                 .sort('finished', -1))
-    print (db.Play.find({'finished': {'$ne':None}})
-                .sort('finished', -1)
-                .explain())
     recent_users = set()
     _broken = False
     for play in finished:
@@ -41,7 +38,7 @@ def main(*args):
         print user.username
         play_points = PlayPoints.calculate(user)
         #print "\n"
-        if 0 and options.verbose and not options.all:
+        if options.verbose and not options.all:
             print user.username.ljust(20), play_points.points
 
     if options.verbose:

@@ -17,6 +17,9 @@ def run(**options):
     ensure(collection, 'users.$id')
     yield 'users'
 
+    ensure(collection, 'finished')
+    yield 'finished'
+
     collection = db.PlayedQuestion.collection
     if options.get('clear_all_first'):
         collection.drop_indexes()
@@ -34,6 +37,12 @@ def run(**options):
 def test():
     any_obj_id = list(db.Play.find().limit(1))[0]._id
     curs = db.Play.find({'users.$id': any_obj_id}).explain()['cursor']
+    assert 'BtreeCursor' in curs
+
+    import datetime
+    then = datetime.datetime.now() - datetime.timedelta(days=99)
+    curs = (db.Play.find({'finished': {'$gte':then}})
+            .sort('finished', -1).explain()['cursor'])
     assert 'BtreeCursor' in curs
 
     curs = (db.PlayedQuestion

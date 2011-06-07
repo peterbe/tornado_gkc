@@ -12,7 +12,11 @@
   {% for i, pp in enumerate(play_points) %}
   <tr>
     <td>{{ i + 1 }}.</td>
-    <td>{{ pp.user.username }}</td>
+    <td>{{ pp.user.username }}
+    {% if user and user == pp.user %}
+      <span class="yellow">&larr; you you you!</span>
+    {% end %}
+    </td>
     <td>{{ pp.points }}</td>
 
   {% end %}

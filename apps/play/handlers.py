@@ -167,7 +167,6 @@ class SendPlayMessageHandler(BasePlayHandler):
         url += '#message_sent'
         self.redirect(url)
 
-################################################################################
 route_redirect('/play/highscore$', '/play/highscore/',
                name='play_highscore_shortcut')
 @route('/play/highscore/$', name='play_highscore')
@@ -177,7 +176,7 @@ class PlayHighscoreHandler(BaseHandler):
         options = self.get_base_options()
         play_points = (self.db.PlayPoints
                        .find()
-                       .sort('points')
+                       .sort('points', -1)
                        )
         options['play_points'] = play_points
         self.render("play/highscore.html", **options)
