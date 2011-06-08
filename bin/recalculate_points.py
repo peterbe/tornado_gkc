@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import os, sys
-if os.path.abspath(os.curdir) not in sys.path:
-    sys.path.insert(0, os.path.abspath(os.curdir))
+p = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if p not in sys.path:
+    sys.path.insert(0, p)
 
 import tornado.options
 from tornado.options import define, options
