@@ -1,0 +1,36 @@
+{% extends "../base.html" %}
+
+{% block extra_head %}
+<style>
+tbody tr:hover { background-color:#2a2e2e; }
+/*tr.odd { background-color:#2a2e2e; }*/
+td { padding:10px; font-size:150%; }
+td.number { padding-left:150px; }
+th { text-align:left; }
+</style>
+{% end %}
+
+{% block content_inner %}
+
+<h2>Stats: {{ page_title }}</h2>
+
+<p><a href="{{ reverse_url('stats') }}">&larr; Back to statistics index</a></p>
+
+<table>
+  <tbody>
+    {% for i, fact in enumerate(facts) %}
+    <tr class="{% if i % 2 %}odd{% else %}even{% end %}">
+      <td>{{ fact.label }}</td>
+      <td class="number">
+        {% if fact.url %}
+          <a href="{{ fact.url }}">{{ fact.number }}</a>
+        {% else %}
+        {{ fact.number }}
+        {% end %}
+      </td>
+    </tr>
+    {% end %}
+  </tbody>
+</table>
+
+{% end %}
