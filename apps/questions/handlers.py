@@ -278,7 +278,6 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
         self.render("questions/published.html", **options)
 
 
-
 @route('/questions/add/$', name="add_question")
 class AddQuestionHandler(QuestionsBaseHandler):
 
@@ -422,7 +421,8 @@ class EditQuestionHandler(QuestionsBaseHandler):
             question.genre = genre
             question.spell_correct = form.spell_correct.data
             question.comment = form.comment.data
-            question.state = DRAFT
+            if not self.is_admin_user(user):
+                question.state = DRAFT
             question.save()
 
             if self.get_argument('submit_question', False):

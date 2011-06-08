@@ -20,7 +20,9 @@
 &nbsp;
 <a href="{{ reverse_url('add_question') }}">Add a new question &rarr;</a>
 </p>
-
+<script>
+var CHARTS = [];
+</script>
 <div id="questions">
   {% for question in questions %}
   <div class="question-outer">
@@ -31,10 +33,19 @@
       Published {{ modules.TimeSince(question.publish_date) }} ago
       </p>
     </div>
-    <div class="stats">
+    <div class="stats" id="q-{{ question._id }}">
       {% set stats=modules.QuestionShortStats(question) %}
+      <div id="q-{{ question._id }}-rating" style="border:1px solid green;float:right"></div>
+      <div id="q-{{ question._id }}-difficulty" style="border:1px solid white;float:right"></div>
+      <script>
+      CHARTS.push({id: 'q-{{ question._id }}',
+                   difficulties: {{ stats['difficulties_json'] }},
+                   ratings: {{ stats['ratings_json'] }}
+                   });
+      </script>
+
       <span class=""></span>
-      foo: {{ stats['foo'] }}
+
     </div>
     <div class="clearer">&nbsp;</div>
   </div>
@@ -42,4 +53,104 @@
 </div>
 
 
+{% end %}
+
+
+{% block extra_js %}
+
+<script>
+head.ready(function() {
+  head.js('{{ modules.StaticURL('js/ext/highcharts/highcharts.js') }}', function() {
+    $.each(CHARTS, function (i, chart) {
+      new Highcharts.Chart({
+      chart: {
+         renderTo: chart.id+'-difficulty',
+         height: 100,
+         width: 100,
+         margin: [0, 0, 0, 0],
+         backgroundColor: 'transparent',
+         plotBackgroundColor: null,
+         plotBorderWidth: null,
+         plotShadow: true
+      },
+      credits: {
+         enabled: false
+      },
+      title: {
+         text: ''
+      },
+      tooltip: {
+         formatter: function() {
+            return '<b>'+ this.point.name +'</b>: '+ this.y;
+         }
+      },
+      plotOptions: {
+         pie: {
+            allowPointSelect: true,
+            cursor: 'pointer',
+            dataLabels: {
+               enabled: false
+            }
+         }
+      },
+       series: [{
+         type: 'pie',
+         name: 'Difficulties',
+         data: [
+            ['Easy', chart.difficulties[1]],
+            ['About right', chart.difficulties[0]],
+            ['Hard', chart.difficulties[-1]]
+         ]
+      }]
+   });
+
+
+      new Highcharts.Chart({
+      chart: {
+         renderTo: chart.id+'-rating',
+         height: 100,
+         width: 100,
+         margin: [0, 0, 0, 0],
+         backgroundColor: 'transparent',
+         plotBackgroundColor: null,
+         plotBorderWidth: null,
+         plotShadow: true
+      },
+      credits: {
+         enabled: false
+      },
+      title: {
+         text: ''
+      },
+      tooltip: {
+         formatter: function() {
+            return '<b>'+ this.point.name +'</b>: '+ this.y;
+         }
+      },
+      plotOptions: {
+         pie: {
+            allowPointSelect: true,
+            cursor: 'pointer',
+            dataLabels: {
+               enabled: false
+            }
+         }
+      },
+       series: [{
+         type: 'pie',
+         name: 'Ratings',
+         data: [
+            ['Bad', chart.ratings[-1]],
+            ['OK', chart.ratings[0]],
+            ['Good', chart.ratings[1]]
+         ]
+      }]
+   });
+
+
+
+    });
+  });
+});
+</script>
 {% end %}
