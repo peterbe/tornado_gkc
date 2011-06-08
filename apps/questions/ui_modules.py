@@ -24,7 +24,8 @@ class QuestionShortStats(tornado.web.UIModule):
           -1: 0 # bad
         }
         count = 0
-        for review in db.QuestionReview.find({'question.$id': question._id}):
+        search = {'question.$id': question._id}
+        for review in db.QuestionReview.find(search):
             difficulties[review['difficulty']] += 1
             rating = review['rating']
             if rating == 2: # legacy
@@ -36,6 +37,35 @@ class QuestionShortStats(tornado.web.UIModule):
                 rating = 1
             ratings[rating] += 1
             count += 1
+
+        count = rights = alternatives = wrongs = tooslows = 0
+        for qp in db.PlayedQuestion.collection.find(search):
+            play = db.Play.collection.one({'_id': qp['play'].id})
+            if not play:
+                db.PlayedQuestion.collection.remove({'play.$id':qp['play'].id})
+                continue
+
+            if play['finished']:
+                if qp['answer']:
+                    count += 1
+                    if qp['right']:
+                        rights += 1
+                    else:
+                        wrongs += 1
+                    if qp['alternatives']:
+                        alternatives += 1
+                else:
+                    tooslows += 1
+        answers = {
+          'right': int(100. * rights /count),
+          'wrong': int(100. * wrongs /count),
+          'alternatives': int(100. * alternatives /count),
+        }
+
+        return dict(difficulties=difficulties,
+                    ratings=ratings,
+                    answers=answers,
+                    )
         return dict(difficulties_json=tornado.escape.json_encode(difficulties),
                     ratings_json=tornado.escape.json_encode(ratings),
                     )

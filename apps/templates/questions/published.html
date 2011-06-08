@@ -8,8 +8,10 @@
 }
 
 .question { float:left; width:50%; }
-.question_text { margin:0; }
-.question_metadata { margin:0; }
+#questions p { margin:0; }
+table { width:48% }
+td { text-align:left; font-size:80%; }
+td.label { text-align:left; font-weight:bold; }
 </style>
 {% end %}
 
@@ -35,16 +37,43 @@ var CHARTS = [];
     </div>
     <div class="stats" id="q-{{ question._id }}">
       {% set stats=modules.QuestionShortStats(question) %}
-      <div id="q-{{ question._id }}-rating" style="border:1px solid green;float:right"></div>
-      <div id="q-{{ question._id }}-difficulty" style="border:1px solid white;float:right"></div>
-      <script>
-      CHARTS.push({id: 'q-{{ question._id }}',
-                   difficulties: {{ stats['difficulties_json'] }},
-                   ratings: {{ stats['ratings_json'] }}
-                   });
-      </script>
-
-      <span class=""></span>
+      <table>
+        <td class="label">Difficulty:</td>
+        <td>
+	Hard <span class="yellow">{{ stats['difficulties'][-1] }}</span>
+        </td>
+        <td>
+	Easy <span class="yellow">{{ stats['difficulties'][1] }}</span>
+        </td>
+        <td>
+	About right <span class="yellow">{{ stats['difficulties'][0] }}</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Ratings:</td>
+        <td>
+	OK <span class="yellow">{{ stats['ratings'][0] }}</span>
+        </td>
+        <td>
+	Good <span class="yellow">{{ stats['ratings'][1] }}</span>
+        </td>
+        <td>
+	Bad <span class="yellow">{{ stats['ratings'][-1] }}</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Answers:</td>
+        <td>
+	Right <span class="yellow">{{ stats['answers']['right'] }}%</span>
+        </td>
+        <td>
+	Wrong <span class="yellow">{{ stats['answers']['wrong'] }}%</span>
+        </td>
+        <td>
+	Alternatives <span class="yellow">{{ stats['answers']['alternatives'] }}%</span>
+        </td>
+      </tr>
+      </table>
 
     </div>
     <div class="clearer">&nbsp;</div>
@@ -58,99 +87,4 @@ var CHARTS = [];
 
 {% block extra_js %}
 
-<script>
-head.ready(function() {
-  head.js('{{ modules.StaticURL('js/ext/highcharts/highcharts.js') }}', function() {
-    $.each(CHARTS, function (i, chart) {
-      new Highcharts.Chart({
-      chart: {
-         renderTo: chart.id+'-difficulty',
-         height: 100,
-         width: 100,
-         margin: [0, 0, 0, 0],
-         backgroundColor: 'transparent',
-         plotBackgroundColor: null,
-         plotBorderWidth: null,
-         plotShadow: true
-      },
-      credits: {
-         enabled: false
-      },
-      title: {
-         text: ''
-      },
-      tooltip: {
-         formatter: function() {
-            return '<b>'+ this.point.name +'</b>: '+ this.y;
-         }
-      },
-      plotOptions: {
-         pie: {
-            allowPointSelect: true,
-            cursor: 'pointer',
-            dataLabels: {
-               enabled: false
-            }
-         }
-      },
-       series: [{
-         type: 'pie',
-         name: 'Difficulties',
-         data: [
-            ['Easy', chart.difficulties[1]],
-            ['About right', chart.difficulties[0]],
-            ['Hard', chart.difficulties[-1]]
-         ]
-      }]
-   });
-
-
-      new Highcharts.Chart({
-      chart: {
-         renderTo: chart.id+'-rating',
-         height: 100,
-         width: 100,
-         margin: [0, 0, 0, 0],
-         backgroundColor: 'transparent',
-         plotBackgroundColor: null,
-         plotBorderWidth: null,
-         plotShadow: true
-      },
-      credits: {
-         enabled: false
-      },
-      title: {
-         text: ''
-      },
-      tooltip: {
-         formatter: function() {
-            return '<b>'+ this.point.name +'</b>: '+ this.y;
-         }
-      },
-      plotOptions: {
-         pie: {
-            allowPointSelect: true,
-            cursor: 'pointer',
-            dataLabels: {
-               enabled: false
-            }
-         }
-      },
-       series: [{
-         type: 'pie',
-         name: 'Ratings',
-         data: [
-            ['Bad', chart.ratings[-1]],
-            ['OK', chart.ratings[0]],
-            ['Good', chart.ratings[1]]
-         ]
-      }]
-   });
-
-
-
-    });
-  });
-});
-</script>
 {% end %}

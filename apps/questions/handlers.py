@@ -250,9 +250,21 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
         self.db.Question.find(
           dict(_user_search, state=DRAFT)).sort('add_date', -1)
 
-        options['rejected_questions'] = \
-        self.db.Question.find(
-          dict(_user_search, state=REJECTED)).sort('reject_date', -1)
+        options['rejected_questions'] = (self.db.Question
+        .find(dict(_user_search, state=REJECTED))
+        .sort('reject_date', -1))
+
+        options['published_questions'] = (self.db.Question
+        .find(dict(_user_search, state=PUBLISHED)))
+        options['published_questions_count'] = (
+          options['published_questions'].count()
+        )
+        played_questions_count = 0
+        for q in (self.db.Question.collection
+        .find(dict(_user_search, state=PUBLISHED))):
+            played_questions_count += (self.db.PlayedQuestion
+              .find({'question.$id': q['_id']}).count())
+        options['played_questions_count'] = played_questions_count / 2
 
         if self.is_admin_user(user):
             _user_search = {}
