@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block extra_head %}
+<style>
+.question-outer {
+  clear:left;
+  border-top:1px solid #666;
+  padding:20px;
+}
+
+.question { float:left; width:50%; }
+.question_text { margin:0; }
+.question_metadata { margin:0; }
+</style>
+{% end %}
+
+{% block content_inner %}
+
+<p>
+<a href="{{ reverse_url('questions') }}" class="btn">&larr; Back to questions dashboard</a>
+&nbsp;
+<a href="{{ reverse_url('add_question') }}">Add a new question &rarr;</a>
+</p>
+
+<div id="questions">
+  {% for question in questions %}
+  <div class="question-outer">
+    <div id="{{ question._id }}" class="question">
+      <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}" class="yellow">{{ question.text }}</a></p>
+      <p class="question_metadata">
+      Category: {{ question.genre.name }}<br>
+      Published {{ modules.TimeSince(question.publish_date) }} ago
+      </p>
+    </div>
+    <div class="stats">
+      {% set stats=modules.QuestionShortStats(question) %}
+      <span class=""></span>
+      foo: {{ stats['foo'] }}
+    </div>
+    <div class="clearer">&nbsp;</div>
+  </div>
+  {% end %}
+</div>
+
+
+{% end %}

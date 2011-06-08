@@ -262,6 +262,23 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
 
         self.render("questions/index.html", **options)
 
+route_redirect('/questions/published$', '/questions/published/')
+@route('/questions/published/$', name="questions_published")
+class QuestionsHomeHandler(QuestionsBaseHandler):
+    DEFAULT_BATCH_SIZE = 200
+
+    def get(self):
+        options = self.get_base_options()
+        questions = (self.db.Question
+                      .find({'author.$id': options['user']._id,
+                             'state': 'PUBLISHED'})
+                      .sort('publish_date'))
+        options['questions'] = questions
+        options['page_title'] = "Your published questions"
+        self.render("questions/published.html", **options)
+
+
+
 @route('/questions/add/$', name="add_question")
 class AddQuestionHandler(QuestionsBaseHandler):
 
