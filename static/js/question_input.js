@@ -55,8 +55,10 @@ head.js(JS_URLS.jquery_autocomplete, function() {
    $.getJSON('/questions/genre_names.json', {separate_popular: true}, function(r) {
       var preval = $('#genre').val(), preval_element;
       $('#genre').hide();
-      var container = $('#genre').parents('p.field');
+      var container, big_container = $('#genre').parents('p.field');
+      
       $.each(r.popular_names, function(i, e) {
+	 container = $('<span>').addClass('genre-field');
          $('<input type="radio" name="chosen_genre">')
            .attr('id', 'g_' + i)
              .val(e[1])
@@ -73,25 +75,31 @@ head.js(JS_URLS.jquery_autocomplete, function() {
             'for': 'g_' + i})
            .addClass('genre')
            .appendTo(container);
+	 if (i && 0 == i % 6) {
+	   $('<br>').appendTo(container);
+	 }
+
+	 big_container.append(container);
       });
-      $('<br>').appendTo(container);
+      
+      $('<br>').appendTo(big_container);
       $('<input type="radio" name="chosen_genre">')
         .attr('id', 'g_other')
           .val('other')
             .change(function() {
                $('#id_other_genre').fadeTo(300, 1);
             })
-          .appendTo(container);
+          .appendTo(big_container);
       $('<label>', {text: 'Other:', 'for': 'g_other'})
         .addClass('genre')
-        .appendTo(container);
+        .appendTo(big_container);
       $('<input type="text" name="other_genre" id="id_other_genre">')
         .autocomplete(r.all_names)
           .bind('focus', function() {
              $('input[value="other"]').attr('checked', 'checked');
              $('#id_other_genre').fadeTo(300, 1);
           })
-        .appendTo(container);
+        .appendTo(big_container);
 
       if (preval_element) {
          preval_element.attr('checked', 'checked');
@@ -100,6 +108,8 @@ head.js(JS_URLS.jquery_autocomplete, function() {
          $('#g_other').attr('checked', 'checked');
       }
       //$('input[name="genre"]').autocomplete(r.names);
+      
+
    });
 });
 

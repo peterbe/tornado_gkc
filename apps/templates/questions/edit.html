@@ -6,7 +6,7 @@
 
 {% block content_inner %}
 
-<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
+<p><a href="{{ reverse_url('questions') }}" class="btn">&larr; Back to questions dashboard</a></p>
 
 
 {% if can_submit %}
