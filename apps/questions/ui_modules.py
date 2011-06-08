@@ -57,10 +57,14 @@ class QuestionShortStats(tornado.web.UIModule):
                 else:
                     tooslows += 1
         answers = {
-          'right': int(100. * rights /count),
-          'wrong': int(100. * wrongs /count),
-          'alternatives': int(100. * alternatives /count),
+          'right': 0,
+          'wrong': 0,
+          'alternatives': 0,
         }
+        if count:
+            answers['right'] = int(100. * rights /count)
+            answers['wrong'] = int(100. * wrongs /count)
+            answers['alternatives'] = int(100. * alternatives /count)
 
         return dict(difficulties=difficulties,
                     ratings=ratings,
