@@ -17,6 +17,20 @@ class BaseDocument(Document):
     use_autorefs = True
     use_dot_notation = True
 
+    def save(self, *args, **kwargs):
+        if '_id' in self:
+            self.modify_date = datetime.datetime.now()
+        super(BaseDocument, self).save(*args, **kwargs)
+
+    def __eq__(self, other_doc):
+        try:
+            return self._id == other_doc._id
+        except AttributeError:
+            return False
+
+    def __ne__(self, other_doc):
+        return not self == other_doc
+
 class User(BaseDocument):
     __collection__ = 'users'
     structure = {

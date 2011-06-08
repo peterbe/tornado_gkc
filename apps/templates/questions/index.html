@@ -87,6 +87,15 @@
 </div>
 {% end %}
 
+{% if published_questions_count %}
+<div id="published_questions">
+  <h3>Published Questions ({{ published_questions_count }})</h3>
+  <p>Your {% if published_questions_count==1 %}question{% else %}{{ published_questions_count }} questions{% end %}
+  has been played {{ played_questions_count }} times!</p>
+  <p><a href="{{ reverse_url('questions_published') }}">See all your published questions</a></p>
+</div>
+{% end %}
+
 <h3>Categories</h3>
 
 <p>There are currently <strong>{{ count_all_approved_genres }} approved categories</strong><br>

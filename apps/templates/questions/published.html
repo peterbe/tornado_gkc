@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block extra_head %}
+<style>
+.question-outer {
+  clear:left;
+  border-top:1px solid #666;
+  padding:20px;
+}
+
+.question { float:left; width:50%; }
+#questions p { margin:0; }
+table { width:48% }
+td { text-align:left; font-size:80%; }
+td.label { text-align:left; font-weight:bold; }
+</style>
+{% end %}
+
+{% block content_inner %}
+
+<p>
+<a href="{{ reverse_url('questions') }}" class="btn">&larr; Back to questions dashboard</a>
+&nbsp;
+<a href="{{ reverse_url('add_question') }}">Add a new question &rarr;</a>
+</p>
+<script>
+var CHARTS = [];
+</script>
+<div id="questions">
+  {% for question in questions %}
+  <div class="question-outer">
+    <div id="{{ question._id }}" class="question">
+      <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}" class="yellow">{{ question.text }}</a></p>
+      <p class="question_metadata">
+      Category: {{ question.genre.name }}<br>
+      Published {{ modules.TimeSince(question.publish_date) }} ago
+      </p>
+    </div>
+    <div class="stats" id="q-{{ question._id }}">
+      {% set stats=modules.QuestionShortStats(question) %}
+      <table>
+        <td class="label">Difficulty:</td>
+        <td>
+	Hard <span class="yellow">{{ stats['difficulties'][-1] }}</span>
+        </td>
+        <td>
+	Easy <span class="yellow">{{ stats['difficulties'][1] }}</span>
+        </td>
+        <td>
+	About right <span class="yellow">{{ stats['difficulties'][0] }}</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Ratings:</td>
+        <td>
+	OK <span class="yellow">{{ stats['ratings'][0] }}</span>
+        </td>
+        <td>
+	Good <span class="yellow">{{ stats['ratings'][1] }}</span>
+        </td>
+        <td>
+	Bad <span class="yellow">{{ stats['ratings'][-1] }}</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Answers:</td>
+        <td>
+	Right <span class="yellow">{{ stats['answers']['right'] }}%</span>
+        </td>
+        <td>
+	Wrong <span class="yellow">{{ stats['answers']['wrong'] }}%</span>
+        </td>
+        <td>
+	Alternatives <span class="yellow">{{ stats['answers']['alternatives'] }}%</span>
+        </td>
+      </tr>
+      </table>
+
+    </div>
+    <div class="clearer">&nbsp;</div>
+  </div>
+  {% end %}
+</div>
+
+
+{% end %}
+
+
+{% block extra_js %}
+
+{% end %}

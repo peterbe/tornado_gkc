@@ -26,6 +26,8 @@ def main(*args):
     for play in db.Play.find():
         count = db.PlayedQuestion.find({'play.$id': play._id}).count()
         if count not in (10, 20):
+            for qp in db.PlayedQuestion.find({'play.$id': play._id}):
+                qp.delete()
             play.delete()
             qless_plays += 1
     if options.verbose:

@@ -250,9 +250,21 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
         self.db.Question.find(
           dict(_user_search, state=DRAFT)).sort('add_date', -1)
 
-        options['rejected_questions'] = \
-        self.db.Question.find(
-          dict(_user_search, state=REJECTED)).sort('reject_date', -1)
+        options['rejected_questions'] = (self.db.Question
+        .find(dict(_user_search, state=REJECTED))
+        .sort('reject_date', -1))
+
+        options['published_questions'] = (self.db.Question
+        .find(dict(_user_search, state=PUBLISHED)))
+        options['published_questions_count'] = (
+          options['published_questions'].count()
+        )
+        played_questions_count = 0
+        for q in (self.db.Question.collection
+        .find(dict(_user_search, state=PUBLISHED))):
+            played_questions_count += (self.db.PlayedQuestion
+              .find({'question.$id': q['_id']}).count())
+        options['played_questions_count'] = played_questions_count / 2
 
         if self.is_admin_user(user):
             _user_search = {}
@@ -261,6 +273,22 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
           dict(_user_search, state=SUBMITTED)).sort('submit_date', -1)
 
         self.render("questions/index.html", **options)
+
+route_redirect('/questions/published$', '/questions/published/')
+@route('/questions/published/$', name="questions_published")
+class QuestionsHomeHandler(QuestionsBaseHandler):
+    DEFAULT_BATCH_SIZE = 200
+
+    def get(self):
+        options = self.get_base_options()
+        questions = (self.db.Question
+                      .find({'author.$id': options['user']._id,
+                             'state': 'PUBLISHED'})
+                      .sort('publish_date'))
+        options['questions'] = questions
+        options['page_title'] = "Your published questions"
+        self.render("questions/published.html", **options)
+
 
 @route('/questions/add/$', name="add_question")
 class AddQuestionHandler(QuestionsBaseHandler):
@@ -405,7 +433,8 @@ class EditQuestionHandler(QuestionsBaseHandler):
             question.genre = genre
             question.spell_correct = form.spell_correct.data
             question.comment = form.comment.data
-            question.state = DRAFT
+            if not self.is_admin_user(user):
+                question.state = DRAFT
             question.save()
 
             if self.get_argument('submit_question', False):
