@@ -77,6 +77,26 @@ class PlayPoints(BaseDocument):
 
     required_fields = ['user','points']
 
+    def update_highscore_position(self):
+        pps = (
+          self.db.PlayPoints
+          .find({'points':{'$gt': 0}})
+          .sort('points', -1)
+          )
+        return_position = None
+        position = 0
+        _prev_points = -1
+        for pp in pps:
+            if _prev_points != pp.points:
+                position += 1
+            if position != pp.highscore_position:
+                pp.highscore_position = position
+                pp.save()
+            if pp == self:
+                self.highscore_position = position
+            _prev_points = pp.points
+
+
     @staticmethod
     def calculate(user):
         db = user.db

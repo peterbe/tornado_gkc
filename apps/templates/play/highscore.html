@@ -2,6 +2,13 @@
 
 {% block extra_head %}
 <style>
+tr.band-1 td { font-size:155%; }
+tr.band-2 td { font-size:135%; }
+tr.band-3 td { font-size:125%; }
+tr.band-10 td { font-size:110%; }
+tr.band-50 td { font-size:100%; }
+tr.band-100 td { font-size:80%; }
+tr.band-1000 td { font-size:70%; }
 </style>
 {% end %}
 
@@ -10,14 +17,14 @@
 
 <table>
   {% for i, pp in enumerate(play_points) %}
-  <tr>
-    <td>{{ i + 1 }}.</td>
-    <td>{{ pp.user.username }}
+  <tr class="band-{{ modules.HighscoreBand(pp.highscore_position) }}">
+    <td class="position">{{ pp.highscore_position }}.</td>
+    <td class="name">{{ pp.user.username }}
     {% if user and user == pp.user %}
       <span class="yellow">&larr; you you you!</span>
     {% end %}
     </td>
-    <td>{{ pp.points }}</td>
+    <td class="points">{{ pp.points }}</td>
 
   {% end %}
 </table>

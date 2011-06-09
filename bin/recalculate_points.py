@@ -10,6 +10,7 @@ from tornado.options import define, options
 define("verbose", default=False, help="be louder", type=bool)
 define("all", default=False, help="recalculate all users", type=bool)
 define("users", default=10, help="no. recent plays", type=int)
+define("random", default=False, help="pick random users", type=bool)
 
 def main(*args):
     tornado.options.parse_command_line()
@@ -23,22 +24,32 @@ def main(*args):
         max_users = 999999
     else:
         max_users = options.users
-    finished = (db.Play.find({'finished': {'$ne':None}})
-                .sort('finished', -1))
-    recent_users = []
-    _broken = False
-    for play in finished:
-        if _broken:
-            break
-        for user in play.users:
-            if user not in recent_users:
-                recent_users.append(user)
-            if len(recent_users) >= max_users:
-                _broken = True
-                break
 
+    recent_users = []
+    if options.random:
+        while len(recent_users) < max_users:
+            play = db.Play.find_random()
+            if play.finished:
+                for user in play.users:
+                    if user not in recent_users:
+                        recent_users.append(user)
+
+    else:
+        finished = (db.Play.find({'finished': {'$ne':None}})
+                    .sort('finished', -1))
+        _broken = False
+        for play in finished:
+            if _broken:
+                break
+            for user in play.users:
+                if user not in recent_users:
+                    recent_users.append(user)
+                if len(recent_users) >= max_users:
+                    _broken = True
+                    break
     for user in recent_users:
         play_points = PlayPoints.calculate(user)
+        break
         if options.verbose and not options.all:
             print user.username.ljust(20), play_points.points
 

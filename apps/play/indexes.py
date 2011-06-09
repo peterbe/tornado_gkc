@@ -1,9 +1,9 @@
 from pymongo import ASCENDING, DESCENDING
-from models import Play, PlayedQuestion
+from models import Play, PlayedQuestion, PlayPoints
 from mongokit import Connection
 import settings
 con = Connection()
-con.register([Play, PlayedQuestion])
+con.register([Play, PlayedQuestion, PlayPoints])
 db = con[settings.DATABASE_NAME]
 
 def run(**options):
@@ -31,6 +31,15 @@ def run(**options):
     ensure(collection, 'question.$id')
     yield 'played_question.question'
 
+    collection = db.PlayPoints.collection
+    if options.get('clear_all_first'):
+        collection.drop_indexes()
+    ensure(collection, 'user.$id')
+    yield 'playpoints.user'
+    ensure(collection, 'points')
+    yield 'playpoints.points'
+
+
     test()
 
 
@@ -50,6 +59,15 @@ def test():
                   'user.$id': any_obj_id,
                   'question.$id': any_obj_id,
                   }).explain())['cursor']
+    assert 'BtreeCursor' in curs
+
+    curs = db.PlayPoints.find({'user.$id': any_obj_id}).explain()['cursor']
+    assert 'BtreeCursor' in curs
+
+    curs = (db.PlayPoints
+              .find({'points': {'$gt': 0}})
+              .sort('points', -1)
+              .explain()['cursor'])
     assert 'BtreeCursor' in curs
 
     #curs = db.Question.find({'author.$id': any_obj_id}).explain()['cursor']

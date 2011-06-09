@@ -224,7 +224,7 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
                        PROJECT_TITLE=settings.PROJECT_TITLE,
                        page_title=settings.PROJECT_TITLE,
                        #total_question_points=0,
-                       total_battle_points=0,
+                       total_play_points=0,
                        )
 
         # default settings
@@ -251,8 +251,15 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
             user_settings = self.get_current_user_settings(user)
             #options['total_question_points'] = \
             #  self.get_total_question_points(user)
-            options['total_battle_points'] = \
-              self.get_total_battle_points(user)
+            play_points = self.get_play_points(user)
+            if play_points:
+                options['total_play_points'] = play_points.points
+                if not play_points.highscore_position:
+                    play_points.update_highscore_position()
+                options['play_highscore_position'] = play_points.highscore_position
+            else:
+                options['total_play_points'] = None
+                options['play_highscore_position'] = None
 
         options['settings'] = settings_
 
@@ -291,8 +298,10 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
             _search['read'] = False
         return self.db.FlashMessage.find(_search).sort('add_date', 1)
 
-    def get_total_battle_points(self, user):
-        return 0
+    def get_play_points(self, user):
+        """return the total play points or None"""
+        return self.db.PlayPoints.one({'user.$id': user._id})
+
 
 
 

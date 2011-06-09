@@ -175,8 +175,9 @@ class PlayHighscoreHandler(BaseHandler):
     def get(self):
         options = self.get_base_options()
         play_points = (self.db.PlayPoints
-                       .find()
+                       .find({'points':{'$gt':0}})
                        .sort('points', -1)
                        )
         options['play_points'] = play_points
+        options['page_title'] = "Highscore"
         self.render("play/highscore.html", **options)
