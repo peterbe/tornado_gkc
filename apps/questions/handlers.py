@@ -313,7 +313,8 @@ class AddQuestionHandler(QuestionsBaseHandler):
             question.text = form.text.data
             question.answer = form.answer.data
             question.accept = [form.accept.data]
-            question.alternatives = [x for x in form.alternatives.data.splitlines()]
+            question.alternatives = [x.strip() for x in
+                                     form.alternatives.data.splitlines()]
             assert question.answer in question.alternatives, "answer not in alternatives"
             genre = self.db.Genre.one(dict(name=form.genre.data))
             if not genre:
@@ -411,8 +412,8 @@ class EditQuestionHandler(QuestionsBaseHandler):
         if form.validate():
             question.text = form.text.data
             question.answer = form.answer.data
-            question.accept = [x for x in form.accept.data.splitlines()]
-            question.alternatives = [x for x in form.alternatives.data.splitlines()]
+            question.accept = [x.strip() for x in form.accept.data.splitlines()]
+            question.alternatives = [x.strip() for x in form.alternatives.data.splitlines()]
             if question.answer not in question.alternatives:
                 alts = []
                 for each in question.alternatives:

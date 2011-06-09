@@ -44,7 +44,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         data = dict(text=u"H\ex3r mar dU? ",
                     answer="Bra   ",
                     accept="Hyffsat",
-                    alternatives=" Bra\nOk\nFine\nIlla",
+                    alternatives=" Bra  \nOk\nFine\nIlla",
                     genre="Life ",
                     spell_correct='yes',
                     comment="  \nSome\nComment\t"
