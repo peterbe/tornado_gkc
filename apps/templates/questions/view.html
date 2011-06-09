@@ -28,7 +28,7 @@
     </div>
     <div><input type="submit" value="Send comment"></div>
   </form>
-  {% if question.accept_date %}
+  {% if question.state == 'ACCEPTED' %}
     {% if skip is not None %}
       <form action="{{ reverse_url('review_accepted') }}" method="post" id="skip">
         {{ xsrf_form_html() }}
@@ -128,6 +128,11 @@
 
 <div id="question_metadata">
 <p>
+{% if is_admin_user %}
+<strong>State:</strong>
+<span>{{ question.state }} (admin only)</span>
+<br>
+{% end %}
 <strong>By:</strong>
 <span>{{ modules.ShowUser(question.author) }}</span>
 <br>
