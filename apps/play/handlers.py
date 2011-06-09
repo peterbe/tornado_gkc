@@ -66,8 +66,12 @@ class ReplayPlayHandler(BasePlayHandler):
     def get(self, play_id):
         options = self.get_base_options()
         play = self.must_find_play(play_id, options['user'])
+        play = self.find_play(play_id)
         options['play'] = play
-        player_names = [unicode(x) for x in play.users]
+        player_names_lookup = {}
+        for user in play.users:
+            player_names_lookup[user._id] = unicode(user)
+        player_names = player_names_lookup.values()
         def sort_me_first(x, y):
             if x == unicode(options['user']):
                 return -1
@@ -75,22 +79,32 @@ class ReplayPlayHandler(BasePlayHandler):
                 return 1
         player_names.sort(sort_me_first)
         options['player_names'] = player_names
-        played_questions = (self.db.PlayedQuestion
+        played_questions = (self.db.PlayedQuestion.collection
           .find({'play.$id': play._id}).sort('add_date', ASCENDING))
+
         questions = []
         outcomes = defaultdict(dict)
         totals = defaultdict(int)
         for played_question in played_questions:
-            if played_question.question not in questions:
-                questions.append(played_question.question)
-            player_name = unicode(played_question.user)
-            outcomes[played_question.question._id][player_name] = played_question
-            if played_question.right:
-                if played_question.alternatives:
+            if played_question['question'].id not in questions:
+                questions.append(played_question['question'].id)
+            player_name = player_names_lookup[played_question['user'].id]
+            outcomes[played_question['question'].id][player_name] = dict_plus(played_question)
+            if played_question['right']:
+                if played_question['alternatives']:
                     totals[player_name] += 1
                 else:
                     totals[player_name] += 3
-        #questions = [x.question for x in played_questions]
+        questions = [dict_plus(self.db.Question.collection.one({'_id':x}))
+                      for x in questions]
+        genres = {}
+        for q in questions:
+            if q._id in genres:
+                name = genres[q._id]
+            else:
+                genres[q._id] = u'xxx'
+            q.genre = dict_plus(dict(name=genres[q._id]))
+
         options['questions'] = questions
         options['outcomes'] = outcomes
         options['totals'] = totals
@@ -204,3 +218,17 @@ class UpdatePointsJSONHandler(BasePlayHandler):
                              highscore_position_before=highscore_position_before,
                              highscore_position=play_points.highscore_position,
                              ))
+
+class dict_plus(dict):
+    def __init__(self, *args, **kwargs):
+        if 'collection' in kwargs: # excess we don't need
+            kwargs.pop('collection')
+        dict.__init__(self, *args, **kwargs)
+        self._wrap_internal_dicts()
+    def _wrap_internal_dicts(self):
+        for key, value in self.items():
+            if isinstance(value, dict):
+                self[key] = dict_plus(value)
+
+    def __getattr__(self, key):
+        return self[key]
