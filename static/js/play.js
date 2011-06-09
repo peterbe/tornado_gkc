@@ -505,6 +505,20 @@ $(function() {
       }
       if (obj.play_id) {
          $('a.replay').attr('href', '/play/replay/' + obj.play_id  + '/');
+         $.getJSON('/play/update_points.json', {play_id: obj.play_id}, function(response) {
+            if (response.increment) {
+               $('<a>')
+                 .attr('href', '/play/highscore/')
+                   .attr('title', 'Click to see where you are in the Highscore list')
+                     .text("You just earn yourself " + response.increment + " more Kwissle points!")
+                       .appendTo($('.points'));
+               $('<br>')
+                 .appendTo($('.points'));
+               $('<span>')
+                 .text("You're now number " +response.highscore_position + "in the Highscore list")
+                   .appendTo($('.points'));
+            }
+         });
       }
    });
 

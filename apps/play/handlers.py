@@ -5,6 +5,7 @@ from pymongo.objectid import InvalidId, ObjectId
 import tornado.web
 from tornado.web import HTTPError
 from apps.main.handlers import BaseHandler
+from apps.play.models import PlayPoints
 from utils.routes import route, route_redirect
 import settings
 
@@ -181,3 +182,25 @@ class PlayHighscoreHandler(BaseHandler):
         options['play_points'] = play_points
         options['page_title'] = "Highscore"
         self.render("play/highscore.html", **options)
+
+
+@route('/play/update_points.json$', name='play_update_points_json')
+class UpdatePointsJSONHandler(BasePlayHandler):
+
+    def get(self):
+        user = self.get_current_user()
+        play_id = self.get_argument('play_id')
+        play = self.must_find_play(play_id, user)
+        play_points_before = self.get_play_points(user)
+        points_before = getattr(play_points_before, 'points', 0)
+        highscore_position_before = getattr(play_points_before,
+                                            'highscore_position', None)
+        play_points = PlayPoints.calculate(user)
+
+        increment = play_points.points - points_before
+        self.write_json(dict(increment=increment,
+                             points_before=points_before,
+                             points=play_points.points,
+                             highscore_position_before=highscore_position_before,
+                             highscore_position=play_points.highscore_position,
+                             ))
