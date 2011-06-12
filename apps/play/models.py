@@ -3,6 +3,7 @@ from collections import defaultdict
 import datetime
 from apps.main.models import BaseDocument, User
 from apps.questions.models import Question
+from utils import dict_plus
 
 class Play(BaseDocument):
     __collection__ = 'plays'
@@ -114,10 +115,9 @@ class PlayPoints(BaseDocument):
         play_points.wins = 0
         play_points.losses = 0
         play_points.draws = 0
-        for play in db.Play.find(search):
-            #print play.finished
-            #print "Against", play.get_other_user(user).username
-            if play.winner == user:
+        for play in db.Play.collection.find(search):
+            play = dict_plus(play)
+            if play.winner and play.winner.id == user._id:
                 play_points.wins += 1
             elif play.draw:
                 play_points.draws += 1
@@ -128,7 +128,7 @@ class PlayPoints(BaseDocument):
                 except AssertionError:
                     # This happens because of a bug in the game, where a draw
                     # isn't saved properly.
-
+                    print "FIXING"
                     points = defaultdict(int)
                     for u in play.users:
                         for pq in db.PlayedQuestion.find({'play.$id':play._id, 'user.$id':u._id}):
@@ -164,10 +164,11 @@ class PlayPoints(BaseDocument):
                 play_points.losses += 1
             #print
             try:
-                for played in (user.db.PlayedQuestion
+                for played in (user.db.PlayedQuestion.collection
                                  .find({'play.$id': play._id,
                                         'user.$id': user._id})):
                     #pprint(played)
+                    played = dict_plus(played)
                     if played.right:
                         if played.alternatives:
                             play_points.points += 1

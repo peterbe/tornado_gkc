@@ -7,6 +7,7 @@ from tornado.web import HTTPError
 from apps.main.handlers import BaseHandler
 from apps.play.models import PlayPoints
 from utils.routes import route, route_redirect
+from utils import dict_plus
 import settings
 
 
@@ -209,11 +210,7 @@ class UpdatePointsJSONHandler(BasePlayHandler):
         points_before = getattr(play_points_before, 'points', 0)
         highscore_position_before = getattr(play_points_before,
                                             'highscore_position', None)
-        from time import time
-        t0=time()
         play_points = PlayPoints.calculate(user)
-        t1=time()
-        print t1-t0, "seconds to calculate %s's points" % user
 
         increment = play_points.points - points_before
         self.write_json(dict(increment=increment,
@@ -222,17 +219,3 @@ class UpdatePointsJSONHandler(BasePlayHandler):
                              highscore_position_before=highscore_position_before,
                              highscore_position=play_points.highscore_position,
                              ))
-
-class dict_plus(dict):
-    def __init__(self, *args, **kwargs):
-        if 'collection' in kwargs: # excess we don't need
-            kwargs.pop('collection')
-        dict.__init__(self, *args, **kwargs)
-        self._wrap_internal_dicts()
-    def _wrap_internal_dicts(self):
-        for key, value in self.items():
-            if isinstance(value, dict):
-                self[key] = dict_plus(value)
-
-    def __getattr__(self, key):
-        return self[key]
