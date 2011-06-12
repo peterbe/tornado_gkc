@@ -1,6 +1,6 @@
 
 head.ready(function() {
-   var search_placeholder = 'Search';
+   var search_placeholder = 'Search your questions...';
    $('#search').submit(function() {
       var value = $('input[name="q"]', this).val();
       if (value == search_placeholder) value = '';

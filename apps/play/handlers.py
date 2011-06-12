@@ -209,7 +209,11 @@ class UpdatePointsJSONHandler(BasePlayHandler):
         points_before = getattr(play_points_before, 'points', 0)
         highscore_position_before = getattr(play_points_before,
                                             'highscore_position', None)
+        from time import time
+        t0=time()
         play_points = PlayPoints.calculate(user)
+        t1=time()
+        print t1-t0, "seconds to calculate %s's points" % user
 
         increment = play_points.points - points_before
         self.write_json(dict(increment=increment,

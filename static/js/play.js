@@ -515,7 +515,7 @@ $(function() {
                $('<br>')
                  .appendTo($('.points'));
                $('<span>')
-                 .text("You're now number " +response.highscore_position + "in the Highscore list")
+                 .html("You're now number <span class=\"yellow\">" +response.highscore_position + " in the Highscore list</span>")
                    .appendTo($('.points'));
             }
          });
