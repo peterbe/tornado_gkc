@@ -52,6 +52,17 @@ def main():
             since = datetime.datetime.strptime(since, '%Y-%m-%d')
     if options.verbose:
         print 'since', since
+
+    genres = {}
+    authors = {}
+    count = 0
+    search = {'modify_date': {'$gt': since}}
+    if not db.Question.find(search).count():
+        if options.verbose:
+            print "0 questions"
+        return
+    youngest = since
+
     indexer = xappy.IndexerConnection(settings.XAPIAN_LOCATION)
     if not indexer.get_fields_with_actions() or options.update_fields:
         indexer.add_field_action('question', xappy.FieldActions.INDEX_FREETEXT,
@@ -77,11 +88,7 @@ def main():
         indexer.add_field_action('genre', xappy.FieldActions.STORE_CONTENT)
         indexer.add_field_action('state', xappy.FieldActions.STORE_CONTENT)
 
-    genres = {}
-    authors = {}
-    count = 0
-    search = {'modify_date': {'$gt': since}}
-    youngest = since
+
     t0 = time.time()
     for question in db.Question.collection.find(search):
         if question['modify_date'] > youngest:
