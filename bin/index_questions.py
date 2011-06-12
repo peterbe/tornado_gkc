@@ -104,7 +104,6 @@ def main():
             author = db.User.one({'_id': question['author'].id})
             author = author.username
             authors[question['author'].id] = author
-        print repr(author)
         doc.fields.append(xappy.Field('author', author))
         doc.fields.append(xappy.Field('comment', question['comment']))
         doc.fields.append(xappy.Field('accept', '\n'.join(question['accept'])))
