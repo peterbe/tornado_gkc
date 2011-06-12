@@ -37,3 +37,6 @@ p.question_metadata {
 th { text-align: left; }
 
 a.about-breakdown { font-size:80%; }
+
+#search input { float:right; margin-right:60px;}
+input.placeholder { color:#999; }

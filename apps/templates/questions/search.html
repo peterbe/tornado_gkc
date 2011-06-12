@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<style>
+.result-outer {
+  clear:left;
+  border-top:1px solid #666;
+  padding:20px;
+}
+#results p { margin:0; }
+.result b { background-color:#666; font-style:italic; }
+</style>
+{% end %}
+
+{% block extra_js %}
+<script>
+head.ready(function() {
+  if ($('h3').text().search(/0 found/) > -1) {
+    $('input[name="q"]').trigger('focus');
+  }
+});
+</script>
+{% end %}
+
+{% block content_inner %}
+
+<p>
+<a href="/questions/" class="btn">&larr; back to questions dashboard</a>
+</p>
+<h3>{{ len(results) }} found</h3>
+{% if spell_correction %}
+<p><a href="{{ spell_correction_url }}">Did you mean <strong class="yellow">{{ spell_correction }}</strong>?</a>
+</p>
+{% end %}
+<div id="results">
+  {% for result, question in results %}
+  <div class="result-outer">
+    <div id="{{ result.id }}" class="result">
+      <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}" class="yellow">{{ result.highlight('question')[0] }}</a></p>
+      <p class="question_metadata">
+      {% if is_admin_user %}By: {{ modules.ShowUser(question.author) }}<br>{% end %}
+      Category: {{ question.genre.name }}<br>
+      {% if question.publish_date %}
+      Published {{ modules.TimeSince(question.publish_date) }} ago
+      {% else %}
+      {% if question.accept_date %}
+      Accepted {{ modules.TimeSince(question.accept_date) }} ago
+      {% end %}
+      {% end %}
+      </p>
+    </div>
+
+    <div class="clearer">&nbsp;</div>
+  </div>
+  {% end %}
+</div>
+
+{% if matches.matches_estimated > limit %}
+<p>Sorry, search results limited to the first {{ limit }} matches. Try refining the search.</p>
+{% end %}
+
+{% end %}

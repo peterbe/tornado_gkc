@@ -27,6 +27,8 @@ TWITTER_CONSUMER_SECRET = open(op.join(HERE, 'twitter_consumer_secret')).read().
 FACEBOOK_API_KEY = '0bdf577fe3dc898fc740a3999a1f1ce0'
 FACEBOOK_SECRET = open(op.join(HERE, 'facebook_consumer_secret')).read().strip()
 
+XAPIAN_LOCATION = op.join(HERE, 'xapian_db')
+
 try:
     from local_settings import *
 except ImportError:

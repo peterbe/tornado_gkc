@@ -8,6 +8,7 @@ import re
 import os.path
 from mongokit import Connection, Document as mongokit_Document
 import logging
+import xappy
 
 # tornado
 import tornado.httpserver
@@ -126,6 +127,15 @@ class Application(tornado.web.Application):
                     pass
 
         self.con.register(model_classes)
+        self._search_connection = None
+
+    @property
+    def search_connection(self):
+        if not self._search_connection:
+            self._search_connection = xappy.SearchConnection(
+              settings.XAPIAN_LOCATION
+              )
+        return self._search_connection
 
 for app_name in settings.APPS:
     __import__('apps.%s' % app_name, globals(), locals(), ['handlers'], -1)

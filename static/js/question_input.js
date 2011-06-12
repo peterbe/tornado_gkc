@@ -56,7 +56,7 @@ head.js(JS_URLS.jquery_autocomplete, function() {
       var preval = $('#genre').val(), preval_element;
       $('#genre').hide();
       var container, big_container = $('#genre').parents('p.field');
-      
+
       $.each(r.popular_names, function(i, e) {
 	 container = $('<span>').addClass('genre-field');
          $('<input type="radio" name="chosen_genre">')
@@ -81,7 +81,7 @@ head.js(JS_URLS.jquery_autocomplete, function() {
 
 	 big_container.append(container);
       });
-      
+
       $('<br>').appendTo(big_container);
       $('<input type="radio" name="chosen_genre">')
         .attr('id', 'g_other')
@@ -108,7 +108,7 @@ head.js(JS_URLS.jquery_autocomplete, function() {
          $('#g_other').attr('checked', 'checked');
       }
       //$('input[name="genre"]').autocomplete(r.names);
-      
+
 
    });
 });

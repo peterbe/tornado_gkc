@@ -32,3 +32,5 @@ NAMES.txt
 deployment/
 scripts/backups/
 flashpolicyd/flashpolicy.xml
+xapian_db/
+bin/.indexed_document_since

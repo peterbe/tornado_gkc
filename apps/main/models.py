@@ -31,6 +31,7 @@ class BaseDocument(Document):
     def __ne__(self, other_doc):
         return not self == other_doc
 
+
 class User(BaseDocument):
     __collection__ = 'users'
     structure = {

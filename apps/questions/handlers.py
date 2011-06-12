@@ -1,6 +1,7 @@
 from pymongo.objectid import InvalidId, ObjectId
 import re
 import datetime
+import urllib
 import logging
 from random import randint
 from pprint import pprint
@@ -10,6 +11,7 @@ from utils.decorators import login_required, login_redirect
 from apps.main.handlers import BaseHandler
 from utils.routes import route, route_redirect
 from utils.send_mail import send_email
+from utils.stopwords import strip_stopwords
 import settings
 
 from models import STATES, DRAFT, SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
@@ -26,6 +28,7 @@ class QuestionsBaseHandler(BaseHandler):
             options['total_question_points'] = self.get_total_questions_points(options['user'])
         else:
             options['total_question_points'] = 0
+        options['q'] = self.get_argument('q', u'').strip()
         return options
 
     def find_question(self, question_id):
@@ -916,12 +919,13 @@ class CategoriesHandler(QuestionsBaseHandler): # pragma: no cover
         for status, name in status_and_names:
             aux_series[name] = {}
 
-        for genre in self.db.Genre.find({'approved':True}).sort('name'):
-            x_categories.append(genre.name)
+        for genre in (self.db.Genre.collection
+                       .find({'approved':True}).sort('name')):
+            x_categories.append(genre['name'])
             for status, name in status_and_names:
-                count = self.db.Question.find({'genre.$id': genre._id,
+                count = self.db.Question.find({'genre.$id': genre['_id'],
                                                 'state': status}).count()
-                aux_series[name][genre.name] = count
+                aux_series[name][genre['name']] = count
 
         series = []
         for status, name in status_and_names:
@@ -1014,3 +1018,50 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler): # pragma: no cover
                 options['all_users'].append(user)
 
         self.render("questions/all.html", **options)
+
+@route('/questions/search/$', name="questions_search")
+class QuestionSearchHandler(QuestionsBaseHandler):
+
+    @tornado.web.authenticated
+    def get(self, operator='AND'):
+        options = self.get_base_options()
+        q = self.get_argument('q', u'').strip()
+        options['q'] = q
+        limit = int(self.get_argument('limit', 20))
+        searcher = self.application.search_connection
+        options['spell_correction'] = searcher.spell_correct(q)
+        if options['spell_correction'] == q:
+            options['spell_correction'] = None
+            options['spell_correction_url'] = None
+        else:
+            options['spell_correction_url'] = ('%s?q=%s' %
+            (self.reverse_url('questions_search'),
+            urllib.quote(options['spell_correction']))
+            )
+        q = strip_stopwords(q)
+        if operator == 'AND':
+            search_operator = searcher.OP_AND
+        else:
+            search_operator = searcher.OP_OR
+        query = searcher.query_field('question', q,
+                                     default_op=search_operator)
+        if not self.is_admin_user(options['user']):
+            u_query = searcher.query_field('author', options['user'].username,
+                                     default_op=searcher.OP_AND)
+            query = searcher.query_composite(searcher.OP_AND, [query, u_query])
+
+        matches = searcher.search(query, 0, limit)
+        options['matches'] = matches
+        if not matches.matches_estimated and operator == 'AND' and len(q.split()) > 1:
+            self.get(operator='OR')
+            return
+        options['results'] = []
+        for result in matches:
+            question = self.db.Question.one({'_id': ObjectId(result.id)})
+            if not question:
+                logging.warn("Xapian result %r doesn't exist as question" % result.id)
+                continue
+            options['results'].append((result, question))
+        options['limit'] = limit
+        options['page_title'] = "Search results for '%s'" % q
+        self.render("questions/search.html", **options)

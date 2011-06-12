@@ -1,8 +1,15 @@
 {% extends "../base.html" %}
 
-{% block extra_head %}
+{% block extra_head_outer %}
 {{ modules.Static("css/questions.css", "css/question_input.css","css/ext/jquery.autocomplete.css", "css/ext/tipsy.css") }}
+{% block extra_head %}{% end %}
 {% end %}
+
+{% block extra_js_outer %}
+{{ modules.Static("js/questions.js") }}
+{% block extra_js %}{% end %}
+{% end %}
+
 
 {% block title %}
 {% if page_title %}
@@ -25,6 +32,10 @@
 
 {% block content_outer %}
   <div id="content_inner">
+  <form action="{{ reverse_url('questions_search') }}" id="search">
+  <input name="q" size="30" value="{{ q }}">
+  </form>
+
   <h2>{% if page_title %}
   {{ page_title }}
   {% else %}
