@@ -282,6 +282,7 @@ route_redirect('/questions/published$', '/questions/published/')
 class QuestionsHomeHandler(QuestionsBaseHandler):
     DEFAULT_BATCH_SIZE = 200
 
+    @tornado.web.authenticated
     def get(self):
         options = self.get_base_options()
         questions = (self.db.Question
