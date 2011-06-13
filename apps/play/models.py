@@ -117,6 +117,7 @@ class PlayPoints(BaseDocument):
         play_points.draws = 0
         for play in db.Play.collection.find(search):
             play = dict_plus(play)
+
             if play.winner and play.winner.id == user._id:
                 play_points.wins += 1
             elif play.draw:
@@ -130,8 +131,11 @@ class PlayPoints(BaseDocument):
                     # isn't saved properly.
                     print "FIXING"
                     points = defaultdict(int)
-                    for u in play.users:
-                        for pq in db.PlayedQuestion.find({'play.$id':play._id, 'user.$id':u._id}):
+                    for u_ref in play.users:
+                        u = db.User.one({'_id': u_ref.id})
+                        for pq in (db.PlayedQuestion.collection
+                                   .find({'play.$id':play._id, 'user.$id':u._id})):
+                            pq = dict_plus(pq)
                             if pq.right:
                                 if pq.alternatives:
                                     p = 1
@@ -143,10 +147,15 @@ class PlayPoints(BaseDocument):
                     if sum(points.values()) == 0:
                         for pq in db.PlayedQuestion.find({'play.$id':play._id}):
                             pq.delete()
+
+                        play = db.Play.one({'_id': play._id})
                         play.delete()
                         continue
 
                     if len(points) == 2 and len(set(points.values())):
+                        play = db.Play.one({'_id': play._id})
+                        play.delete()
+
                         play.draw = True
                         play.save()
                         play_points.draws += 1

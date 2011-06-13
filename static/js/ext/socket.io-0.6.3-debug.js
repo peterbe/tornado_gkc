@@ -1522,6 +1522,7 @@ if (typeof window != 'undefined'){
     var transports = override || this.options.transports, match;
     if (this.options.rememberTransport && !override){
       match = this.options.document.cookie.match('(?:^|;)\\s*socketio=([^;]*)');
+
       if (match){
         this.rememberedTransport = true;
         transports = [decodeURIComponent(match[1])];

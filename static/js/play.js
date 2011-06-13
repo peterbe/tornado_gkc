@@ -111,13 +111,12 @@ var Question = (function() {
 	 _initialized = true;
       },
       load_question: function(question) {
-         //L("LOAD_QUESTION", question);
 	 if (!_initialized) {
 	    this.initialize();
 	 }
 	 _has_answered = false;
 	 _current_question = question;
-	 $('#timer:hidden').show(100);
+	 $('#timer:hidden').show();
 	 $('#input:hidden').show();
 	 $('#alternatives input.alternative').remove();
 	 $('#alternatives-outer:visible').hide();
@@ -165,30 +164,30 @@ var Question = (function() {
 	 $('#question li.current').removeClass('current').addClass('past');
 	 if (draw) {
 	    Title.show_temporarily("You drew!", 30);
-            $('#you_drew').fadeIn(400);
+            $('#you_drew').fadeIn(300);
 	 } else {
 	    if (you_won) {
                if (CONFIG.ENABLE_SOUNDS && soundManager) {
                   soundManager.play(CONFIG.SOUNDS['you_won']);
                }
 	       Title.show_temporarily("You won!! Congratulations!", 30);
-               $('#you_won').fadeIn(400);
+               $('#you_won').fadeIn(300);
 	    } else {
                if (CONFIG.ENABLE_SOUNDS && soundManager) {
                   soundManager.play(CONFIG.SOUNDS['you_lost']);
                }
 	       Title.show_temporarily("You lost. Sorry(?)", 30);
-               $('#you_lost').fadeIn(400);
+               $('#you_lost').fadeIn(300);
 	    }
 	 }
 	 setTimeout(function() {
-	    $('#questions_ad:hidden').show(500);
-	 }, 3 * 1000);
+	    $('#questions_ad:hidden').show(700);
+	 }, 5 * 1000);
       },
       stop: function(information) { // the whole battle is over
 	 Clock.stop();
 	 $('#timer').hide();
-	 $('#input').hide(500);
+	 $('#input').hide();
 	 if (information && information.message) {
 	    $('#information p').text(information.message);
 	    $('#information').show();
@@ -202,7 +201,7 @@ var Question = (function() {
 		alt: msg
 	   }));
 	 Title.show_temporarily(msg);
-	 $('#alert').text(msg).show(100);
+	 $('#alert').text(msg).show();
       },
       wrong_answer: function() {
 	 var msg = 'Sorry. You got it wrong';
@@ -212,7 +211,7 @@ var Question = (function() {
 		alt: msg
 	   }));
 	 Title.show_temporarily(msg);
-	 $('#alert').text(msg).show(100);
+	 $('#alert').text(msg).show();
          var left = Clock.get_seconds_left();
          if ((left - 1) > 0) {
             Gossip.count_down(left - 1, function (s) {
@@ -228,7 +227,7 @@ var Question = (function() {
 		alt: msg
 	   }));
 	 Title.show_temporarily(msg);
-	 $('#alert').text(msg).show(100);
+	 $('#alert').text(msg).show();
       },
       beaten: function() {
 	 var msg = 'Sorry. Opponent beat you on that question';
@@ -238,7 +237,7 @@ var Question = (function() {
 		alt: msg
 	   }));*/
 	 Title.show_temporarily(msg);
-	 $('#alert').text(msg).show(100);
+	 $('#alert').text(msg).show();
       },
       send_answer: function(answer) {
          if (_has_answered) {
@@ -390,7 +389,7 @@ $(function() {
 
       setTimeout(function() {
          if (!$('.error:visible').size() && !Question.is_initialized()) {
-            $('#besocial').show(900);
+            $('#besocial').show(700);
          }
       }, 7 * 1000);
 
@@ -492,7 +491,7 @@ $(function() {
       } else if (obj.your_name) {
          // this is mainly for checking that all is working fine
          $('#your_name strong').text(obj.your_name);
-         $('#your_name:hidden').show(500);
+         $('#your_name:hidden').show(400);
       }
 
       // things that might be included with any other message
@@ -530,6 +529,10 @@ $(function() {
    $(window).bind('beforeunload', function() {
       return "Sure you want to exit? Hit Escape to stay.";
    });
-
+   
+   // Annoyingly this only works the first time with Chrome
+   shortcut.add('backspace', function() {
+      // void
+   }, {disable_in_input:true});
 
 });

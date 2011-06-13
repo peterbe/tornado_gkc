@@ -709,6 +709,7 @@ class HelpHandler(BaseHandler):
       ['/a-good-question', u"Writing a good question"],
       ['/rules', u"Rules"],
       ['/question-workflow', u"Question workflow"],
+      ['/browsers', u"Browsers"],
       #u"News",
       #['/API', u"Developers' API"],
       #u"Bookmarklet",
@@ -755,7 +756,7 @@ class HelpHandler(BaseHandler):
         options['see_also_links'] = self.get_see_also_links(exclude_index=True)
 
 
-@route('/settings/toggle/', name='user_settings_toggle')
+@route('/settings/toggle/$', name='user_settings_toggle')
 class UserSettingsToggle(BaseHandler):
 
     def check_xsrf_cookie(self):
