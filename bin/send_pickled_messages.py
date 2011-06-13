@@ -17,6 +17,12 @@ define("debug", default=False, help="run in debug mode", type=bool)
 define("dry_run", default=False, help="print messages to send", type=bool)
 
 def main():
+    from utils.send_mail import config
+    filenames = glob(os.path.join(config.PICKLE_LOCATION, '*.pickle'))
+    filenames.sort()
+    if not filenames:
+        return
+
     t0 = time.time()
     tornado.options.parse_command_line()
     from utils.send_mail import send_email
@@ -24,11 +30,6 @@ def main():
         from utils.send_mail.backends.console import EmailBackend
     else:
         from utils.send_mail.backends.smtp import EmailBackend
-    from utils.send_mail import config
-    filenames = glob(os.path.join(config.PICKLE_LOCATION, '*.pickle'))
-    filenames.sort()
-    if not filenames:
-        return
     max_count = 10
     filenames = filenames[:max_count]
     messages = [cPickle.load(open(x, 'rb')) for x in filenames]
