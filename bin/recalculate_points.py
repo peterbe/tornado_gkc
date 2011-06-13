@@ -49,7 +49,6 @@ def main(*args):
                     break
     for user in recent_users:
         play_points = PlayPoints.calculate(user)
-        break
         if options.verbose and not options.all:
             print user.username.ljust(20), play_points.points
 

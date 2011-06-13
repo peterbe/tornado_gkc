@@ -124,7 +124,7 @@ class PlayPoints(BaseDocument):
             else:
                 try:
                     assert play.winner
-                    assert play.winner != user
+                    assert play.winner.id != user._id
                 except AssertionError:
                     # This happens because of a bug in the game, where a draw
                     # isn't saved properly.
