@@ -73,7 +73,11 @@
 {% block corejs %}
 {{ modules.Static("js/ext/head.load.min.js") }}
 <script>
-head.js(JS_URLS.jquery, JS_URLS.gritter, JS_URLS.base, function() {
+function L() {
+   if (window.console && window.console.log)
+     console.log.apply(console, arguments);
+}
+head.js(JS_URLS.jquery, JS_URLS.gritter, function() {
   var messages = {{ modules.FlashMessages().as_list() }};
   $.each(messages, function(i, msg) {
     $.gritter.add({title: msg.title,
