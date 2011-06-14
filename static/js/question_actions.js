@@ -1,3 +1,7 @@
+head.js(JS_URLS.jquery_tipsy, function() {
+   $('#retract input').tipsy({trigger: 'hover', gravity: 'w', fade: true});
+});
+
 head.ready(function() {
    $('form#reject').submit(function() {
       if ($('#reject_comment:hidden').size()) {

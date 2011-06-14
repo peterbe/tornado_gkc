@@ -18,7 +18,7 @@ class BaseDocument(Document):
     use_dot_notation = True
 
     def save(self, *args, **kwargs):
-        if '_id' in self:
+        if '_id' in self and kwargs.get('update_modify_date', True):
             self.modify_date = datetime.datetime.now()
         super(BaseDocument, self).save(*args, **kwargs)
 

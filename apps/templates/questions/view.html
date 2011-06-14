@@ -164,6 +164,14 @@
 </p>
 </div>
 
+{% if question.state == 'SUBMITTED' %}
+<form id="retract" action="{{ reverse_url('retract_question', question._id) }}" method="post">
+{{ xsrf_form_html() }}
+<p><input type="submit" title="This will un-submit the question so you can edit it" value="&larr; Edit question again">
+</p>
+</form>
+{% end %}
+
 <p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
 
 

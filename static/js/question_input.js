@@ -18,7 +18,7 @@ var Form = (function() {
          });
          return count >= 4;
       },
-      shuffle_alternatives: function(animate) {
+      shuffle_alternatives: function(animate, callback) {
          animate = animate != null ? animate : 15;
          var alts = [];
          $('input[name="alternatives"]').each(function(i,e) {
@@ -30,8 +30,10 @@ var Form = (function() {
          });
          if (animate > 0) {
             setTimeout(function() {
-               Form.shuffle_alternatives(animate - 1);
+               Form.shuffle_alternatives(animate - 1, callback);
             }, 40 + (10 * (20 - animate)));
+         } else if (callback) {
+            callback();
          }
       },
       add_shuffler: function() {
@@ -53,7 +55,7 @@ var Form = (function() {
 var GENRE_NAMES;
 head.js(JS_URLS.jquery_autocomplete, function() {
    $.getJSON('/questions/genre_names.json', {separate_popular: true}, function(r) {
-      var preval = $('#genre').val(), preval_element;
+      var preval = $('#genre').val(), preval_element_id;
       $('#genre').hide();
       var container, big_container = $('#genre').parents('p.field');
 
@@ -67,7 +69,7 @@ head.js(JS_URLS.jquery_autocomplete, function() {
                })
            .appendTo(container);
          if (e[1] == preval) {
-            preval_element = $('#g_' + i);
+            preval_element_id = 'g_' + i;
          }
          $('<label>',
            {title: e[0] + ' questions',
@@ -101,14 +103,14 @@ head.js(JS_URLS.jquery_autocomplete, function() {
           })
         .appendTo(big_container);
 
-      if (preval_element) {
+      if (preval_element_id) {
+         var preval_element = $('#' + preval_element_id)
          preval_element.attr('checked', 'checked');
       } else if (preval) {
          $('#id_other_genre').val(preval);
          $('#g_other').attr('checked', 'checked');
       }
       //$('input[name="genre"]').autocomplete(r.names);
-
 
    });
 });
@@ -186,7 +188,9 @@ head.ready(function() {
    });
    $('input[name="alternatives"]').change(function() {
       if ($(this).val().length && Form.has_all_alternatives() && !$('.shuffler').size()) {
-         Form.add_shuffler();
+         Form.shuffle_alternatives(null, function() {
+            Form.add_shuffler();
+         });
       }
    });
    $('input[name="answer"]').change(function() {

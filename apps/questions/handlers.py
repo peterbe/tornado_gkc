@@ -741,6 +741,25 @@ class PublishQuestionHandler(QuestionsBaseHandler):
             url += '?skip=%s' % self.get_argument('skip')
         self.redirect(url)
 
+@route('/questions/(\w{24})/retract/$', name="retract_question")
+class RetractQuestionHandler(QuestionsBaseHandler):
+
+    @tornado.web.authenticated
+    def post(self, question_id):
+        user = self.get_current_user()
+        question = self.must_find_question(question_id, user)
+        question.state = DRAFT
+        question.save()
+
+        self.update_total_questions_points(question.author)
+
+        self.push_flash_message("Question retracted!",
+            "Now you can edit the question again")
+
+        url = self.reverse_url('edit_question', question._id)
+        self.redirect(url)
+
+
 @route('/questions/review/random/$', name="review_random")
 class RandomReviewQuestionHandler(QuestionsBaseHandler):
 
