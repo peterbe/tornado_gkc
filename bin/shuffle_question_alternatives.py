@@ -17,11 +17,9 @@ define("random", default=False, help="pick random questions", type=bool)
 
 def main(*args):
     tornado.options.parse_command_line()
+    from apps.main.models import connection
     from apps.questions.models import Question
-    from mongokit import Connection
-    con = Connection()
-    con.register([Question])
-    db = con.gkc
+    db = connection.gkc
     positions = defaultdict(int)
     limit = options.questions
 

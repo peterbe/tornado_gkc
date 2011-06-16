@@ -1,6 +1,7 @@
 import datetime
-from apps.main.models import BaseDocument, User
+from apps.main.models import BaseDocument, User, register
 
+@register
 class Genre(BaseDocument):
     __collection__ = 'question_genres'
     structure = {
@@ -25,6 +26,7 @@ MEDIUM = u"MEDIUM"
 HARD = u"HARD"
 DIFFICULTIES = EASY, MEDIUM, HARD
 
+@register
 class Question(BaseDocument):
     __collection__ = 'questions'
     structure = {
@@ -70,6 +72,7 @@ TOO_EASY = u"TOO EASY"
 TOO_HARD = u"TOO HARD"
 VERDICTS = VERIFIED, UNSURE, WRONG, TOO_EASY, TOO_HARD
 
+@register
 class QuestionReview(BaseDocument):
     __collection__ = 'question_reviews'
     structure = {
@@ -86,6 +89,7 @@ class QuestionReview(BaseDocument):
     }
 
 
+@register
 class QuestionPoints(BaseDocument):
     __collection__ = 'question_points'
     structure = {
@@ -112,3 +116,26 @@ class QuestionPoints(BaseDocument):
           {'$inc': {'highscore_position': 1}},
           multi=True # multi
         )
+
+
+@register
+class QuestionKnowledge(BaseDocument):
+    __collection__ = 'question_knowledge'
+    structure = {
+      'question': Question,
+      'right': float,
+      'alternatives': float,
+      'right_alternative': float,
+      'too_slow': float,
+      'timed_out': float,
+      'users': int,
+    }
+
+    default_values = {
+      'users': 0,
+      'right': 0.0,
+      'alternatives': 0.0,
+      'right_alternative': 0.0,
+      'too_slow': 0.0,
+      'timed_out': 0.0,
+    }

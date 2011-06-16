@@ -4,6 +4,12 @@ import datetime
 from mongokit import Document, ValidationError
 from utils import encrypt_password
 
+from mongokit import Connection
+connection = Connection()
+def register(cls):
+    connection.register([cls])
+    return cls
+
 class BaseDocument(Document):
     structure = {
       'add_date': datetime.datetime,
@@ -32,6 +38,7 @@ class BaseDocument(Document):
         return not self == other_doc
 
 
+@register
 class User(BaseDocument):
     __collection__ = 'users'
     structure = {
@@ -70,6 +77,7 @@ class User(BaseDocument):
         else:
             raise NotImplementedError("No checking clear text passwords")
 
+@register
 class UserSettings(BaseDocument):
     __collection__ = 'user_settings'
     structure = {
@@ -105,6 +113,7 @@ class UserSettings(BaseDocument):
                 if value is bool]
 
 
+@register
 class FlashMessage(BaseDocument):
     __collection__ = 'flash_messages'
     structure = {

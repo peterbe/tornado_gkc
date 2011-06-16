@@ -1,10 +1,11 @@
 from pprint import pprint
 from collections import defaultdict
 import datetime
-from apps.main.models import BaseDocument, User
+from apps.main.models import BaseDocument, User, register
 from apps.questions.models import Question
 from utils import dict_plus
 
+@register
 class Play(BaseDocument):
     __collection__ = 'plays'
     structure = {
@@ -31,6 +32,7 @@ class Play(BaseDocument):
         return [x for x in self.users if x != this_user][0]
 
 
+@register
 class PlayedQuestion(BaseDocument):
     __collection__ = 'played_questions'
     structure = {
@@ -50,6 +52,7 @@ class PlayedQuestion(BaseDocument):
     }
 
 
+@register
 class PlayMessage(BaseDocument):
     __collection__ = 'play_messages'
     structure = {
@@ -65,6 +68,7 @@ class PlayMessage(BaseDocument):
     }
 
 
+@register
 class PlayPoints(BaseDocument):
     __collection__ = 'play_points'
     structure = {

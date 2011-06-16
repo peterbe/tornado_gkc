@@ -121,7 +121,6 @@ class StaticURL(tornado.web.UIModule):
             pass
         else:
             destination = file(new_name, 'w')
-
             do_optimize_static_content = self.handler.settings\
               .get('optimize_static_content', True)
 
@@ -187,7 +186,9 @@ class StaticURL(tornado.web.UIModule):
         first_ext = os.path.splitext(names[0])[-1]
         save_dir = self.handler.application.settings.get('combined_static_dir')
         if save_dir is None:
-            save_dir = gettempdir()
+            save_dir = os.environ.get('TMP_DIR')
+            if not save_dir:
+                save_dir = gettempdir()
         save_dir = os.path.join(save_dir, 'combined')
         mkdir(save_dir)
         combined_name = []
@@ -218,6 +219,9 @@ class StaticURL(tornado.web.UIModule):
               (filename.startswith("'") and filename.endswith("'")):
                 filename = filename[1:-1]
             if 'data:image' in filename or filename.startswith('http://'):
+                return filename
+            if filename == '.':
+                # this is a known IE hack in CSS
                 return filename
             # It's really quite common that the CSS file refers to the file
             # that doesn't exist because if you refer to an image in CSS for

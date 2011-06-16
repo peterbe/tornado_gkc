@@ -93,23 +93,22 @@ class ShowUserName(tornado.web.UIModule):
                 name = name[:3] + '...@...' + name.split('@')[1][3:]
         return name
 
+
 class ShowUser(ShowUserName):
     """one day make this with an image"""
     pass
+
 
 class HelpPageTitle(tornado.web.UIModule):
     def render(self):
         links = []
         current_path = self.request.path
         for each in self.handler.get_see_also_links():
-            print each
             link = each['link']
             if not link.startswith('/help'):
                 link = '/help' + link
-            print repr(link), repr(current_path)
             if link == current_path:
                 return each['label']
-
         return "Help"
 
 
@@ -118,6 +117,7 @@ class Messages(object):
         self.msgs = msgs
     def as_list(self):
         return tornado.escape.json_encode(self.msgs)
+
 
 class FlashMessages(tornado.web.UIModule):
     def render(self):
@@ -128,6 +128,7 @@ class FlashMessages(tornado.web.UIModule):
             message.read = True
             message.save()
         return Messages(msgs)
+
 
 class SortKey(tornado.web.UIModule):
     def render(self, key):
