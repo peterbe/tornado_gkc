@@ -16,9 +16,12 @@ define("ids", help="question ids", type=str)
 
 from collections import defaultdict
 from utils import dict_plus
+import settings
+
 def calculate_knowledge(db, question):
     bot_ids = [bot['_id'] for bot in
-              db.User.collection.find({'username':'BOT'})]
+              (db.User.collection
+                .find({'username': settings.COMPUTER_USERNAME}))]
     users = defaultdict(set)
     tally = {
       'right': 0,

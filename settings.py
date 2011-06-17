@@ -12,9 +12,10 @@ APPS = (
 DATABASE_NAME = "gkc"
 
 LOGIN_URL = "/auth/login/"
-NODE_URL = "http://%(host)s:8888/start"
-NODE_DOMAIN = 'kwissle.com'
+#NODE_URL = "http://%(host)s:8888/start"
+#NODE_DOMAIN = 'kwissle.com'
 
+COMPUTER_USERNAME = u'Computer'
 COOKIE_SECRET = "12orTzK2XQAGUYdkL5gmueJIFuY37EQn92XsTo1v/Vo="
 
 WEBMASTER = 'webmaster@kwissle.com'

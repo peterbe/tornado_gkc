@@ -3,6 +3,5 @@ mongokit
 pycurl
 simplejson
 wtforms
-py-bcrypt
 cssmin
 xappy
