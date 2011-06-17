@@ -124,8 +124,9 @@ class QuestionKnowledge(BaseDocument):
     structure = {
       'question': Question,
       'right': float,
-      'alternatives': float,
-      'right_alternative': float,
+      'wrong': float,
+      'alternatives_right': float,
+      'alternatives_wrong': float,
       'too_slow': float,
       'timed_out': float,
       'users': int,
@@ -134,8 +135,9 @@ class QuestionKnowledge(BaseDocument):
     default_values = {
       'users': 0,
       'right': 0.0,
-      'alternatives': 0.0,
-      'right_alternative': 0.0,
+      'wrong': 0.0,
+      'alternatives_right': 0.0,
+      'alternatives_wrong': 0.0,
       'too_slow': 0.0,
       'timed_out': 0.0,
     }

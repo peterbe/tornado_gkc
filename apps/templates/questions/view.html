@@ -164,6 +164,47 @@
 </p>
 </div>
 
+{% if question_knowledge %}
+<div id="question_knowledge">
+<p>Question has been played {{ question_knowledge.users }} times</p>
+{% if is_admin_user %}
+<table>
+  <tr>
+    <td>Right:</td>
+    <td>{{ modules.ShowPercentage(question_knowledge.right) }}</td>
+  </tr>
+  <tr>
+    <td>Right with alternatives:</td>
+    <td>{{ modules.ShowPercentage(question_knowledge.alternatives_right) }}</td>
+  </tr>
+  <tr>
+    <td>Wrong:</td>
+    <td>{{ modules.ShowPercentage(question_knowledge.wrong) }}</td>
+  </tr>
+  <tr>
+    <td>Wrong with alternatives:</td>
+    <td>{{ modules.ShowPercentage(question_knowledge.alternatives_wrong) }}</td>
+  </tr>
+  <tr>
+    <td>Too slow:</td>
+    <td>{{ modules.ShowPercentage(question_knowledge.too_slow) }}</td>
+  </tr>
+  <tr>
+    <td>No answer from anybody:</td>
+    <td>{{ modules.ShowPercentage(question_knowledge.timed_out) }}</td>
+  </tr>
+  <tr>
+    <td style="font-weight:bold">Check:</td>
+    {% set k=question_knowledge %}
+    <td style="font-weight:bold">{{ modules.ShowPercentage(k.right + k.wrong + k.alternatives_right + k.alternatives_wrong + k.too_slow + k.timed_out) }}</td>
+  </tr>
+</table>
+{% else %}
+<p>About {{ modules.ShowPercentage(question_knowledge.right, sf=0) }} chance that someone gets it right.</p>
+{% end %}
+</div>
+{% end %}
+
 {% if question.state == 'SUBMITTED' %}
 <form id="retract" action="{{ reverse_url('retract_question', question._id) }}" method="post">
 {{ xsrf_form_html() }}

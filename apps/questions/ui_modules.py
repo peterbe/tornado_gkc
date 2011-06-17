@@ -73,3 +73,11 @@ class QuestionShortStats(tornado.web.UIModule):
         return dict(difficulties_json=tornado.escape.json_encode(difficulties),
                     ratings_json=tornado.escape.json_encode(ratings),
                     )
+
+class ShowPercentage(tornado.web.UIModule):
+    def render(self, p, sf=1):
+        p = round(100 * p, sf)
+        if sf:
+            return '%s%%' % p
+        else:
+            return '%d%%' % p

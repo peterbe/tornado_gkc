@@ -362,9 +362,10 @@ class ViewQuestionHandler(QuestionsBaseHandler):
     @tornado.web.authenticated
     def get(self, question_id):
         options = self.get_base_options()
-        options['question'] = self.must_find_question(question_id, options['user'])
+        question = self.must_find_question(question_id, options['user'])
+        options['question'] = question
         options['page_title'] = "View question"
-        options['your_question'] = options['question'].author == options['user']
+        options['your_question'] = question.author == options['user']
         options['reviews'] = []
 
         # to avoid NameErrors
@@ -373,9 +374,11 @@ class ViewQuestionHandler(QuestionsBaseHandler):
         options['skip'] = None
         options['can_edit'] = False
 
-        if self.can_edit_question(options['question'], options['user']):
+        if self.can_edit_question(question, options['user']):
             options['can_edit'] = True
 
+        options['question_knowledge'] = (self.db.QuestionKnowledge
+                                          .one({'question.$id': question._id}))
         self.render('questions/view.html', **options)
 
 
