@@ -5,8 +5,11 @@ import time
 from collections import defaultdict
 from utils.edit_distance import EditDistance
 
+from bot import ComputerClient, predict_bot_answer
+
 class BattleError(Exception):
     pass
+
 class Battle(object):
 
     def __init__(self, thinking_time,
@@ -76,7 +79,7 @@ class Battle(object):
     def has_more_questions(self):
         return len(self.sent_questions) < self.no_questions
 
-    def send_question(self, question):
+    def send_question(self, question, knowledge=None):
         self.sent_questions.add(question)
         self.current_question = question
         self.current_question_sent = time.time()
@@ -87,6 +90,16 @@ class Battle(object):
         }
         self.send_to_all(dict(question=packaged_question,
                               thinking_time=self.thinking_time))
+        if knowledge:
+            # depend on how easy the question is the bot will send
+            # and answer in X seconds
+            bot_answer = predict_bot_answer(self.thinking_time, knowledge)
+            #print "BOT_ANSWER"
+            #pprint(bot_answer)
+            self.bot_answer = bot_answer
+            self.send_to_all(dict(bot_answers=bot_answer['seconds']))
+        else:
+            self.bot_answer = None
 
     def close_current_question(self):
         self.current_question = None
@@ -94,6 +107,24 @@ class Battle(object):
         self.clear_answered()
         self.clear_timed_out()
         self.clear_loaded_alternatives()
+
+    ## Convenient macros
+
+    def has_computer_participant(self):
+        return any([isinstance(p, ComputerClient) for p in self.participants])
+
+    def get_computer_participant(self):
+        return [p for p in self.participants
+                if isinstance(p, ComputerClient)][0]
+
+    def commence(self, db):
+        self.send_to_all({
+          'init_scoreboard': [x.user_name for x in self.participants],
+          'thinking_time': self.thinking_time,
+        })
+        self.send_wait(3, dict(next_question=True))
+        self.save_play(db, started=True)
+
 
     ## Timed out
 
@@ -187,6 +218,9 @@ class Battle(object):
 
     def stop(self):
         self.stopped = True
+
+    def is_stopped(self):
+        return self.stopped
 
     ## Concluding
 

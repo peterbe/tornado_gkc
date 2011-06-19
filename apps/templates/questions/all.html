@@ -20,11 +20,11 @@ td { font-size: 80%; }
 <table>
   <thead>
     <tr>
-      <th><a href="{{ modules.SortKey('state') }}">State</a></th>
+      <th><a href="{% module SortKey('state') %}">State</a></th>
       {% if 0 %}<th>Question</th>{% end %}
       <th>Category</th>
       <th>By</th>
-      <th><a href="{{ modules.SortKey('age') }}">Age</a></th>
+      <th><a href="{% module SortKey('age') %}">Age</a></th>
       <th>Question</th>
     </tr>
   <thead>
@@ -68,8 +68,8 @@ td { font-size: 80%; }
       <td>{{ question.state }}</td>
       {% if 0 %}<td>{{ question.text }}</td>{% end %}
       <td>{{ question.genre.name }}</td>
-      <td>{{ modules.ShowUser(question.author) }}</td>
-      <td>{{ modules.TimeSince(question.add_date) }}</td>
+      <td>{% module ShowUser(question.author) %}</td>
+      <td>{% module TimeSince(question.add_date) %}</td>
       <td>
         <a href="{{ reverse_url('view_question', question._id) }}">{{ question.text }}</a>
 	(<a href="{{ reverse_url('edit_question', question._id) }}">edit</a>)

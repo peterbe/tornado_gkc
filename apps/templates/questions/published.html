@@ -32,7 +32,7 @@ var CHARTS = [];
       <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}" class="yellow">{{ question.text }}</a></p>
       <p class="question_metadata">
       Category: {{ question.genre.name }}<br>
-      Published {{ modules.TimeSince(question.publish_date) }} ago
+      Published {% module TimeSince(question.publish_date) %} ago
       </p>
     </div>
     <div class="stats" id="q-{{ question._id }}">

@@ -13,7 +13,7 @@ p.contribute-now a {
 {% end %}
 
 {% block content_inner %}
-<h1>Help: {{ modules.HelpPageTitle() }}</h1>
+<h1>Help: {% module HelpPageTitle() %}</h1>
 
 <p>
 <a href="{{ reverse_url('questions') }}" class="btn">&larr; back to questions dashboard</a></p>

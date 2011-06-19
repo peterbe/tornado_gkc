@@ -45,7 +45,7 @@ table#stats td {
   <tbody>
     {% for play in plays %}
     <tr>
-      <td>{{ modules.TimeSince(play.add_date) }} ago</td>
+      <td>{% module TimeSince(play.add_date) %} ago</td>
       <td>{% for user_ in play.users %}
       {% if user_._id != user._id %}{{ user_.username }}{% end %}
       {% end %}

@@ -1,7 +1,7 @@
 {% extends "../base.html" %}
 
 {% block extra_head %}
-{{ modules.Static("css/ext/fancybox/jquery.fancybox-1.3.4.css") }}
+{% module Static("css/ext/fancybox/jquery.fancybox-1.3.4.css") %}
 {% end %}
 
 {% block content_inner %}
@@ -11,5 +11,5 @@
 {% end %}
 
 {% block extra_js %}
-{{ modules.Static("js/start_play.js") }}
+{% module Static("js/start_play.js") %}
 {% end %}

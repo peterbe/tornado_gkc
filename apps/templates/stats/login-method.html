@@ -16,7 +16,7 @@ log in with different methods but have the same username.</p>
 
 {% block extra_js %}
 <script>
-head.js('{{ modules.StaticURL('js/ext/highcharts/highcharts.js') }}', function() {
+head.js('{% module StaticURL('js/ext/highcharts/highcharts.js') %}', function() {
 
   var PERCENTAGES = {{ percentages }};
   var colors = Highcharts.getOptions().colors;

@@ -5,8 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=Edge;chrome=1">
     <title>Play!!</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <!--<link rel="stylesheet" type="text/css" href="/static/css/style.css">-->
-    {{ modules.Static("css/style.css","css/play.css") }}
+    {% module Static("css/style.css","css/play.css") %}
     {% block extra_head_outer %}
     {% block extra_head %}{% end %}
     {% end %}
@@ -25,8 +24,9 @@
 
     <div id="scoreboard" style="display:none"></div>
 
+    <div id="play_right" style="display:none">
     {% if user_settings and (user_settings.twitter or user_settings.facebook or user_settings.google) %}
-    <div id="besocial" style="display:none">
+    <div id="besocial">
       <p><span class="yellow">No one to play against?</span><br>
       Then challenge your friends in some way!</p>
       {% if user_settings.twitter %}
@@ -53,11 +53,35 @@
     </div>
     {% end %}
 
+    <form action="." id="challenge-computer">
+      {% if user_settings and (user_settings.twitter or user_settings.facebook or user_settings.google) %}
+      {% else %}
+        <p>Got no one to play against? Wanna play against everyone?</p>
+      {% end %}
+      <p></p>
+      <p>
+      <input type="submit" value="Play against computer">
+      <a class="more-info" href="#challenge-computer-info">[more info]</a>
+      </p>
+      <p style="display:none" class="more-info">
+      By playing against the computer you're effectively playing against
+      <strong>everyone</strong>. The computer will answer "randomly" but
+      based on how everyone has faired on each question when played in the
+      past. For example, if 30% of players know the answer to a particular
+      question, there's a 30% chance the computer will give the right answer.<br>
+      How quick the computer answers depends on how many people have got the
+      question right or wrong.
+      </p>
+    </form>
+
+    </div><!-- /#play_right -->
+
     <div id="your_name" style="display:none">
       <p><span class="yellow">Hi there <strong></strong>!</span><br>
       We're about to begin playing shortly.<br>
       Just waiting for someone to play against.
     </div>
+
 
     <div id="timer-wrapper">
     <div id="timer" style="display:none"></div>
@@ -168,22 +192,22 @@
     </div>
 </div>
 
-{{ modules.Static("js/ext/socket.io-0.6.3.js") }}
+{% module Static("js/ext/socket.io-0.6.3.js") %}
 <script>
 var IMAGES = {
   WRONG: '{{ static_url('images/wrong.png') }}'
 , RIGHT: '{{ static_url('images/right.png') }}'
 , HOURGLASS: '{{ static_url('images/hourglass.png') }}'
 };
-var CONFIG = {{ config_json }};
+var CONFIG = {% raw config_json %};
 WEB_SOCKET_DEBUG = false;
 //WEB_SOCKET_DEBUG=1;
 // it's important this appears *after* loading socket.io.js
 //WEB_SOCKET_SWF_LOCATION = 'http://cdn.socket.io/stable/WebSocketMain.swf';
 WEB_SOCKET_SWF_LOCATION = '{{ static_url("js/ext/WebSocketMain.swf") }}';
 </script>
-{{ modules.Static("js/ext/jquery-1.6.1.min.js") }}
-{{ modules.Static("js/scoreboard.js", "js/rumbler.js", "js/ext/shortcut.js", "js/play.js") }}
+{% module Static("js/ext/jquery-1.6.1.min.js") %}
+{% module Static("js/scoreboard.js", "js/rumbler.js", "js/ext/shortcut.js", "js/play.js") %}
 <script>
 $(function () {
    if (CONFIG.DEBUG) {
@@ -195,15 +219,15 @@ $(function () {
 
 <script>
 var SOUND_CONFIG = {
-  url: '{{ modules.StaticURL("swf/soundmanager2.swf") }}',
+  url: '{% module StaticURL("swf/soundmanager2.swf") %}',
   sounds: {
-    applause: '{{ modules.StaticURL("sounds/applause.mp3") }}',
-    fake_applause: '{{ modules.StaticURL("sounds/fake_applause.mp3") }}',
-    sword: '{{ modules.StaticURL("sounds/sword.mp3") }}'
+    applause: '{% module StaticURL("sounds/applause.mp3") %}',
+    fake_applause: '{% module StaticURL("sounds/fake_applause.mp3") %}',
+    sword: '{% module StaticURL("sounds/sword.mp3") %}'
   },
   settings_toggle_url: '{{ reverse_url('user_settings_toggle') }}'
 };
 </script>
-{{ modules.Static("js/ext/soundmanager/soundmanager2-nodebug-jsmin.js", "js/playsound.js", defer=True) }}
+{% module Static("js/ext/soundmanager/soundmanager2-nodebug-jsmin.js", "js/playsound.js", defer=True) %}
 </body>
 </html>

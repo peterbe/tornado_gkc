@@ -78,7 +78,7 @@ span.maxlength-maxed { color:red; }
 
 <p id="message_sent" style="display:none">Cool! Message sent</p>
 <div id="send_message" style="display:none">
-{{ modules.SendPlayMessageForm(play) }}
+{% module SendPlayMessageForm(play) %}
 </div>
 
 <p><a href="{{ reverse_url('play_replays') }}">&larr; Back to all past plays</a>

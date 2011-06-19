@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block extra_js %}
-{{ modules.Static("js/question_input.js") }}
+{% module Static("js/question_input.js") %}
 {% end %}
 
 {% block content_inner %}
@@ -27,11 +27,11 @@
     </ul>
 {% end %}
 
-<form action="" class="question" method="post">{{ xsrf_form_html() }}
+<form action="" class="question" method="post">{% module xsrf_form_html() %}
 {% for field in form %}
   <p class="field">
     {{ field.label }}
-    {{ modules.RenderField(field) }}
+    {% module RenderField(field) %}
     {% if field.errors %}
        <ul class="errors">{% for error in field.errors %}<li>{{ error }}</li>{% end %}</ul>
     {% end %}

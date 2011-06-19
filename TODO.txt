@@ -1,3 +1,14 @@
+* Loading images:
+
+// good:
+var image = new Image();
+image.onload = function() {
+  // always called
+  alert('image loaded');
+);
+image.src = 'image.jpg';
+	
+
 * Consider http://stanlemon.net/projects/jgrowl.html
 
 * Link at the bottom of replayed play to scream out "we need more

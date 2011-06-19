@@ -38,6 +38,15 @@ def calculate_knowledge(db, question):
                                      'user.$id': {'$nin': bot_ids}})
                               .sort('add_date', 1)):
         played_question = dict_plus(played_question)
+        #print "PQ"
+        #pprint(dict(play=played_question.play.id,
+        #           user=played_question.user.id,
+        #           right=played_question.right,
+        #           question=played_question.question.id,
+        #           alternatives=played_question.alternatives,
+        #           timed_out=played_question.timed_out,
+        #           answer=played_question.answer))
+
         # only bother with played questions in a play that finished
         play_id = played_question.play.id
         if play_id not in finished_plays:
@@ -51,8 +60,6 @@ def calculate_knowledge(db, question):
         if played_question['question'].id in users[user_id]:
             continue
         users[user_id].add(played_question['question'].id)
-        #print "THIS"
-        #pprint(played_question)
 
         tally['users'] += 1
         if played_question.right:
@@ -60,14 +67,18 @@ def calculate_knowledge(db, question):
             if played_question.alternatives:
                 # ...but had to load alternatives
                 tally['alternatives_right'] += 1
+                #print "ALTERNATIVES RIGHT"
             else:
                 # ...by knowing the answer
                 tally['right'] += 1
+                #print "RIGHT"
         elif played_question.answer:
             if played_question.alternatives:
                 tally['alternatives_wrong'] += 1
+                #print "ALTERNATIVES WRONG"
             else:
                 tally['wrong'] += 1
+                #print "WRONG"
         else:
             # that means that this user was either
             # too slow (ie. beaten) or timed out
@@ -90,9 +101,11 @@ def calculate_knowledge(db, question):
             if any(others_right):
                 # in some way, the opponent beat you to it
                 tally['too_slow'] += 1
+                #print "TOO SLOW"
             else:
                 # opponent didn't get it right and you no answer
                 tally['timed_out'] += 1
+                #print "TIMED OUT"
 
     if not tally['users']:
         if options.verbose:

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block extra_js %}
-{{ modules.Static("js/question_actions.js") }}
+{% module Static("js/question_actions.js") %}
 {% end %}
 
 {% block content_inner %}
@@ -10,5 +10,5 @@
 
 <p>In the meantime, why don't you <a href="{{ reverse_url('add_question') }}">add some of your own</a></p>
 
-<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
+<p><a href="{{ reverse_url('questions') }}" class="btn">&larr; back to questions dashboard</a></p>
 {% end %}

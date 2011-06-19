@@ -23,7 +23,7 @@
   <div id="{{ question._id }}" class="question">
     <p class="question_text"><a href="{{ reverse_url('edit_question', question._id ) }}">{{ question.text }}</a></p>
     <p class="question_metadata">Category: {{ question.genre.name }}<br>
-    Added {{ modules.TimeSince(question.add_date) }} ago
+    Added {% module TimeSince(question.add_date) %} ago
     </p>
   </div>
   {% end %}
@@ -43,7 +43,7 @@
     <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}">{{ question.text }}</a></p>
     <p class="question_metadata">Comment: <em>{{ question.reject_comment }}</em><br>
     Category: {{ question.genre.name }}<br>
-    Rejected {{ modules.TimeSince(question.reject_date) }} ago
+    Rejected {% module TimeSince(question.reject_date) %} ago
     </p>
   </div>
   {% end %}
@@ -55,15 +55,15 @@
   {% for question in submitted_questions %}
   <div id="{{ question._id }}" class="question">
     <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}">{{ question.text }}</a></p>
-    <p class="question_metadata">{% if is_admin_user %}By: {{ modules.ShowUser(question.author) }}<br>{% end %}
+    <p class="question_metadata">{% if is_admin_user %}By: {% module ShowUser(question.author) %}<br>{% end %}
     Category: {{ question.genre.name }}<br>
-    Submitted {{ modules.TimeSince(question.submit_date) }} ago
+    Submitted {% module TimeSince(question.submit_date) %} ago
     </p>
   </div>
   {% end %}
   {% if not submitted_questions.count() %}
   <div>
-    <p><em>None at the moment</em></p>
+    <p><em>None at the momqent</em></p>
   </div>
   {% end %}
 </div>

@@ -22,7 +22,7 @@ tfoot td.total { font-size:150%; }
 
 {% if is_admin_user %}
 <form action="{{ reverse_url('update_question_points') }}" method="post">
-{{ xsrf_form_html() }}
+{% module xsrf_form_html() %}
 <div style="float:right">
   <input type="submit" value="update">(admin only)
 </div>

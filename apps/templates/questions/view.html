@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block extra_js %}
-{{ modules.Static("js/question_actions.js") }}
+{% module Static("js/question_actions.js") %}
 {% end %}
 
 {% block content_inner %}
@@ -13,7 +13,7 @@
   <h3>Admin actions</h3>
   {% if question.submit_date %}
   <form action="{{ reverse_url('reject_question', question._id) }}" method="post" id="reject">
-    {{ xsrf_form_html() }}
+    {% module xsrf_form_html() %}
     <div id="reject_comment" style="display:none">Comment:<br>
     {% if skip is not None %}<input type="hidden" name="skip" value="{{ skip }}">{% end %}
     <textarea name="reject_comment" cols="30" rows="3"></textarea>
@@ -21,7 +21,7 @@
     <div><input type="submit" value="Reject"></div>
   </form>
   <form action="{{ reverse_url('comment_question', question._id) }}" method="post" id="comment">
-    {{ xsrf_form_html() }}
+    {% module xsrf_form_html() %}
     <div id="send_comment" style="display:none">Comment:<br>
     {% if skip is not None %}<input type="hidden" name="skip" value="{{ skip }}">{% end %}
     <textarea name="comment" cols="50" rows="6"></textarea>
@@ -31,21 +31,21 @@
   {% if question.state == 'ACCEPTED' %}
     {% if skip is not None %}
       <form action="{{ reverse_url('review_accepted') }}" method="post" id="skip">
-        {{ xsrf_form_html() }}
+        {% module xsrf_form_html() %}
         <div><input type="hidden" name="skip" value="{{ skip }}">
         <input type="submit" value="Skip"></div>
       </form>
     {% end %}
 
     <form action="{{ reverse_url('publish_question', question._id) }}" method="post" id="publish">
-      {{ xsrf_form_html() }}
+      {% module xsrf_form_html() %}
       {% if skip is not None %}<input type="hidden" name="skip" value="{{ skip }}">{% end %}
       <div><input type="submit" value="Publish!"></div>
     </form>
 
   {% else %}
     <form action="{{ reverse_url('accept_question', question._id) }}" method="post" id="accept">
-      {{ xsrf_form_html() }}
+      {% module xsrf_form_html() %}
       <div><input type="submit" value="Accept"></div>
     </form>
   {% end %}
@@ -80,7 +80,7 @@
   <tbody class="review">
     <tr>
       <td><strong>{{ review.verdict }}</strong></td>
-      <td>{{ modules.ShowUser(review.user) }}</td>
+      <td>{% module ShowUser(review.user) %}</td>
       <td>{{ review.difficulty }}</td>
       <td>{{ review.rating }}</td>
     </tr>
@@ -134,16 +134,16 @@
 <br>
 {% end %}
 <strong>By:</strong>
-<span>{{ modules.ShowUser(question.author) }}</span>
+<span>{% module ShowUser(question.author) %}</span>
 <br>
 {% if question.submit_date %}
 <strong>Submitted:</strong>
-<span>{{ modules.TimeSince(question.submit_date) }} ago</span>
+<span>{% module TimeSince(question.submit_date) %} ago</span>
 <br>
 {% end %}
 {% if question.reject_date %}
 <strong>Rejected:</strong>
-<span>{{ modules.TimeSince(question.reject_date) }} ago</span>
+<span>{% module TimeSince(question.reject_date) %} ago</span>
 <br>
 {% if question.reject_comment %}
 <strong>Rejection comment:</strong>
@@ -153,12 +153,12 @@
 {% end %}
 {% if question.accept_date %}
 <strong>Accepted:</strong>
-<span>{{ modules.TimeSince(question.accept_date) }} ago</span>
+<span>{% module TimeSince(question.accept_date) %} ago</span>
 <br>
 {% end %}
 {% if question.publish_date %}
 <strong>Published:</strong>
-<span>{{ modules.TimeSince(question.publish_date) }} ago</span>
+<span>{% module TimeSince(question.publish_date) %} ago</span>
 <br>
 {% end %}
 </p>
@@ -171,49 +171,49 @@
 <table>
   <tr>
     <td>Right:</td>
-    <td>{{ modules.ShowPercentage(question_knowledge.right) }}</td>
+    <td>{% module ShowPercentage(question_knowledge.right) %}</td>
   </tr>
   <tr>
     <td>Right with alternatives:</td>
-    <td>{{ modules.ShowPercentage(question_knowledge.alternatives_right) }}</td>
+    <td>{% module ShowPercentage(question_knowledge.alternatives_right) %}</td>
   </tr>
   <tr>
     <td>Wrong:</td>
-    <td>{{ modules.ShowPercentage(question_knowledge.wrong) }}</td>
+    <td>{% module ShowPercentage(question_knowledge.wrong) %}</td>
   </tr>
   <tr>
     <td>Wrong with alternatives:</td>
-    <td>{{ modules.ShowPercentage(question_knowledge.alternatives_wrong) }}</td>
+    <td>{% module ShowPercentage(question_knowledge.alternatives_wrong) %}</td>
   </tr>
   <tr>
     <td>Too slow:</td>
-    <td>{{ modules.ShowPercentage(question_knowledge.too_slow) }}</td>
+    <td>{% module ShowPercentage(question_knowledge.too_slow) %}</td>
   </tr>
   <tr>
     <td>No answer from anybody:</td>
-    <td>{{ modules.ShowPercentage(question_knowledge.timed_out) }}</td>
+    <td>{% module ShowPercentage(question_knowledge.timed_out) %}</td>
   </tr>
   <tr>
     <td style="font-weight:bold">Check:</td>
     {% set k=question_knowledge %}
-    <td style="font-weight:bold">{{ modules.ShowPercentage(k.right + k.wrong + k.alternatives_right + k.alternatives_wrong + k.too_slow + k.timed_out) }}</td>
+    <td style="font-weight:bold">{% module ShowPercentage(k.right + k.wrong + k.alternatives_right + k.alternatives_wrong + k.too_slow + k.timed_out) %}</td>
   </tr>
 </table>
 {% else %}
-<p>About {{ modules.ShowPercentage(question_knowledge.right, sf=0) }} chance that someone gets it right.</p>
+<p>About {% module ShowPercentage(question_knowledge.right, sf=0) %} chance that someone gets it right.</p>
 {% end %}
 </div>
 {% end %}
 
 {% if question.state == 'SUBMITTED' %}
 <form id="retract" action="{{ reverse_url('retract_question', question._id) }}" method="post">
-{{ xsrf_form_html() }}
+{% module xsrf_form_html() %}
 <p><input type="submit" title="This will un-submit the question so you can edit it" value="&larr; Edit question again">
 </p>
 </form>
 {% end %}
 
-<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
+<p><a href="{{ reverse_url('questions') }}" class="btn">&larr; back to questions dashboard</a></p>
 
 
 

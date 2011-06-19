@@ -41,222 +41,231 @@ var Title = (function() {
 
 
 var Clock = (function() {
-   var _clock
-, _seconds_left
-, _callback
-, _init_seconds
-, _thinking_time;
-   return {
-      stop: function() {
-	 clearTimeout(_clock);
-      },
-      start: function(callback) {
-         if (_thinking_time === null) throw 'Thinking time not set';
-	 Rumbler.stop();
-	 _init_seconds = _thinking_time;
-	 Clock.tick(_thinking_time);
-	 _callback = callback;
-      },
-      tick: function(seconds) {
-         _seconds_left = seconds;
-	 $('#timer').text(seconds);
-	 if (seconds > 0) {
-	    _clock = setTimeout(function() {
-	       Clock.tick(seconds - 1);
-	    }, 1000);
-	    var p = parseInt(100 * seconds / _init_seconds);
-	    // p is percentage of time left
-	    // max rumble speed is 200 (quite arbitrary)
-	    var rumbleSpeed;
-	    if (p < 30) {
-	       rumbleSpeed = 1 * p;
-	       var range;
-	       if (p < 1) range = 8;
-	       else if (p < 5) range = 4;
-	       else if (p < 10) range = 3;
-	       else range = 2;
-	       Rumbler.start($('#timer'), rumbleSpeed, range);
-	    }
-	 } else {
-	    _callback();
-	 }
-      },
-      get_thinking_time: function() {
-         return _thinking_time;
-      },
-      set_thinking_time: function(t) {
-         _thinking_time = t;
-      },
-      get_seconds_left: function() {
-         return _seconds_left;
+  var _clock
+    , _seconds_left
+    , _callback
+    , _init_seconds
+    , _thinking_time;
+  return {
+     stop: function() {
+       clearTimeout(_clock);
+     },
+    start: function(callback) {
+      if (_thinking_time === null) throw 'Thinking time not set';
+      Rumbler.stop();
+      _init_seconds = _thinking_time;
+      Clock.tick(_thinking_time);
+      _callback = callback;
+    },
+    tick: function(seconds) {
+      _seconds_left = seconds;
+      $('#timer').text(seconds);
+      if (seconds > 0) {
+        _clock = setTimeout(function() {
+          Clock.tick(seconds - 1);
+        }, 1000);
+        var p = parseInt(100 * seconds / _init_seconds);
+        // p is percentage of time left
+        // max rumble speed is 200 (quite arbitrary)
+        var rumbleSpeed;
+        if (p < 30) {
+          rumbleSpeed = 1 * p;
+          var range;
+          if (p < 1) range = 8;
+          else if (p < 5) range = 4;
+          else if (p < 10) range = 3;
+          else range = 2;
+          Rumbler.start($('#timer'), rumbleSpeed, range);
+        }
+      } else {
+        _callback();
       }
-   };
+    },
+    get_thinking_time: function() {
+      return _thinking_time;
+    },
+    set_thinking_time: function(t) {
+      _thinking_time = t;
+    },
+    get_seconds_left: function() {
+      return _seconds_left;
+    }
+  };
 })();
 
 
 var Question = (function() {
-   var _current_question
-, _initialized = false
-, _timer_callback
-, _has_answered = false;
+  var _current_question
+    , _initialized = false
+    , _timer_callback
+    , _timer_bot
+    , _has_answered = false;
 
-   return {
-      is_initialized: function() {
-	 return _initialized;
-      },
-      initialize: function() {
-	 $('#respond').show();
-	 $('#waiting').hide();
-	 $('#your_name').hide();
-	 _initialized = true;
-      },
-      load_question: function(question) {
-	 if (!_initialized) {
-	    this.initialize();
-	 }
-	 _has_answered = false;
-	 _current_question = question;
-	 $('#timer:hidden').show();
-	 $('#input:hidden').show();
-	 $('#alternatives input.alternative').remove();
-	 $('#alternatives-outer:visible').hide();
-	 $('#load-alternatives:hidden').show();
-	 $('#typed:hidden').show();
-	 $('#answer').removeAttr('readonly').removeAttr('disabled').val('');
-	 $('#question li.current').removeClass('current').addClass('past');
-	 $('#question').append($('<li>', {id: question.id}
-				).addClass('current')
-			      .append($('<span>', {text: question.text})));
-	 $('#alternatives').fadeTo(0, 1.0);
-	 $('#alert').hide();
-	 $('#gossip').hide();
-	 Clock.stop();
-	 Clock.start(this.timed_out);
-	 $('#answer').focus();
-
-	 // check if an image was loaded to the previous question
-	 if (!$('img', $('li.past').eq(-1)).size()) {
-	    $('li.past').eq(-1)
-	      .append($('<img>', {
-                 src: IMAGES.HOURGLASS,
-		alt: 'Timed out'
-	      }));
-	 }
-      },
-      timed_out: function() {
-	 $('#question li.current').addClass('past');
-	 $('#answer').removeAttr('readonly');
-	 var msg = 'Both too slow';
-	 $('li.current')
-	   .append($('<img>', {src: IMAGES.HOURGLASS,
-		alt: msg
-	   }));
-	 $('#input').hide();
-	 $('#timer').hide();
-	 send({timed_out: true});
-      },
-      finish: function(you_won, draw) {
-         $('#alert').hide();
-         $('#gossip').hide();
-	 $('#input').hide();
-	 Question.stop();
-	 draw = draw || false;
-	 $('#question li.current').removeClass('current').addClass('past');
-	 if (draw) {
-	    Title.show_temporarily("You drew!", 30);
-            $('#you_drew').fadeIn(300);
-	 } else {
-	    if (you_won) {
-               if (CONFIG.ENABLE_SOUNDS && soundManager) {
-                  soundManager.play(CONFIG.SOUNDS['you_won']);
-               }
-	       Title.show_temporarily("You won!! Congratulations!", 30);
-               $('#you_won').fadeIn(300);
-	    } else {
-               if (CONFIG.ENABLE_SOUNDS && soundManager) {
-                  soundManager.play(CONFIG.SOUNDS['you_lost']);
-               }
-	       Title.show_temporarily("You lost. Sorry(?)", 30);
-               $('#you_lost').fadeIn(300);
-	    }
-	 }
-	 setTimeout(function() {
-	    $('#questions_ad:hidden').show(700);
-	 }, 5 * 1000);
-      },
-      stop: function(information) { // the whole battle is over
-	 Clock.stop();
-	 $('#timer').hide();
-	 $('#input').hide();
-	 if (information && information.message) {
-	    $('#information p').text(information.message);
-	    $('#information').show();
-	 }
-      },
-      right_answer: function() {
-	 var msg = 'Yay! you got it right';
-	 $('li.current')
-	   .append($('<img>', {
-              src: IMAGES.RIGHT,
-		alt: msg
-	   }));
-	 Title.show_temporarily(msg);
-	 $('#alert').text(msg).show();
-      },
-      wrong_answer: function() {
-	 var msg = 'Sorry. You got it wrong';
-	 $('li.current')
-	   .append($('<img>', {
-              src: IMAGES.WRONG,
-		alt: msg
-	   }));
-	 Title.show_temporarily(msg);
-	 $('#alert').text(msg).show();
-         var left = Clock.get_seconds_left();
-         if ((left - 1) > 0) {
-            Gossip.count_down(left - 1, function (s) {
-               return 'Opponent has ' + (s + 1) + ' seconds left. Be patient!';
-            });
-         }
-      },
-      too_slow: function() {
-	 var msg = 'Sorry. You were too slow';
-	 $('li.current')
-	   .append($('<img>', {
-              src: IMAGES.WRONG,
-		alt: msg
-	   }));
-	 Title.show_temporarily(msg);
-	 $('#alert').text(msg).show();
-      },
-      beaten: function() {
-	 var msg = 'Sorry. Opponent beat you on that question';
-	 /*$('li.current')
-	   .append($('<img>', {
-              src: IMAGES.WRONG,
-		alt: msg
-	   }));*/
-	 Title.show_temporarily(msg);
-	 $('#alert').text(msg).show();
-      },
-      send_answer: function(answer) {
-         if (_has_answered) {
-            alert('You have already answered this question');
-         } else {
-            Clock.stop();
-            $('#answer').attr('readonly', 'readonly').attr('disabled', 'disabled');
-            send({answer: answer});
-            _has_answered = true;
-         }
-      },
-      has_sent_answer: function() {
-	 return _has_answered;
+  return {
+     is_initialized: function() {
+       return _initialized;
+     },
+    initialize: function() {
+      $('#respond').show();
+      $('#waiting').hide();
+      $('#your_name').hide();
+      _initialized = true;
+    },
+    load_question: function(question) {
+      if (!_initialized) {
+        this.initialize();
       }
-   };
+      if (_timer_bot) clearTimeout(_timer_bot);
+      _has_answered = false;
+      _current_question = question;
+      $('#timer:hidden').show();
+      $('#input:hidden').show();
+      $('#alternatives input.alternative').remove();
+      $('#alternatives-outer:visible').hide();
+      $('#load-alternatives:hidden').show();
+      $('#typed:hidden').show();
+      $('#answer').removeAttr('readonly').removeAttr('disabled').val('');
+      $('#question li.current').removeClass('current').addClass('past');
+      $('#question').append($('<li>', {id: question.id}
+                             ).addClass('current')
+                            .append($('<span>', {text: question.text})));
+      $('#alternatives').fadeTo(0, 1.0);
+      $('#alert').hide();
+      $('#gossip').hide();
+      Clock.stop();
+      Clock.start(this.timed_out);
+      $('#answer').focus();
+
+      // check if an image was loaded to the previous question
+      if (!$('img', $('li.past').eq(-1)).size()) {
+        $('li.past').eq(-1)
+          .append($('<img>', {
+             src: IMAGES.HOURGLASS,
+              alt: 'Timed out'
+          }));
+      }
+    },
+    bot_answers: function(seconds) {
+      _timer_bot = setTimeout(function() {
+        socket.send({bot_answers: true});
+      }, seconds * 1000);
+    },
+    timed_out: function() {
+      if (_timer_bot) clearTimeout(_timer_bot);
+      $('#question li.current').addClass('past');
+      $('#answer').removeAttr('readonly');
+      var msg = 'Both too slow';
+      $('li.current')
+        .append($('<img>', {src: IMAGES.HOURGLASS,
+            alt: msg
+        }));
+      $('#input').hide();
+      $('#timer').hide();
+      send({timed_out: true});
+    },
+    finish: function(you_won, draw) {
+      if (_timer_bot) clearTimeout(_timer_bot);
+      $('#alert').hide();
+      $('#gossip').hide();
+      $('#input').hide();
+      Question.stop();
+      draw = draw || false;
+      $('#question li.current').removeClass('current').addClass('past');
+      if (draw) {
+        Title.show_temporarily("You drew!", 30);
+        $('#you_drew').fadeIn(300);
+      } else {
+        if (you_won) {
+          if (CONFIG.ENABLE_SOUNDS && soundManager) {
+            soundManager.play(CONFIG.SOUNDS['you_won']);
+          }
+          Title.show_temporarily("You won!! Congratulations!", 30);
+          $('#you_won').fadeIn(300);
+        } else {
+          if (CONFIG.ENABLE_SOUNDS && soundManager) {
+            soundManager.play(CONFIG.SOUNDS['you_lost']);
+          }
+          Title.show_temporarily("You lost. Sorry(?)", 30);
+          $('#you_lost').fadeIn(300);
+        }
+      }
+      setTimeout(function() {
+        $('#questions_ad:hidden').show(700);
+      }, 5 * 1000);
+    },
+    stop: function(information) { // the whole battle is over
+      Clock.stop();
+      $('#timer').hide();
+      $('#input').hide();
+      if (information && information.message) {
+        $('#information p').text(information.message);
+        $('#information').show();
+      }
+    },
+    right_answer: function() {
+      var msg = 'Yay! you got it right';
+      $('li.current')
+        .append($('<img>', {
+           src: IMAGES.RIGHT,
+            alt: msg
+        }));
+      Title.show_temporarily(msg);
+      $('#alert').text(msg).show();
+    },
+    wrong_answer: function() {
+      var msg = 'Sorry. You got it wrong';
+      $('li.current')
+        .append($('<img>', {
+           src: IMAGES.WRONG,
+            alt: msg
+        }));
+      Title.show_temporarily(msg);
+      $('#alert').text(msg).show();
+      var left = Clock.get_seconds_left();
+      if ((left - 1) > 0) {
+        Gossip.count_down(left - 1, function (s) {
+          return 'Opponent has ' + (s + 1) + ' seconds left. Be patient!';
+        });
+      }
+    },
+    too_slow: function() {
+      var msg = 'Sorry. You were too slow';
+      $('li.current')
+        .append($('<img>', {
+           src: IMAGES.WRONG,
+            alt: msg
+        }));
+      Title.show_temporarily(msg);
+      $('#alert').text(msg).show();
+    },
+    beaten: function() {
+      var msg = 'Sorry. Opponent beat you on that question';
+      /*$('li.current')
+       .append($('<img>', {
+       src: IMAGES.WRONG,
+       alt: msg
+       }));*/
+      Title.show_temporarily(msg);
+      $('#alert').text(msg).show();
+    },
+    send_answer: function(answer) {
+      if (_has_answered) {
+        alert('You have already answered this question');
+      } else {
+        Clock.stop();
+        $('#answer').attr('readonly', 'readonly').attr('disabled', 'disabled');
+        send({answer: answer});
+        _has_answered = true;
+      }
+    },
+    has_sent_answer: function() {
+      return _has_answered;
+    }
+  };
 })();
 
 var alternatives = (function() {
-   return {
+  return {
       load: function() {
 	 $('#load-alternatives').hide();
 	 send({alternatives: true});
@@ -376,22 +385,38 @@ $(function() {
       }
        */
 
-      clearInterval(waiting_message_interval);
-      $('#waiting .message').text('Waiting for an opponent');
-      waiting_message_interval = setInterval(function() {
-         var text = $('#waiting .message').text();
-         if (text.length > 100) {
-            text = text.replace(/\.{3,100}/, '...');
-         }
-         $('#waiting .message').text(text + '.');
-      }, 1000);
+     clearInterval(waiting_message_interval);
+     $('#waiting .message').text('Waiting for an opponent');
+     waiting_message_interval = setInterval(function() {
+       var text = $('#waiting .message').text();
+       if (text.length > 100) {
+         text = text.replace(/\.{3,100}/, '...');
+       }
+       $('#waiting .message').text(text + '.');
+     }, 1000);
 
+     $('#challenge-computer a.more-info').click(function() {
+       if ($('#challenge-computer p.more-info:visible').size()) {
+         $(this).text('More info');
+         $('#challenge-computer p.more-info').hide();
+       } else {
+         $(this).text('Hide info');
+         $('#challenge-computer p.more-info').show();
+       }
+       return false;
+     });
 
-      setTimeout(function() {
-         if (!$('.error:visible').size() && !Question.is_initialized()) {
-            $('#besocial').show(700);
-         }
-      }, 7 * 1000);
+     $('#challenge-computer').submit(function() {
+       if (!first_wait) return false;
+       socket.send({against_computer:1});
+       return false;
+     });
+
+     setTimeout(function() {
+       if (!$('.error:visible').size() && !Question.is_initialized()) {
+         $('#play_right').show(700);
+       }
+     }, 5 * 1000);
 
       $('form#respond').submit(function() {
          var answer = $.trim($('#answer').val());
@@ -407,132 +432,135 @@ $(function() {
       });
    });
 
-   var first_wait = true;
-   socket.on('message', function(obj) {
-      if (dead_battle) return;
-      __log_message(obj, false);
-      if (obj.question) {
-         clearInterval(waiting_message_interval);
-         Question.load_question(obj.question);
-      } else if (obj.wait && obj.message) {
-         if (first_wait) {
-            if (CONFIG.ENABLE_SOUNDS && soundManager) {
-               soundManager.play(CONFIG.SOUNDS['be_ready']);
-            }
-	    Title.show_temporarily("Ready!? Game about to start!!");
-            $('#your_name').hide();
-            $('#your_name').hide();
-            $('#waiting').hide();
-            $('#besocial').remove();
-         }
-         var seconds_left = obj.wait;
-         Gossip.count_down(obj.wait, function(seconds) {
-            return 'Next question in ' + seconds + ' seconds';
-         });
-         setTimeout(function() {
-            send(obj.message);
-         }, obj.wait * 1000);
-         first_wait = false;
-      } else if (obj.winner) {
-         if (obj.winner.draw) {
-            Question.finish(null, true);
-         } else {
-            Question.finish(obj.winner.you_won);
-         }
-         dead_battle = true;
-         $(window).unbind('beforeunload');
-      } else if (obj.update_scoreboard) {
-         if (-1 == obj.update_scoreboard[1]) {
-            scoreboard.drop_score(obj.update_scoreboard[0]);
-         } else {
-            scoreboard.incr_score(obj.update_scoreboard[0], obj.update_scoreboard[1]);
-         }
-      } else if (obj.alternatives) {
-         alternatives.show(obj.alternatives);
-      } else if (obj.stop) {
-         Question.stop(obj.stop);
-      } else if (obj.has_answered) {
-	 var msg = obj.has_answered + ' has answered but was wrong';
-	 Title.show_temporarily(msg, 3 * 1000);
-         Gossip.show(msg);
-      } else if (obj.answered) {
-         $('#timer').hide();
-         $('#input').hide();
-         if (obj.answered.right) {
-            Clock.stop();
-            Question.right_answer();
-         } else if (obj.answered.too_slow) {
-            Question.too_slow();
-         } else if (obj.answered.beaten) {
-            Question.beaten();
-         } else {
-            Clock.stop();
-            Question.wrong_answer();
-         }
-      } else if (obj.disconnected) {
-         scoreboard.drop_score(obj.disconnected);
-         Question.stop();
-         $('#error_disconnected').show();
-	 $('#error_disconnected .user_name').text(obj.disconnected);
-         dead_battle = true;
-         $(window).unbind('beforeunload');
-      } else if (obj.error) {
-         Question.stop();
-	 $('#waiting').hide();
-         $('#besocial').hide();
-	 $('#your_name').hide();
-         $('#error_warning').show();
-         $('#error_warning pre').text(obj.error.message);
-         if (obj.error.code == 200) {
-            $('#error_run_out').show();
-         }
-         dead_battle = true;
-         $(window).unbind('beforeunload');
-      } else if (obj.your_name) {
-         // this is mainly for checking that all is working fine
-         $('#your_name strong').text(obj.your_name);
-         $('#your_name:hidden').show(400);
+  var first_wait = true;
+  socket.on('message', function(obj) {
+    if (dead_battle) return;
+    __log_message(obj, false);
+    if (obj.question) {
+      clearInterval(waiting_message_interval);
+      Question.load_question(obj.question);
+    } else if (obj.wait && obj.message) {
+      if (first_wait) {
+        if (CONFIG.ENABLE_SOUNDS && soundManager) {
+          soundManager.play(CONFIG.SOUNDS['be_ready']);
+        }
+        Title.show_temporarily("Ready!? Game about to start!!");
+        $('#your_name').hide();
+        $('#challenge-computer').hide();
+        $('#waiting').hide();
+        $('#play_right').remove();
       }
-
-      // things that might be included with any other message
-      if (obj.thinking_time) {
-         Clock.set_thinking_time(obj.thinking_time);
+      var seconds_left = obj.wait;
+      Gossip.count_down(obj.wait, function(seconds) {
+        return 'Next question in ' + seconds + ' seconds';
+      });
+      setTimeout(function() {
+        send(obj.message);
+      }, obj.wait * 1000);
+      first_wait = false;
+    } else if (obj.winner) {
+      if (obj.winner.draw) {
+        Question.finish(null, true);
+      } else {
+        Question.finish(obj.winner.you_won);
       }
-      if (obj.init_scoreboard) {
-         scoreboard.init_players(obj.init_scoreboard);
-         $('#scoreboard:hidden').show(500);
-      }
-      if (obj.play_id) {
-         $('a.replay').attr('href', '/play/replay/' + obj.play_id  + '/');
-         $.getJSON('/play/update_points.json', {play_id: obj.play_id}, function(response) {
-            if (response.increment) {
-               $('<a>')
-                 .attr('href', '/play/highscore/')
-                   .attr('title', 'Click to see where you are in the Highscore list')
-                     .text("You just earn yourself " + response.increment + " more Kwissle points!")
-                       .appendTo($('.points'));
-               $('<br>')
-                 .appendTo($('.points'));
-               $('<span>')
-                 .html("You're now number <span class=\"yellow\">" +response.highscore_position + " in the Highscore list</span>")
-                   .appendTo($('.points'));
-            }
-         });
-      }
-   });
-
-   $('a').click(function() {
-      confirm_exit = false;
+      dead_battle = true;
       $(window).unbind('beforeunload');
-   });
+    } else if (obj.update_scoreboard) {
+      if (-1 == obj.update_scoreboard[1]) {
+        scoreboard.drop_score(obj.update_scoreboard[0]);
+      } else {
+        scoreboard.incr_score(obj.update_scoreboard[0], obj.update_scoreboard[1]);
+      }
+    } else if (obj.alternatives) {
+      alternatives.show(obj.alternatives);
+    } else if (obj.stop) {
+      Question.stop(obj.stop);
+    } else if (obj.has_answered) {
+      var msg = obj.has_answered + ' has answered but was wrong';
+      Title.show_temporarily(msg, 3 * 1000);
+      Gossip.show(msg);
+    } else if (obj.answered) {
+      $('#timer').hide();
+      $('#input').hide();
+      if (obj.answered.right) {
+        Clock.stop();
+        Question.right_answer();
+      } else if (obj.answered.too_slow) {
+        Question.too_slow();
+      } else if (obj.answered.beaten) {
+        Question.beaten();
+      } else {
+        Clock.stop();
+        Question.wrong_answer();
+      }
+    } else if (obj.disconnected) {
+      scoreboard.drop_score(obj.disconnected);
+      Question.stop();
+      $('#error_disconnected').show();
+      $('#error_disconnected .user_name').text(obj.disconnected);
+      dead_battle = true;
+      $(window).unbind('beforeunload');
+    } else if (obj.error) {
+      Question.stop();
+      $('#waiting').hide();
+      $('#play_right').hide();
+      $('#your_name').hide();
+      $('#error_warning').show();
+      $('#error_warning pre').text(obj.error.message);
+      if (obj.error.code == 200) {
+        $('#error_run_out').show();
+      }
+      dead_battle = true;
+      $(window).unbind('beforeunload');
+    } else if (obj.your_name) {
+      // this is mainly for checking that all is working fine
+      $('#your_name strong').text(obj.your_name);
+      $('#your_name:hidden').show(400);
+    }
 
-   $(window).bind('beforeunload', function() {
-      return "Sure you want to exit? Hit Escape to stay.";
-   });
-   
-   // Annoyingly this only works the first time with Chrome
-   shortcut.add('backspace', function() {
-      // void
-   }, {disable_in_input:true});
+    // things that might be included with any other message
+    if (obj.thinking_time) {
+      Clock.set_thinking_time(obj.thinking_time);
+    }
+    if (obj.bot_answers) {
+      Question.bot_answers(obj.bot_answers);
+    }
+    if (obj.init_scoreboard) {
+      scoreboard.init_players(obj.init_scoreboard);
+      $('#scoreboard:hidden').show(500);
+    }
+    if (obj.play_id) {
+      $('a.replay').attr('href', '/play/replay/' + obj.play_id  + '/');
+      $.getJSON('/play/update_points.json', {play_id: obj.play_id}, function(response) {
+        if (response.increment) {
+          $('<a>')
+            .attr('href', '/play/highscore/')
+              .attr('title', 'Click to see where you are in the Highscore list')
+                .text("You just earn yourself " + response.increment + " more Kwissle points!")
+                  .appendTo($('.points'));
+          $('<br>')
+            .appendTo($('.points'));
+          $('<span>')
+            .html("You're now number <span class=\"yellow\">" +response.highscore_position + " in the Highscore list</span>")
+              .appendTo($('.points'));
+        }
+      });
+    }
+  });
+
+  $('a').click(function() {
+    confirm_exit = false;
+    $(window).unbind('beforeunload');
+  });
+
+  $(window).bind('beforeunload', function() {
+    return "Sure you want to exit? Hit Escape to stay.";
+  });
+
+  // Annoyingly this only works the first time with Chrome
+  shortcut.add('backspace', function() {
+    // void
+  }, {disable_in_input:true});
 
 });

@@ -5,22 +5,20 @@ import base64
 import Cookie
 import unittest
 from pprint import pprint
-from apps.main.models import User
-from apps.questions.models import Question, Genre
+from apps.main.models import User, connection
+import apps.questions.models
+import apps.play.models
 from apps.play.cookies import CookieParser
 from apps.play.client_app import Client
-from apps.play.models import Play, PlayedQuestion
 from apps.play import errors
+import settings
 
 class BaseTestCase(unittest.TestCase):
     _once = False
     def setUp(self):
         if not self._once:
             self._once = True
-            from mongokit import Connection
-            self.con = Connection()
-            self.con.register([User, Question, Genre, Play, PlayedQuestion])
-            self.db = self.con.test
+            self.db = connection.test
             self._emptyCollections()
 
     def _emptyCollections(self):
@@ -126,32 +124,48 @@ class ClientTestCase(BaseTestCase):
 
         return q
 
-    def _create_two_connected_clients(self):
+    def _create_connected_client(self, username, request=None):
         client = MockClient(self)
-        request = MockRequest()
+        if not request:
+            request = MockRequest()
         cookie = Cookie.BaseCookie()
         cookie_maker = CookieMaker(request)
 
         user = self.db.User()
-        user.username = u'peterbe'
+        user.username = unicode(username)
         user.save()
         cookie['user'] = cookie_maker.create_signed_value('user', str(user._id))
         request.headers['Cookie'] = cookie.output()
         client.on_open(request)
 
-        user2 = self.db.User()
-        user2.username = u'chris'
-        user2.save()
+        return user, client, request
 
-        client2 = MockClient(self)
-        request = MockRequest()
-        cookie = Cookie.BaseCookie()
-        cookie_maker = CookieMaker(request)
-        cookie['user'] = cookie_maker.create_signed_value('user', str(user2._id))
-        request.headers['Cookie'] = cookie.output()
-        client2.on_open(request)
-
+    def _create_two_connected_clients(self):
+        user, client, request = self._create_connected_client(
+                                 u'peterbe')
+        user2, client2, __ = self._create_connected_client(
+                                 u'chris', request=request)
         return (user, client), (user2, client2)
+
+    def _create_question_knowledge(self, question, knowledge):
+        sum_ = knowledge['right'] + \
+               knowledge['wrong'] + \
+               knowledge['alternatives_right'] + \
+               knowledge['alternatives_wrong'] + \
+               knowledge['too_slow'] + \
+               knowledge['timed_out']
+        assert round(sum_, 1) == 1.0, "%r <> 1" % round(sum_, 1)
+        qk = self.db.QuestionKnowledge()
+        qk.question = question
+        qk.right = knowledge['right']
+        qk.wrong = knowledge['wrong']
+        qk.alternatives_right = knowledge['alternatives_right']
+        qk.alternatives_wrong = knowledge['alternatives_wrong']
+        qk.too_slow = knowledge['too_slow']
+        qk.timed_out = knowledge['timed_out']
+        qk.users = knowledge['users']
+        qk.save()
+        return qk
 
     def test_client_repr(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
@@ -184,8 +198,7 @@ class ClientTestCase(BaseTestCase):
         request.headers['Cookie'] = cookie.output()
         client.on_open(request)
         self.assertTrue(client._sent)
-        self.assertEqual(len(client._sent), 3)
-        self.assertTrue(client._sent[0]['debug'])
+        self.assertEqual(len(client._sent), 1)
         message = [x for x in client._sent if 'your_name' in x][0]
         self.assertEqual(message['your_name'], u'peterbe')
 
@@ -684,6 +697,294 @@ class ClientTestCase(BaseTestCase):
         self.assertEqual(len(client2_msgs),
                          len(client2._sent))
 
+    def test_getting_alternatives_too_late(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 1
+        q1 = self._create_question()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        client.on_message(dict(answer='Yes'))
+        client2.on_message(dict(alternatives=1))
+
+        self.assertTrue(client._sent[-1]['winner'])
+        self.assertTrue(client2._sent[-1]['winner'])
+
+        self.assertTrue(client._sent[-1]['winner']['you_won'])
+        self.assertTrue(not client2._sent[-1]['winner']['you_won'])
+
+    def test_sending_right_answer_too_late(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 1
+        q1 = self._create_question()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        client.on_message(dict(answer='Yes'))
+        client2.on_message(dict(answer='yes'))
+
+        self.assertTrue(client._sent[-1]['winner'])
+        self.assertTrue(client2._sent[-1]['winner'])
+
+        self.assertTrue(client._sent[-1]['winner']['you_won'])
+        self.assertTrue(not client2._sent[-1]['winner']['you_won'])
+
+    def test_sending_wrong_answer_too_late(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 1
+        q1 = self._create_question()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        client.on_message(dict(answer='Yes'))
+        client2.on_message(dict(answer='WRong'))
+
+        self.assertTrue(client._sent[-1]['winner'])
+        self.assertTrue(client2._sent[-1]['winner'])
+
+        self.assertTrue(client._sent[-1]['winner']['you_won'])
+        self.assertTrue(not client2._sent[-1]['winner']['you_won'])
+
+    def test_playing_against_computer(self):
+        user, client, request = self._create_connected_client('peterbe')
+        client.on_message(dict(against_computer=1))
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client._sent[-2]['init_scoreboard'])
+        user_names = client._sent[-2]['init_scoreboard']
+
+        q1 = self._create_question()
+        q2 = self._create_question()
+        q3 = self._create_question()
+
+        qk1 = self._create_question_knowledge(q1, {
+          'right': 0.3,
+          'wrong': 0.1,
+          'alternatives_right': 0.1,
+          'alternatives_wrong': 0.1,
+          'too_slow': 0.3,
+          'timed_out': 0.1,
+          'users': 10,
+        })
+        qk2 = self._create_question_knowledge(q3, {
+          'right': 0.3,
+          'wrong': 0.1,
+          'alternatives_right': 0.1,
+          'alternatives_wrong': 0.1,
+          'too_slow': 0.3,
+          'timed_out': 0.1,
+          'users': 10,
+        })
+
+        self.assertTrue(u'peterbe' in user_names)
+        self.assertTrue(settings.COMPUTER_USERNAME in user_names)
+        # pretend that we have waited X seconds
+        battle = client.current_client_battles[str(user._id)]
+        battle.min_wait_delay -= client._sent[-1]['wait']
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['bot_answers'])
+        bot_answers_seconds = client._sent[-1]['bot_answers']
+        self.assertTrue(bot_answers_seconds > 0)
+        self.assertTrue(bot_answers_seconds <= battle.thinking_time)
+        # pretend the user does nothing
+        battle.min_wait_delay -= bot_answers_seconds
+        client.on_message(dict(bot_answers=1))
+        # since the outcome is already decided we know what to expect
+        self.assertTrue(battle.bot_answer)
+        self.assertEqual(bot_answers_seconds, battle.bot_answer['seconds'])
+        self.assertTrue(battle.bot_answer['alternatives'] in (True, False))
+        self.assertTrue(battle.bot_answer['right'] in (True, False))
+        self.assertTrue(battle.bot_answer['wrong'] in (True, False))
+
+        if battle.bot_answer['right']:
+            if battle.bot_answer['alternatives']:
+                self.assertTrue(client._sent[-3]['answered'])
+                self.assertTrue(client._sent[-3]['answered']['too_slow'])
+                self.assertTrue(client._sent[-2]['update_scoreboard'])
+                self.assertEqual(client._sent[-2]['update_scoreboard'],
+                                 [settings.COMPUTER_USERNAME, 1])
+                self.assertTrue(client._sent[-1]['wait'])
+            else:
+                self.assertTrue(client._sent[-3]['answered'])
+                self.assertTrue(client._sent[-3]['answered']['too_slow'])
+                self.assertTrue(client._sent[-2]['update_scoreboard'])
+                self.assertEqual(client._sent[-2]['update_scoreboard'],
+                                 [settings.COMPUTER_USERNAME, 3])
+                self.assertTrue(client._sent[-1]['wait'])
+        elif battle.bot_answer['wrong']:
+            if battle.bot_answer['alternatives']:
+                self.assertTrue(client._sent[-1]['has_answered'])
+                self.assertEqual(client._sent[-1]['has_answered'],
+                                settings.COMPUTER_USERNAME)
+            else:
+                self.assertTrue(client._sent[-1]['has_answered'])
+                self.assertEqual(client._sent[-1]['has_answered'],
+                                settings.COMPUTER_USERNAME)
+
+    def test_beat_computer(self):
+        user, client, request = self._create_connected_client('peterbe')
+        client.on_message(dict(against_computer=1))
+        user_names = client._sent[-2]['init_scoreboard']
+
+        q1 = self._create_question()
+        q2 = self._create_question()
+
+        qk1 = self._create_question_knowledge(q1, {
+          'right': 0.3,
+          'wrong': 0.1,
+          'alternatives_right': 0.1,
+          'alternatives_wrong': 0.1,
+          'too_slow': 0.3,
+          'timed_out': 0.1,
+          'users': 10,
+        })
+        qk2 = self._create_question_knowledge(q2, {
+          'right': 0.3,
+          'wrong': 0.1,
+          'alternatives_right': 0.1,
+          'alternatives_wrong': 0.1,
+          'too_slow': 0.3,
+          'timed_out': 0.1,
+          'users': 10,
+        })
+
+        self.assertTrue(u'peterbe' in user_names)
+        self.assertTrue(settings.COMPUTER_USERNAME in user_names)
+
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 2
+
+        battle.min_wait_delay -= client._sent[-1]['wait']
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['bot_answers'])
+        bot_answers_seconds = client._sent[-1]['bot_answers']
+
+        battle.min_wait_delay -= bot_answers_seconds
+        client.on_message(dict(alternatives=1))
+        self.assertTrue(client._sent[-1]['alternatives'])
+        client.on_message(dict(answer='YES'))
+
+        self.assertTrue(client._sent[-3]['answered'])
+        self.assertTrue(client._sent[-3]['answered']['right'])
+        self.assertTrue(client._sent[-2]['update_scoreboard'])
+        self.assertEqual(client._sent[-2]['update_scoreboard'],
+                         [u'peterbe', 1])
+        self.assertTrue(client._sent[-1]['wait'])
+
+        battle.min_wait_delay -= bot_answers_seconds
+        client.on_message(dict(next_question=1))
+
+        self.assertTrue(client._sent[-2]['question'])
+        self.assertTrue(client._sent[-1]['bot_answers'])
+        client.on_message(dict(answer='Yes'))
+
+        self.assertTrue(client._sent[-3]['update_scoreboard'])
+        self.assertEqual(client._sent[-3]['update_scoreboard'],
+                         [u'peterbe', 3])
+
+        self.assertTrue(client._sent[-2]['play_id'])
+        self.assertTrue(client._sent[-1]['winner'])
+        self.assertTrue(client._sent[-1]['winner']['you_won'])
+        play_id = client._sent[-2]['play_id']
+
+        play = self.db.Play.one({'_id': ObjectId(play_id)})
+        self.assertEqual(len(play.users), 2)
+        self.assertTrue(settings.COMPUTER_USERNAME in
+                        [x.username for x in play.users])
+        self.assertTrue(play.finished)
+        self.assertFalse(play.draw)
+        self.assertEqual(play.winner.username, u'peterbe')
+
+    def test_draw_against_computer(self):
+        user, client, request = self._create_connected_client('peterbe')
+        client.on_message(dict(against_computer=1))
+        user_names = client._sent[-2]['init_scoreboard']
+
+        q1 = self._create_question()
+        q2 = self._create_question()
+
+        qk1 = self._create_question_knowledge(q1, {
+          'right': 1.,
+          'wrong': 0.,
+          'alternatives_right': 0.,
+          'alternatives_wrong': 0.,
+          'too_slow': 0.,
+          'timed_out': 0.,
+          'users': 10,
+        })
+        qk2 = self._create_question_knowledge(q2, {
+          'right': 1.,
+          'wrong': 0.,
+          'alternatives_right': 0.,
+          'alternatives_wrong': 0.,
+          'too_slow': 0.,
+          'timed_out': 0.,
+          'users': 10,
+        })
+
+        self.assertTrue(u'peterbe' in user_names)
+        self.assertTrue(settings.COMPUTER_USERNAME in user_names)
+
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 2
+
+        battle.min_wait_delay -= client._sent[-1]['wait']
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['bot_answers'])
+        bot_answers_seconds = client._sent[-1]['bot_answers']
+
+        battle.min_wait_delay -= bot_answers_seconds
+        client.on_message(dict(answer='YES'))
+        self.assertTrue(client._sent[-3]['answered'])
+        self.assertTrue(client._sent[-3]['answered']['right'])
+        self.assertTrue(client._sent[-2]['update_scoreboard'])
+        self.assertEqual(client._sent[-2]['update_scoreboard'],
+                         [u'peterbe', 3])
+        self.assertTrue(client._sent[-1]['wait'])
+        battle.min_wait_delay -= client._sent[-1]['wait']
+        client.on_message(dict(next_question=1))
+
+
+        battle.min_wait_delay -= bot_answers_seconds
+        client.on_message(dict(bot_answers=1))
+        if battle.bot_answer['right']:
+            if not battle.bot_answer['alternatives']:
+                self.assertTrue(client._sent[-4]['answered'])
+                self.assertTrue(client._sent[-4]['answered']['too_slow'])
+                self.assertTrue(client._sent[-3]['update_scoreboard'])
+                self.assertEqual(client._sent[-3]['update_scoreboard'],
+                                 [settings.COMPUTER_USERNAME, 3])
+
+                self.assertTrue(client._sent[-1]['winner'])
+                self.assertTrue(client._sent[-1]['winner']['draw'])
+
+                self.assertTrue(client._sent[-2]['play_id'])
+                play_id = client._sent[-2]['play_id']
+
+                play = self.db.Play.one({'_id': ObjectId(play_id)})
+                self.assertEqual(len(play.users), 2)
+                self.assertTrue(settings.COMPUTER_USERNAME in
+                                [x.username for x in play.users])
+                self.assertTrue(play.finished)
+                self.assertTrue(play.draw)
+                self.assertTrue(not play.winner)
+
+
+        return
+
+        print client._sent[-3]
+        print
+        print client._sent[-2]
+        print
+        print client._sent[-1]
 
         return
         print client._sent[-3]

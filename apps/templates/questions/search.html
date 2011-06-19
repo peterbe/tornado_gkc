@@ -36,15 +36,15 @@ head.ready(function() {
   {% for result, question in results %}
   <div class="result-outer">
     <div id="{{ result.id }}" class="result">
-      <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}" class="yellow">{{ result.highlight('question')[0] }}</a></p>
+      <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}" class="yellow">{% raw result.highlight('question')[0] %}</a></p>
       <p class="question_metadata">
-      {% if is_admin_user %}By: {{ modules.ShowUser(question.author) }}<br>{% end %}
+      {% if is_admin_user %}By: {% module ShowUser(question.author) %}<br>{% end %}
       Category: {{ question.genre.name }}<br>
       {% if question.publish_date %}
-      Published {{ modules.TimeSince(question.publish_date) }} ago
+      Published {% module TimeSince(question.publish_date) %} ago
       {% else %}
       {% if question.accept_date %}
-      Accepted {{ modules.TimeSince(question.accept_date) }} ago
+      Accepted {% module TimeSince(question.accept_date) %} ago
       {% end %}
       {% end %}
       </p>

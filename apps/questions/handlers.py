@@ -975,6 +975,8 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler): # pragma: no cover
     @tornado.web.authenticated
     def get(self):
         options = self.get_base_options()
+        if not self.is_admin_user(options['user']):
+            raise HTTPError(403)
 
         _filter = {}
         states_filter = self.get_arguments('states', [])
@@ -1041,6 +1043,51 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler): # pragma: no cover
                 options['all_users'].append(user)
 
         self.render("questions/all.html", **options)
+
+
+route_redirect('/questions/all/knowledge$', '/questions/all/knowledge/',
+               name="all_knowledge_shortcut")
+@route('/questions/all/knowledge/$', name="all_knowledge")
+class AllQuestionKnowledgeHandler(QuestionsBaseHandler): # pragma: no cover
+
+    @tornado.web.authenticated
+    def get(self):
+        options = self.get_base_options()
+        if not self.is_admin_user(options['user']):
+            raise HTTPError(403)
+        options['page_title'] = "All Question Knowledge"
+        sort_by = self.get_argument('sort_by', 'modify_date')
+        question_knowledges = (self.db.QuestionKnowledge.find()
+                               .sort(sort_by, -1))
+        options['question_knowledges'] = question_knowledges
+
+        averages_keys = 'right wrong alternatives_right alternatives_wrong '\
+                        'too_slow timed_out users'.split()
+        options['averages_keys'] = averages_keys
+        options['key_labels'] = {
+          'right': 'R',
+          'wrong': 'W',
+          'alternatives_right': 'R(A)',
+          'alternatives_wrong': 'W(A)',
+          'timed_out': 'TO',
+          'too_slow': 'TS',
+        }
+        averages = {}
+        for key in averages_keys:
+            averages[key] = []
+
+        for qk in self.db.QuestionKnowledge.collection.find():
+            #qk = dict_plus(qk)
+            for key in averages:
+                averages[key].append(qk[key])
+
+        keys = list(averages.keys())
+        for key in keys:
+            averages[key] = sum(averages[key]) / len(averages[key])
+        options['averages'] = averages
+
+        self.render('questions/all_knowledge.html', **options)
+
 
 @route('/questions/search/$', name="questions_search")
 class QuestionSearchHandler(QuestionsBaseHandler):

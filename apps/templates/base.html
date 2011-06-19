@@ -7,7 +7,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=Edge;chrome=1">
         <meta name="description" content="Kwissle is an real-time general knowledge quiz battle game.">
         <meta name="keywords" content="quiz,battle,realtime,real-time,general knowledge,play,websockets,socket.io">
-	{{ modules.Static("css/ext/jquery.gritter.css", "css/style.css") }}
+	{% module Static("css/ext/jquery.gritter.css", "css/style.css") %}
         {% block extra_head_outer %}
         {% block extra_head %}{% end %}
         {% end %}
@@ -61,25 +61,25 @@
       <div class="clearer">&nbsp;</div>
 
       <div id="footer">
-      {{ modules.Footer(user=user) }}
+      {% module Footer(user=user) %}
       </div>
 
     </div>
     {% end %}
     </div>
 
-{{ modules.Settings(settings) }}
+{% module Settings(settings) %}
 
 <!-- basics needed to render the calendar -->
 {% block corejs %}
-{{ modules.Static("js/ext/head.load.min.js") }}
+{% module Static("js/ext/head.load.min.js") %}
 <script>
 function L() {
    if (window.console && window.console.log)
      console.log.apply(console, arguments);
 }
 head.js(JS_URLS.jquery, JS_URLS.gritter, function() {
-  var messages = {{ modules.FlashMessages().as_list() }};
+  var messages = {% module FlashMessages().as_list() %};
   $.each(messages, function(i, msg) {
     $.gritter.add({title: msg.title,
                    text: msg.text});

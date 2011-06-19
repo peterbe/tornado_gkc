@@ -8,7 +8,7 @@
     </ul>
 {% end %}
 
-<form action="{{ reverse_url('send_play_message', play._id) }}" method="post">{{ xsrf_form_html() }}
+<form action="{{ reverse_url('send_play_message', play._id) }}" method="post">{% module xsrf_form_html() %}
 
 {% for field in form %}
   <p class="field">
@@ -17,7 +17,7 @@
     {% else %}
       '{{ field.label }}'
     {% end %}
-    {{ modules.RenderField(field) }}
+    {% module RenderField(field) %}
     {% if field.errors %}
        <ul class="errors">{% for error in field.errors %}<li>{{ error }}</li>{% end %}</ul>
     {% end %}

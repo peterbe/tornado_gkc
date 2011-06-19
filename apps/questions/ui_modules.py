@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 from pprint import pprint
 import tornado.web
@@ -81,3 +82,8 @@ class ShowPercentage(tornado.web.UIModule):
             return '%s%%' % p
         else:
             return '%d%%' % p
+
+class ShowAgeDays(tornado.web.UIModule):
+    def render(self, date):
+        d = datetime.datetime.today() - date
+        return d.days

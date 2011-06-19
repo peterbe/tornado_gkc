@@ -2,17 +2,17 @@
 
 {% block extra_js %}
 <script>
-var DATA = {{ data_json }};
-var HIGHCHARTS_URL = '{{ modules.StaticURL("js/ext/highcharts/highcharts.js") }}';
-var HIGHCHARTS_THEME_URL = '{{ modules.StaticURL("js/ext/highcharts/themes/gray.js") }}';
+var DATA = {% raw data_json %};
+var HIGHCHARTS_URL = '{% module StaticURL("js/ext/highcharts/highcharts.js") %}';
+var HIGHCHARTS_THEME_URL = '{% module StaticURL("js/ext/highcharts/themes/gray.js") %}';
 head.js(HIGHCHARTS_URL, HIGHCHARTS_THEME_URL);
 </script>
-{{ modules.Static("js/categories.js") }}
+{% module Static("js/categories.js") %}
 {% end %}
 
 {% block content_inner %}
 
-<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
+<p><a href="{{ reverse_url('questions') }}" class="btn">&larr; back to questions dashboard</a></p>
 
 <div id="container" class="highcharts-container"
 style="height:410px; margin: 0 2em; clear:both; min-width: 600px"></div>

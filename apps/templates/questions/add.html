@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block extra_js %}
-{{ modules.Static("js/question_input.js") }}
+{% module Static("js/question_input.js") %}
 {% end %}
 
 {% block content_inner %}
@@ -17,20 +17,20 @@
     <ul class="errors general-errors">
         {% for field_name, field_errors in [(n,form.errors[n]) for n in form.errors if form.errors[n]] %}
             {% for error in field_errors %}
-                <li>{{ form[field_name].label }} {{ error }}</li>
+                <li>{% raw form[field_name].label %} {% raw error %}</li>
             {% end %}
         {% end %}
     </ul>
 {% end %}
 
-<form action="" class="question" method="post">{{ xsrf_form_html() }}
+<form action="" class="question" method="post">{% module xsrf_form_html() %}
 
 {% for field in form %}
   <p class="field">
-    {{ field.label }}
-    {{ modules.RenderField(field) }}
+    {% raw field.label %}
+    {% module RenderField(field) %}
     {% if field.errors %}
-       <ul class="errors">{% for error in field.errors %}<li>{{ error }}</li>{% end %}</ul>
+       <ul class="errors">{% for error in field.errors %}<li>{% raw error %}</li>{% end %}</ul>
     {% end %}
   </p>
 {% end %}

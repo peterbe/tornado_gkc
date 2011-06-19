@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<style type="text/css">
+td { font-size: 80%; }
+tfoot td { font-size: 100%; }
+</style>
+{% end %}
+
+{% block content_inner %}
+
+<table>
+  <thead>
+    <tr>
+      <th>Questions</th>
+      {% for key in averages_keys %}
+      <th style="width:55px"><a
+        title="Sort by {{ key.title().replace('_',' ') }}"
+        href="{{ reverse_url('all_knowledge') }}?sort_by={{ key }}"
+      >{{ key_labels.get(key, key.title()) }}</a></th>
+      {% end %}
+      <td>Age</td>
+    </tr>
+  <thead>
+  <tfoot>
+    <tr>
+      <td>Average:</td>
+      {% for key in averages_keys %}
+        {% if key == 'users' %}
+        <td>{{ averages[key] }}</td>
+        {% else %}
+        <td>{{ modules.ShowPercentage(averages[key]) }}</td>
+        {% end %}
+      {% end %}
+      <td>-</td>
+    </tr>
+  </tfoot>
+  {% for knowledge in question_knowledges %}
+  <tbody>
+    <tr>
+      <td><a href="{{ reverse_url('view_question', knowledge.question._id) }}" class="question"
+             title="{{ knowledge.question.answer }}">{{ knowledge.question.text }}</a></td>
+      {% for key in averages_keys %}
+        {% if key == 'users' %}
+        <td>{{ knowledge[key] }}</td>
+        {% else %}
+        <td>{{ modules.ShowPercentage(knowledge[key]) }}</td>
+        {% end %}
+      {% end %}
+      <td>{{ modules.ShowAgeDays(knowledge.question.publish_date) }}</td>
+    </tr>
+  </tbody>
+  {% end %}
+</table>
+
+<p><a href="{{ reverse_url('questions') }}" class="btn">&larr; Back to questions dashboard</a></p>
+
+{% end %}

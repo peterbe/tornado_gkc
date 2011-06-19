@@ -18,7 +18,7 @@ tr.band-1000 td { font-size:70%; }
 
 <table>
   {% for i, pp in enumerate(play_points) %}
-  <tr class="band-{{ modules.HighscoreBand(pp.highscore_position) }}">
+  <tr class="band-{% module HighscoreBand(pp.highscore_position) %}">
     <td class="position">{{ pp.highscore_position }}.</td>
     <td class="name">{{ pp.user.username }}
     {% if user and user == pp.user %}

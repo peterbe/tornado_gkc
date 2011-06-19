@@ -2,7 +2,7 @@
 
 
 {% block extra_js %}
-{{ modules.Static("js/question_review.js") }}
+{% module Static("js/question_review.js") %}
 {% end %}
 
 {% block content_inner %}
@@ -11,7 +11,7 @@
 
 <div id="question_actions">
 <form action="{{ reverse_url('review_question', question._id) }}" method="post">
-{{ xsrf_form_html() }}
+{% module xsrf_form_html() %}
 <label for="id_rating">1) Rating</label><br>
 <div id="rating_buttons">
 <input type="hidden" name="rating" value="" id="id_rating">
@@ -80,18 +80,18 @@
 <p>
 {% if is_admin_user %}(only visit to admin)
 <strong>By:</strong>
-<span>{{ modules.ShowUser(question.author) }}</span>
+<span>{% module ShowUser(question.author) %}</span>
 <br>
 {% end %}
 {% if question.accept_date %}
 <strong>Accepted:</strong>
-<span>{{ modules.TimeSince(question.accept_date) }} ago</span>
+<span>{% module TimeSince(question.accept_date) %} ago</span>
 <br>
 {% end %}
 </p>
 </div>
 
-<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
+<p><a href="{{ reverse_url('questions') }}" class="btn">&larr; back to questions dashboard</a></p>
 
 
 {% end %}

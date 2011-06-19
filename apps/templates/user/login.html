@@ -26,15 +26,15 @@ or perhaps <a href="{{ reverse_url('settings') }}">change your settings</a>?
 
 <div id="authenticators">
 <p>
-<a href="/auth/google/" title="Google"><img src="{{ modules.StaticURL("images/google_openid.png") }}" alt="Google"></a>
+<a href="/auth/google/" title="Google"><img src="{% module StaticURL("images/google_openid.png") %}" alt="Google"></a>
 </p>
 
 <p>
-<a href="/auth/twitter/" title="Twitter"><img src="{{ modules.StaticURL("images/twitter_oauth.png") }}" alt="Twitter"></a>
+<a href="/auth/twitter/" title="Twitter"><img src="{% module StaticURL("images/twitter_oauth.png") %}" alt="Twitter"></a>
 </p>
 
 <p>
-<a href="/auth/facebook/" title="Facebook"><img src="{{ modules.StaticURL("images/facebook.png") }}" alt="Facebook"></a>
+<a href="/auth/facebook/" title="Facebook"><img src="{% module StaticURL("images/facebook.png") %}" alt="Facebook"></a>
 </p>
 </div>
 

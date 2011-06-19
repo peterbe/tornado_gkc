@@ -5,14 +5,20 @@ import random
 from pymongo.objectid import InvalidId, ObjectId
 import tornado.web
 import tornadio.router
-from apps.main.models import User
+
+
+from apps.main.models import connection
+import apps.main.models
+import apps.questions.models
+import apps.play.models
+
 from apps.play.battle import Battle
-from apps.questions.models import Question, Genre
-from apps.play.models import Play, PlayedQuestion
 from apps.play import errors
 from mongokit import Connection
 from cookies import CookieParser
 import settings
+
+from bot import ComputerClient
 
 class Client(tornadio.SocketConnection):
 
@@ -43,8 +49,8 @@ class Client(tornadio.SocketConnection):
         return application.settings
 
     def on_open(self, request, **kwargs):
-        #print "Opening", repr(self)
-        self.send({'debug': "Connected!"});
+        if self.application_settings['debug']:
+            self.send({'debug': "Connected!"});
         if not hasattr(request, 'headers'):
             logging.debug("No headers :(")
             self.send(dict(error={'message': 'Unable to find login information. Try reloading',
@@ -72,12 +78,12 @@ class Client(tornadio.SocketConnection):
 
         assert user.username
         self.user_name = user.username
-        self.send({'debug': "Your name is %s" % self.user_name})
+        if self.application_settings['debug']:
+            self.send({'debug': "Your name is %s" % self.user_name})
         self._initiate()
 
     def _initiate(self):
         """called when the client has connected successfully"""
-        #print "\tInitiate", repr(self)
         self.send(dict(your_name=self.user_name))
         battle = None
         for created_battle in self.battles:
@@ -98,128 +104,48 @@ class Client(tornadio.SocketConnection):
         battle.add_participant(self)
         self.current_client_battles[self.user_id] = battle
         if battle.ready_to_play():
-            battle.send_to_all({
-              'init_scoreboard': [x.user_name for x in battle.participants],
-              'thinking_time': battle.thinking_time,
-            })
-            battle.send_wait(3, dict(next_question=True))
-            battle.save_play(self.db, started=True)
+            battle.commence(self.db)
 
-    def on_message(self, message):
-        if not hasattr(self, 'user_id'):
+    def on_message(self, message, client=None):
+        if client is None:
+            client = self
+        if not hasattr(client, 'user_id'):
             return
+
         try:
-            battle = self.current_client_battles[self.user_id]
+            battle = self.current_client_battles[client.user_id]
         except KeyError:
-            logging.debug('%r not in any battle' % self)
+            logging.debug('%r not in any battle' % client)
             return
 
         if message.get('answer'):
-            if not battle.current_question:
-                # form submitted too late
-                return
-            if battle.has_answered(self):
-                self.send({'error': 'You have already answered this question'})
-                return
-            battle.remember_answered(self)
-            if battle.check_answer(message['answer']):
-                # client got it right!!
-                points = 3
-                if battle.has_loaded_alternatives(self):
-                    points = 1
-                self.send({'answered': {'right': True}})
-                for participant in battle.participants:
-                    if participant is self:
-                        continue
-                    if battle.has_answered(participant):
-                        participant.send({'answered': {'beaten': True}})
-                    else:
-                        participant.send({'answered': {'too_slow': True}})
-                battle.increment_score(self, points)
-                battle.save_played_question(self.db, self,
-                                            answer=message['answer'],
-                                            right=True)
-                battle.close_current_question()
-                if battle.has_more_questions():
-                    battle.send_wait(3, dict(next_question=True))
-                else:
-                    battle.conclude()
-                    winner = battle.get_winner()
-                    if winner is None:
-                        winner = False
-                    battle.save_play(self.db, finished=True,
-                                     winner=winner)
-
-            else:
-                # you suck!
-                self.send({'answered': {'right': False}})
-                battle.send_to_everyone_else(self,
-                  {'has_answered': self.user_name}
-                )
-                battle.save_played_question(self.db, self,
-                                            answer=message['answer'],
-                                            right=False)
-
-                if battle.has_everyone_answered():
-                    battle.close_current_question()
-                    battle.send_to_all({'answered':{'both_wrong': True}})
-                    if battle.has_more_questions():
-                        battle.send_wait(3, dict(next_question=True))
-                    else:
-                        battle.conclude()
-                        battle.save_play(self.db, finished=True,
-                                         winner=battle.get_winner())
-
+            self._check_answer(battle, self, message['answer'])
         elif message.get('alternatives'):
-            if not battle.current_question:
-                assert battle.is_waiting()
-                return
-            assert battle.current_question
-            if not battle.has_loaded_alternatives(self):
-                battle.send_alternatives(self)
-                battle.save_played_question(self.db, self, alternatives=True)
+            self._get_alternatives(battle, self)
 
         elif message.get('timed_out'):
-            if not battle.current_question:
-                # happens if the timed_out is sent even though someone has
-                # already answered correctly
-                assert battle.is_waiting()
-                return
-            if battle.timed_out_too_soon():
-                logging.debug("time.time():%s current_question_sent+thinking_time:%s"
-                                % (time.time(),
-                                battle.current_question_sent+battle.thinking_time))
-                self.send({'error': 'Timed out too soon'})
-                return
-
-            battle.remember_timed_out(self)
-            battle.save_played_question(self.db, self, timed_out=True)
-            if battle.has_everyone_answered_or_timed_out():
-                for participant in battle.participants:
-                    if not battle.has_answered(participant):
-                        participant.send({'answered': {'too_slow': True}})
-                battle.close_current_question()
-                if battle.has_more_questions():
-                    battle.send_wait(3, dict(next_question=True))
-                else:
-                    battle.conclude()
-                    battle.save_play(self.db, finished=True,
-                                     winner=battle.get_winner())
+            self._timed_out(battle, self)
 
         elif message.get('next_question'):
             # this is going to be hit twice, within nanoseconds of each other.
             if battle.min_wait_delay > time.time():
-                self.send(dict(error={'message': 'Too soon',
+                client.send(dict(error={'message': 'Too soon',
                                       'code': errors.ERROR_NEXT_QUESTION_TOO_SOON}))
                 return
             if battle.stopped:
-                #self.send({'error': 'Battle already stopped'})
+                #client.send({'error': 'Battle already stopped'})
                 return
             if not battle.current_question:
                 question = self._get_next_question(battle)
                 if question:
                     battle.current_question = question
-                    battle.send_question(battle.current_question)
+                    if battle.has_computer_participant():
+                        qk = (self.db.QuestionKnowledge.collection
+                              .one({'question.$id': question._id}))
+                        battle.send_question(battle.current_question,
+                                             knowledge=qk)
+                    else:
+                        battle.send_question(battle.current_question)
                     battle.save_played_question(self.db)
                 else:
                     battle.send_to_all(
@@ -228,15 +154,158 @@ class Client(tornadio.SocketConnection):
                     )
                     battle.save_play(self.db, halted=True)
                     battle.stop()
+        elif message.get('against_computer'):
+            battle = None
+            for created_battle in self.battles:
+                if created_battle.is_open():
+                    if self in created_battle.participants:
+                        battle = created_battle
+            if battle:
+                bot = self.db.User.one({'username': settings.COMPUTER_USERNAME})
+                if not bot:
+                    bot = self.db.User()
+                    bot.username = settings.COMPUTER_USERNAME
+                    bot.save()
+                assert bot
+                battle.add_participant(ComputerClient(str(bot._id), bot.username))
+                self.current_client_battles[client.user_id] = battle
+                if battle.ready_to_play():
+                    battle.commence(self.db)
+
+            else:
+                client.send(dict(error={'message': "You're not waiting in an open battle",
+                                      'code': errors.ERROR_NOT_IN_OPEN_BATTLE}))
+
+        elif message.get('bot_answers'):
+
+            if not battle.current_question:
+                assert battle.is_waiting()
+                return
+
+            outcome = battle.bot_answer
+            # note that we can't use 'self' because what we want to do is
+            # reenact these events for the bot
+            bot = battle.get_computer_participant()
+            if outcome['right']:
+                if outcome['alternatives']:
+                    #self.on_message({'alternatives': 1}, client=bot)
+                    self._get_alternatives(battle, bot)
+                self._check_answer(battle, bot, battle.current_question.answer)
+            elif outcome['wrong']:
+                if outcome['alternatives']:
+                    self._get_alternatives(battle, bot)
+                self._check_answer(battle, bot, '**deliberately wrong**')
+
         else: # pragma: no cover
             print message
             raise NotImplementedError("Unrecognized message")
+
+    def _timed_out(self, battle, client):
+        if not battle.current_question:
+            # happens if the timed_out is sent even though someone has
+            # already answered correctly
+            assert battle.is_waiting()
+            return
+        if battle.timed_out_too_soon():
+            logging.debug("time.time():%s current_question_sent+thinking_time:%s"
+                            % (time.time(),
+                            battle.current_question_sent + battle.thinking_time))
+            client.send(dict(error={'message': 'Timed out too soon',
+                                    'code': errors.ERROR_TIMED_OUT_TOO_SOON}))
+            return
+
+        battle.remember_timed_out(client)
+        battle.save_played_question(self.db, client, timed_out=True)
+        if battle.has_everyone_answered_or_timed_out():
+            for participant in battle.participants:
+                if not battle.has_answered(participant):
+                    participant.send({'answered': {'too_slow': True}})
+            battle.close_current_question()
+            if battle.has_more_questions():
+                battle.send_wait(3, dict(next_question=True))
+            else:
+                battle.conclude()
+                battle.save_play(self.db, finished=True,
+                                 winner=battle.get_winner())
+
+    def _check_answer(self, battle, client, answer):
+        if not battle.current_question:
+            # form submitted too late
+            return
+        if battle.has_answered(client):
+            client.send({'error': 'You have already answered this question'})
+            return
+        battle.remember_answered(client)
+        if battle.check_answer(answer):
+            # client got it right!!
+            points = 3
+            if battle.has_loaded_alternatives(client):
+                points = 1
+            client.send({'answered': {'right': True}})
+            for participant in battle.participants:
+                if participant is client:
+                    continue
+                if battle.has_answered(participant):
+                    participant.send({'answered': {'beaten': True}})
+                else:
+                    participant.send({'answered': {'too_slow': True}})
+            battle.increment_score(client, points)
+            battle.save_played_question(self.db, client,
+                                        answer=answer,
+                                        right=True)
+            battle.close_current_question()
+            if battle.has_more_questions():
+                battle.send_wait(3, dict(next_question=True))
+            else:
+                battle.conclude()
+                winner = battle.get_winner()
+                if winner is None:
+                    winner = False
+                battle.save_play(self.db, finished=True,
+                                 winner=winner)
+
+        else:
+            # you suck!
+            client.send({'answered': {'right': False}})
+            battle.send_to_everyone_else(client,
+              {'has_answered': client.user_name}
+            )
+            battle.save_played_question(self.db, client,
+                                        answer=answer,
+                                        right=False)
+
+            if battle.has_everyone_answered():
+                battle.close_current_question()
+                battle.send_to_all({'answered':{'both_wrong': True}})
+                if battle.has_more_questions():
+                    battle.send_wait(3, dict(next_question=True))
+                else:
+                    battle.conclude()
+                    battle.save_play(self.db, finished=True,
+                                     winner=battle.get_winner())
+
+
+    def _get_alternatives(self, battle, client):
+        if not battle.current_question:
+            assert battle.is_waiting() or battle.is_stopped()
+            return
+        assert battle.current_question
+        if not battle.has_loaded_alternatives(client):
+            battle.send_alternatives(client)
+            battle.save_played_question(self.db, client, alternatives=True)
 
     def _get_next_question(self, battle):
         search = {'state': 'PUBLISHED',
                   '_id':{'$nin': [x._id for x in battle.sent_questions]}}
         if battle.genres_only:
             search['genre.$id'] = {'$nin': [x._id for x in battle.genres_only]}
+
+        def has_question_knowledge(question):
+            qk = (self.db.QuestionKnowledge.collection
+                  .one({'question.$id': question._id}))
+            if qk:
+                return qk['users']
+            return False
 
         while True:
             count = self.db.Question.find(search).count()
@@ -250,7 +319,13 @@ class Client(tornadio.SocketConnection):
                 #   a) written by any of the participants of the battle
                 #   b) hasn't been reviewed by any of the participants
                 #   c) questions played in the past
+                #print question
+                #print has_question_knowledge(question)
+                #print
                 if question.author and str(question.author._id) in battle_user_ids:
+                    search['_id']['$nin'].append(question._id)
+                elif battle.has_computer_participant() and not has_question_knowledge(question):
+
                     search['_id']['$nin'].append(question._id)
                 else:
                     return question
@@ -283,8 +358,7 @@ class Application(tornado.web.Application):
         handlers = [tornadio.get_router(Client).route()]
         tornado.web.Application.__init__(self, handlers, **kwargs)
         self.database_name = database_name
-        self.con = Connection()
-        self.con.register([User, Question, Genre, Play, PlayedQuestion])
+        self.con = connection
 
     @property
     def db(self):

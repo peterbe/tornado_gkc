@@ -1,14 +1,17 @@
 {% extends "../base.html" %}
 
 {% block extra_head %}
-{{ modules.Static("css/chat.css") }}
+{% module Static("css/chat.css") %}
 {% end %}
 {% block extra_js %}
-<script src="http://cdn.socket.io/stable/socket.io.js"></script>
+{% module Static("js/ext/socket.io-0.6.3.js") %}
 <script>
-WEB_SOCKET_DEBUG = true;
-WEB_SOCKET_SWF_LOCATION = 'http://cdn.socket.io/stable/WebSocketMain.swf';</script>
-{{ modules.Static("js/chat.js") }}
+WEB_SOCKET_DEBUG = false;
+//WEB_SOCKET_DEBUG=1;
+// it's important this appears *after* loading socket.io.js
+//WEB_SOCKET_SWF_LOCATION = 'http://cdn.socket.io/stable/WebSocketMain.swf';
+WEB_SOCKET_SWF_LOCATION = '{{ static_url("js/ext/WebSocketMain.swf") }}';
+{% modules.Static("js/chat.js") %}
 {% end %}
 
 {% block content_inner %}

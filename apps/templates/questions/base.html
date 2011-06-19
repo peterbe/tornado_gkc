@@ -1,12 +1,12 @@
 {% extends "../base.html" %}
 
 {% block extra_head_outer %}
-{{ modules.Static("css/questions.css", "css/question_input.css","css/ext/jquery.autocomplete.css", "css/ext/tipsy.css") }}
+{% module Static("css/questions.css", "css/question_input.css","css/ext/jquery.autocomplete.css", "css/ext/tipsy.css") %}
 {% block extra_head %}{% end %}
 {% end %}
 
 {% block extra_js_outer %}
-{{ modules.Static("js/questions.js") }}
+{% module Static("js/questions.js") %}
 {% block extra_js %}{% end %}
 {% end %}
 
