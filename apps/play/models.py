@@ -130,7 +130,7 @@ class PlayPoints(BaseDocument):
                 try:
                     assert play.winner
                     assert play.winner.id != user._id
-                except AssertionError:
+                except AssertionError: # pragma: no cover
                     # This happens because of a bug in the game, where a draw
                     # isn't saved properly.
                     print "FIXING"

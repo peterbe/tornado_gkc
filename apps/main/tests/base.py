@@ -10,7 +10,8 @@ from cStringIO import StringIO
 from tornado.testing import LogTrapTestCase, AsyncHTTPTestCase
 
 import app
-from apps.main.models import User, UserSettings
+import apps.main.models
+from apps.main.models import connection
 from utils.http_test_client import TestClient, HTTPClientMixin
 
 
@@ -19,9 +20,8 @@ class BaseModelsTestCase(unittest.TestCase):
     def setUp(self):
         if not self._once:
             self._once = True
-            from mongokit import Connection
-            self.con = Connection()
-            self.con.register([User, UserSettings])
+            self.con = connection
+            #self.con.register([User, UserSettings])
             self.db = self.con.test
             self._emptyCollections()
 
