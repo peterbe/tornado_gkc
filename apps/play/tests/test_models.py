@@ -205,3 +205,35 @@ class ModelsTestCase(BaseModelsTestCase):
         self.assertEqual(user2_play_points.losses, 1)
         self.assertEqual(user2_play_points.draws, 0)
         self.assertEqual(user2_play_points.points, 2)
+
+
+        # play3 user1 one right and user2 one right
+        play3 = self.db.Play()
+        play3.users = [user1, user2]
+        play3.no_players = 2
+        play3.no_questions = 2
+        play3.started = datetime.datetime.now()
+        play3.finished = datetime.datetime.now() + datetime.timedelta(seconds=1)
+        play3.save()
+
+        # question 1 - user 1 get it right
+        pq1 = self.db.PlayedQuestion() ; pq2 = self.db.PlayedQuestion()
+        pq1.play = play3               ; pq2.play = play3
+        pq1.question = q1              ; pq2.question = q1
+        pq1.user = user1               ; pq2.user = user2
+        pq1.right = True               ; pq2.right = False
+        pq1.answer = u'Yes'            ; pq2.answer = u'Wrong'
+        pq1.save()                     ; pq2.save()
+
+        # question 1 - user 2 gets it right after alternatives
+        pq1 = self.db.PlayedQuestion() ; pq2 = self.db.PlayedQuestion()
+        pq1.play = play3               ; pq2.play = play3
+        pq1.question = q2              ; pq2.question = q2
+        pq1.user = user1               ; pq2.user = user2
+        pq1.right = False              ; pq2.right = True
+        pq1.answer = None              ; pq2.answer = u'Yes'
+        None                           ; pq2.alternatives = False
+        pq1.save()                     ; pq2.save()
+
+        play3.draw = True
+        play3.save()

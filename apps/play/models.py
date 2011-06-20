@@ -187,7 +187,7 @@ class PlayPoints(BaseDocument):
                             play_points.points += 1
                         else:
                             play_points.points += 3
-            except:
+            except: # pragma: no cover
                 print "BROKEN!!!"
                 print user.username,
                 print "Against", play.get_other_user(user).username
