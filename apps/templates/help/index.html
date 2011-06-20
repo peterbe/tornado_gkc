@@ -5,7 +5,9 @@
 {% end %}
 {% block content_inner %}
 
-<h1>Help</h1>
+<div class="box">
+<div class="left">
+<h3>Help</h3>
 
 <ul>
   {% for page in see_also_links %}
@@ -13,10 +15,8 @@
   {% end %}
 </ul>
 
-
+</div>
 
 {% end %}
 
-{% block index_link %}
-<p style="margin-top:40px"><a href="/">&larr; Back to home page</a></p>
-{% end %}
+

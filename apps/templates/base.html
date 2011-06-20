@@ -7,7 +7,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=Edge;chrome=1">
         <meta name="description" content="Kwissle is an real-time general knowledge quiz battle game.">
         <meta name="keywords" content="quiz,battle,realtime,real-time,general knowledge,play,websockets,socket.io">
-	{{ modules.Static("css/ext/jquery.gritter.css", "css/style.css") }}
+		{{ modules.Static("css/ext/jquery.gritter.css", "css/style.css") }}
         {% block extra_head_outer %}
         {% block extra_head %}{% end %}
         {% end %}
@@ -18,31 +18,34 @@
     <div id="body">
 
     <div id="header">
-      <h1><a href="/">{{ PROJECT_TITLE }}</a></h1>
+    	<div class="left">
+	      <h1><a href="/">{{ PROJECT_TITLE }}<span style="color:#fff;"> is the new online social quiz</span></a></h1>
+	      {% block sillydef %}
+	        {% if user %}
+	        {% else %}
+    		 <p class="site-intro">to kwissle [kuh-wiss-uhl] <br/>
+    		 	<span style="color:#fff; font-size:14px;"><em>
+    		 	(verb) the act of engaging in a real-time general knowledge battle with other eggheads.
+    		 	</em></span>
+    		 </p>
+    		 {% end %}
+		  {% end %}
+		</div>
+		
+		<div class="right">
+		{% if user %}
+			<div id="login" class="topnav">	
+	        	<img src="{{ modules.StaticURL("images/avatar_large.jpg") }}">
+	        	<p><a href="{{ reverse_url('settings') }}" class="account">{{ user_name }}</a>
+	        		{% if is_admin_user %}(admin){% end %}
+        		</p>
 
-      <div id="login" class="topnav">
-        {% if user %}
-        <p><a href="{{ reverse_url('settings') }}" class="account">Hi {{ user_name }}</a>
-        {% if is_admin_user %}(admin){% end %}
-        <a href="{{ reverse_url('logout') }}" class="log-out">log out</a></p>
-        {% else %}
-        <p><a href="{{ reverse_url('login') }}" class="account">Login &amp; sign-up</a></p>
-        {% end %}
-
-        {% block extra_login %}
-        {% if total_play_points %}
-          <div id="points">
-          <p>
-            <strong>Your Kwissle Points:</strong>
-            <span class="kwissle-points">{{ total_play_points }}</span>
-            <a href="{{ reverse_url('play_highscore') }}" class="about-breakdown"
-               title="You're number {{ play_highscore_position }} in the Highscore">#{{ play_highscore_position }}</a>
-          </p>
-          </div>
-          {% end %}
-        {% end %}
+    			 <p><a href="{{ reverse_url('logout') }}" class="log-out">log out</a></p>
+    		</div>
+    	{% end %}
       </div>
-      <div class="clearer">&nbsp;</div>
+
+ 
     </div>
 
     {% block content %}
@@ -62,6 +65,7 @@
 
       <div id="footer">
       {{ modules.Footer(user=user) }}
+      {% if debug %}<p style="float:left;" class="tiny">{% else %}<!--{% end %}Wow! this page only took {{ request.request_time() * 1000 }} milliseconds to render {% if debug %}</p>{% else %}-->{% end %}
       </div>
 
     </div>
@@ -110,6 +114,6 @@ head.js(JS_URLS.jquery, JS_URLS.gritter, function() {
 {% end %}
 {% end %}
 
-{% if debug %}<p style="float:right;" class="tiny">{% else %}<!--{% end %}Wow! this page only took {{ request.request_time() * 1000 }} milliseconds to render {% if debug %}</p>{% else %}-->{% end %}
+
     </body>
 </html>

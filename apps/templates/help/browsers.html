@@ -6,12 +6,22 @@
 {% end %}
 
 {% block content_inner %}
-<h1>Help: {{ modules.HelpPageTitle() }}</h1>
+<div class="box">
+<div class="right">
+
+
+</div>
+<div class="left">
+<h3>Help: {{ modules.HelpPageTitle() }}</h3>
 
 <p>To be able to play you need a modern web browser that supports WebSockets or
 Flash. If you run something like Chrome or Safari it should be able to use WebSockets.
 If you use something like Firefox, Opera or one of the latest Internet Explorer you need
 to have Flash support.
 </p>
+<h4>Why not IE6?</h4>
+<p>Kwissle uses modern web-sockets technology to ensure an almost instantaneous quiz battle environment - older browsers simply don't support this technology.</p>
+</div>
+</div>
 
 {% end %}

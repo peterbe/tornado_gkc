@@ -6,7 +6,6 @@
   width:45%;
 }
 button.bold { font-weight:bold; }
-#questions_score { float:right; }
 
 .rating { float:right; }
 .verdict_and_comment p {
@@ -22,21 +21,39 @@ p.verdict strong {
 }
 
 div.question {
-  margin-left:20px;
+  margin-left:10px;
 }
-p.question_text {
-  font-weight: bold;
-  margin-bottom:0.1em;
+div.box p.question_text {
+  font-size: 15px;
+  margin-bottom: 0;
 }
-p.question_metadata {
-  font-size: 0.9em;
-  margin-left:20px;
-  margin-top:0.1em;
+
+div.box p.question_metadata {
+  font-size: 13px;
+  color: #666;
 }
 
 th { text-align: left; }
 
 a.about-breakdown { font-size:80%; }
 
-#search input { float:right; margin-right:60px;}
+#search {
+  float: left;	
+  width: 100%;
+  margin-bottom: 25px;
+  margin-top: 0px;
+}
+
+#search input {
+    border: medium none;
+    border-radius: 7px 7px 7px 7px;
+    color: #666666;
+    font-family: arial,sans-serif;
+    font-size: 16px;
+    padding: 10px 15px;
+    width: 300px;
+}
+
+
+
 input.placeholder { color:#999; }

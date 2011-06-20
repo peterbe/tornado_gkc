@@ -7,3 +7,26 @@
 
 * SMTP details from elastic needs to be read in from a git ignored
   files instead.
+
+
+
+
+PUT THIS BACK INTO THE BASE HEADER AREA:
+
+	        	<!-- COMMENTED OUT BECAUSE IT BREAKS MOST TEMPLATES, BUT I WANT IT BACK!
+	        	{% block extra_login %}
+		    	    {% if total_play_points %}
+		    	      <div id="points">	
+		    	      <p>
+		    	        <strong>Your Kwissle Points:</strong>
+		    	        <span class="kwissle-points">{{ total_play_points }}</span>
+    			        <a href="{{ reverse_url('play_highscore') }}" class="about-breakdown"
+    			           title="You're number {{ play_highscore_position }} in the Highscore">#{{ play_highscore_position }}</a>
+    			      </p>
+    			      </div>
+    			     {% end %}
+    			     {% if past_plays %}
+						<p>You have played <a href="{{ reverse_url('play_replays') }}">{{ past_plays }} times before</a></p>
+					 {% end %}
+    			 {% end %}
+    			 -->

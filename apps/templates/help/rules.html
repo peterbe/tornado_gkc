@@ -2,28 +2,41 @@
 
 {% block extra_head %}
 <style>
-#rules { margin:50px; }
-#rules li { font-size:130%; padding-bottom:15px;}
+
 </style>
 {% end %}
 
 {% block content_inner %}
-<h1>Help: {{ modules.HelpPageTitle() }}</h1>
 
+<div class="box">
+  <div class="right">
+    <h4>Other help topics</h4>
+    <p><a href="/help/">See all help topics</a></p>
+  
+  </div>
+  <div class="left">
 
-<ul id="rules">
-<li>10 questions</li>
-<li><strong class="yellow">3 points</strong> if you know and <strong class="yellow">type in the answer</strong></li>
-<li><strong class="yellow">1 point</strong> if you click to load <strong class="yellow">alternatives</strong> and get it right</li>
-<li>BUT! If your opponent is <strong class="yellow">faster than you</strong>; you get <strong class="yellow">nothing</strong></li>
-<li>Whoever has the <strong class="yellow">most points</strong> at the end of the round <strong class="yellow">wins</strong> the battle</li>
-</ul>
-
-{% if user %}
-<p>
-What are you waiting for? <a href="{{ reverse_url('start_play') }}">Start to play now!</a>
-</p>
-{% end %}
+	<h3>Help: {{ modules.HelpPageTitle() }}</h3>
+	<p>These are the rules of Kwissle - the real-time general knowledge quiz battle</p>
+	<ul id="rules">
+	<li>You play against an opponent in real-time</li>
+	<li>You are each shown the same question at the same time (10 questions in total)</li>
+	<li>If you answer correctly, and faster than the opponent, you win!
+	  <ul>
+	    <li><strong>3 points</strong> if you know and type in the answer</li>
+	    <li><strong>1 point</strong> if you click to load alternatives and get it right</li>
+	    <li><strong>0 points</strong> if your opponent answers before you.</li>
+	  </ul>
+	</li>
+	
+	<li>Whoever has the most points at the end of the round wins the battle</li>
+	</ul>
+	
+	{% if user %}
+	<p>
+	What are you waiting for? <a href="{{ reverse_url('start_play') }}">Start to play now!</a>
+	</p>
+	{% end %}
 
 
 {% end %}

@@ -1,5 +1,12 @@
 #body { padding:0; }
-#log { height: 200px; overflow: auto; width: 750px; border: 1px solid #eee; font: 11px Helvetica, Arial; }
+#log {
+    background-color: #E1E1E1;
+    font: 11px Arial,sans-serif;
+    height: 200px;
+    overflow: auto;
+    width: 900px;
+}
+
 #log p { padding: 4px; margin: 0; }
 #log p.inbound { text-align:right; }
 /*#log p:nth-child(odd) { }*/

@@ -7,13 +7,17 @@
 {% block content_inner %}
 
 <p>
-<span style="float:right">
- Tips: <a href="/help/a-good-question">Writing a good question</a>
-</span>
 
 <a href="{{ reverse_url('questions') }}" class="btn">&larr; back to questions dashboard</a></p>
 
-{% if form.errors %}
+<div class="box">
+  <div class="right">
+  <h4>Tips and help</h4>
+    <a href="/help/a-good-question">Writing a good question</a>
+  </div>
+  <div class="left">
+  <h3>Add a question</h3>
+	{% if form.errors %}
     <ul class="errors general-errors">
         {% for field_name, field_errors in [(n,form.errors[n]) for n in form.errors if form.errors[n]] %}
             {% for error in field_errors %}
@@ -21,23 +25,26 @@
             {% end %}
         {% end %}
     </ul>
-{% end %}
+	{% end %}
 
-<form action="" class="question" method="post">{{ xsrf_form_html() }}
+	<form action="" class="question" method="post">{{ xsrf_form_html() }}
 
-{% for field in form %}
-  <p class="field">
-    {{ field.label }}
-    {{ modules.RenderField(field) }}
-    {% if field.errors %}
-       <ul class="errors">{% for error in field.errors %}<li>{{ error }}</li>{% end %}</ul>
-    {% end %}
-  </p>
-{% end %}
-<div>
-  <input type="submit" value="Save and confirm to submit" title="You have to confirm the question before submitting">
-  <input type="submit" name="save_as_draft" value="Save as draft" title="You can return and work on it any time">
+	{% for field in form %}
+	  <p class="field">
+	    {{ field.label }}
+	    {{ modules.RenderField(field) }}
+	    {% if field.errors %}
+	       <ul class="errors">{% for error in field.errors %}<li>{{ error }}</li>{% end %}</ul>
+	    {% end %}
+	  </p>
+	{% end %}
+
+	<div>
+	  <input type="submit" value="Save and confirm to submit" title="You have to confirm the question before submitting">
+	  <input type="submit" name="save_as_draft" value="Save as draft" title="You can return and work on it any time">
+	</div>
+	</form>
+  </div>
 </div>
-</form>
 
 {% end %}

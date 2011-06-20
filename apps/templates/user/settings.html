@@ -10,8 +10,14 @@ input {
 {% end %}
 
 {% block content_inner %}
-
-<h3>Settings</h3>
+<div class="box">
+<div class="right">
+<h4>Safe data</h4>
+<p>We're not spambots, and your email is safe with us - we'll never give it away, sell it or pass it on to another person.</p>
+</div>
+<div class="left">
+<h3>Your settings ({{ user.username }})</h3>
+<p>Feel free to change your settings below - but remember, your username will always be <code>{{ user.username }}</code>.
 
 {% if form.errors %}
     <ul class="errors general-errors">
@@ -25,11 +31,6 @@ input {
 
 <form action="" class="question" method="post">{{ xsrf_form_html() }}
 
-<p class="field">
-<label for="username">Username</label>
-<code>{{ user.username }}</code>
-</p>
-
 {% for field in form %}
   <p class="field">
     {{ field.label }}
@@ -42,5 +43,6 @@ input {
 <div><input type="submit" value="Save"></div>
 </form>
 
-
+</div>
+</div>
 {% end %}

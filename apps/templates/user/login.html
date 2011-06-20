@@ -3,49 +3,84 @@
 {% block extra_head %}
 <style type="text/css">
 #authenticators {
-  text-align:center;
+  width: 420px;
+  float: left;
+  margin-top: -15px;
 }
+
 #authenticators p {
   float:left;
-  width:33%;
+  margin: 0;
+  width: 128px;
+}
 
+#authenticators p:hover span {
+  visibility: visible;
+}
+
+#authenticators p span {
+  float: left;
+  width: 100%;
+  text-align: center;
+  visibility: hidden;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+#authenticators img {
+  opacity: 0.7;	
+}
+
+#authenticators img:hover {
+  cursor: pointer;
+  opacity: 1;	
+}
+
+ul.benefits {
+  float: left;
+  list-style-type: square;
+  margin: 0 0 0 30px;
+  padding: 0;
+  font-size: 13px;	
+  line-height: 1.6em;
 }
 </style>
 {% end %}
 
 {% block content_inner %}
 
-{% if user %}
-<p>You're already logged in as <code>{{ user.username }}</code>.
-Do you want to
-<a href="{{ reverse_url('logout') }}">log out</a>
-or perhaps <a href="{{ reverse_url('settings') }}">change your settings</a>?
+	{% if user %}
+	<p>You're already logged in as <strong>{{ user.username }}</strong>.
+		Do you want to
+		<a href="{{ reverse_url('logout') }}">log out</a>
+		or perhaps <a href="{{ reverse_url('settings') }}">change your settings</a>?
+	{% else %}
 
-{% else %}
-<h3>Kwissle will NOT post things into your account. Ever!</h3>
+	<div id="authenticators">
+		<p>
+		<a href="/auth/google/" title="Google"><img src="{{ modules.StaticURL("images/google.png") }}" alt="Google"></a>
+		<span>google</span>
+		</p>
 
-<div id="authenticators">
-<p>
-<a href="/auth/google/" title="Google"><img src="{{ modules.StaticURL("images/google_openid.png") }}" alt="Google"></a>
-</p>
+		<p>
+		<a href="/auth/twitter/" title="Twitter"><img src="{{ modules.StaticURL("images/twitter.png") }}" alt="Twitter"></a>
+		<span>twitter</span>
+		</p>
 
-<p>
-<a href="/auth/twitter/" title="Twitter"><img src="{{ modules.StaticURL("images/twitter_oauth.png") }}" alt="Twitter"></a>
-</p>
+		<p>
+		<a href="/auth/facebook/" title="Facebook"><img src="{{ modules.StaticURL("images/facebook1.png") }}" alt="Facebook"></a>
+		<span>facebook</span>
+		</p>
+		</div>
 
-<p>
-<a href="/auth/facebook/" title="Facebook"><img src="{{ modules.StaticURL("images/facebook.png") }}" alt="Facebook"></a>
-</p>
-</div>
+		<p>&laquo; click to sign in with one of these services.</p>
+		<ul class="benefits">
+			<li>No new passwords/login details to remember</li>
+			<li>We <span class="yellow">never</span> post anything to your account</li>
+			<li>Simple and easy</li>
+		</ul>
 
-<div class="clearer">&nbsp;</div>
-
-<p>Using any of the services above mean that you <span class="yellow">don't</span>
-have to have <span class="yellow">yet another password to
-remember</span>.<br>
-<!--All <span class="yellow">accounts are</span> used in <span class="yellow">READ-ONLY</span> mode.--></p>
-
-<div class="clearer">&nbsp;</div>
-{% end %}
+	</div>
+	{% end %}
 
 {% end %}
