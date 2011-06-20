@@ -1,26 +1,31 @@
 {% extends "base.html" %}
 
+
 {% block content_inner %}
 
 
-<p style="text-align:center; font-weight:bold;" class="yellow">
-Kwissle is a real-time general knowledge quiz battle game.
-</p>
-
 {% if user %}
-<p>
-There are current <strong>{{ count_published_questions }}</strong> published
-<a href="{{ reverse_url('questions') }}">Questions</a>.
-<a href="{{ reverse_url('add_question') }}">Wanna contribute some more?</a>
-</p>
 
-<p>
-<a href="{{ reverse_url('play') }}" style="font-size:1.8em">Play!</a>
-<br><a href="/help/rules">Rules are simple</a>
-{% if past_plays %}
-<br>You have played <a href="{{ reverse_url('play_replays') }}">{{ past_plays }} times before</a>
-{% end %}
-</p>
+<div id="start-button">
+	<a href="{{ reverse_url('play') }}">
+	<div>
+		<p>Start a battle</p>
+	</div>
+	</a>
+</div>
+
+<div class="links">
+<ul>
+<li><a href="/help/rules">The rules</a></li>
+<li><a href="{{ reverse_url('play_highscore') }}">Leaderboard</a></li>
+<li><a href="/help/rules">Your stats</a></li>
+<li><a href="/help/rules">How to play</a></li>
+<li><a href="{{ reverse_url('questions') }}">Add questions</a></li>
+</ul>
+</div>	
+
+
+</div>
 
 <!--
 <p>
@@ -29,17 +34,28 @@ There are current <strong>{{ count_published_questions }}</strong> published
 -->
 {% else %}
 
-<p style="margin-top:60px">
-<strong>How to play</strong>
-<p>
+<div id="start-button">
+<a href="{{ reverse_url('login') }}">
+	<div>
+		<p>Start kwissling</p>
+	</div>
+</a>
+</div>
 
-<ol>
-  <li><a href="{{ reverse_url('login') }}" class="account">Sign in</a></li>
-  <li>Click on "Play!" on the home page</li>
-  <li>Wait for someone to play against</li>
-  <li>Battle! You get 3 points if you answer right, 1 point if you get it by alternative (see <a href="/help/rules">Rules</a>)</li>
-  <li>Bask in the glory!</li>
-</ol>
+<div class="links">
+	<ul>
+	  <li><a href="">How to play</a></li>
+	  <li><a href="">Invite your friends</a></li>
+	  <li><a href="">About</a></li>
+	  <li><a href="{{ reverse_url('login') }}">Login / Signup</a></li>
+	  <li><a href="">Leaderboard</a></li>
+	  <li><a href="/help/rules">Rules</a></li>
+	</ul>
+</div>
+
+<br clear="all"/>
+
+
 
 {% end %}
 

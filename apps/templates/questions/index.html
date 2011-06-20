@@ -1,105 +1,113 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<style>
+div.box .left ul#questions {
+   list-style-type: none;	
+   padding-left: 0;
+}
+
+div.box .left ul#questions li {
+    background-color: #F1F1F1;
+    border-bottom: 1px solid #FFFFFF;
+    float: left;
+    padding: 10px;
+    width: 640px;
+}
+
+div.box .left ul#questions li img {
+  float: left;
+  margin-right: 10px;	
+}
+</style>
+{% end %}
+
+
 {% block content_inner %}
 
-<p><a href="{{ reverse_url('add_question') }}" class="bold btn">Add a new question &rarr;</a><br>
-{% if all_accepted_questions_count %}
-  There are {{ all_accepted_questions_count }} accepted questions
-  (written by other people) that needs
-  <a href="{{ reverse_url('review_random') }}" title="click to review a random accepted question">reviewing</a>
-  {% if is_admin_user %}
-    |
-    <a href="{{ reverse_url('review_accepted') }}" title="click to review accepted question">accepted</a>,
-    <a href="{{ reverse_url('all_questions') }}" title="complete table of all questions">all</a>
-    (admin only)
-  {% end %}
-{% end %}
+
+
+
+
+
+<div class="box">
+  <div class="right">
+  	<h4>Your stats</h4>
+  		<ul>
+	  {% if draft_questions.count() %}<li>{{ draft_questions.count() }} still in draft</li>{% end %}
+	  {% if rejected_questions.count() %}<li>{{ rejected_questions.count() }} rejected</li>{% end %}
+	  <li>{{ submitted_questions.count() }} submitted</li>
+	  <li>{{ accepted_questions_count }} waiting for review</li>
+	  <li>{{ published_questions_count }} published
+	      {% if published_questions_count %} - <a href="{{ reverse_url('questions_published') }}">see all</a>{% end %}
+	  </li>
+	</ul>
+	
+	<h4>Categories</h4>
+	<p>There are currently <strong>{{ count_all_approved_genres }} approved categories</strong><br>
+<a href="{{ reverse_url('all_categories') }}">See them all</a>
 </p>
-
-{% if draft_questions.count() %}
-<div id="draft_questions">
-  <h3>Draft Questions ({{ draft_questions.count() }})</h3>
-  {% for question in draft_questions %}
-  <div id="{{ question._id }}" class="question">
-    <p class="question_text"><a href="{{ reverse_url('edit_question', question._id ) }}">{{ question.text }}</a></p>
-    <p class="question_metadata">Category: {{ question.genre.name }}<br>
-    Added {% module TimeSince(question.add_date) %} ago
-    </p>
   </div>
-  {% end %}
-  {% if not draft_questions.count() %}
-  <div>
-    <p><em>None at the moment</em></p>
-  </div>
-  {% end %}
-</div>
-{% end %}
-
-{% if rejected_questions.count() %}
-<div id="rejected_questions">
-  <h3>Rejected Questions ({{ rejected_questions.count() }})</h3>
-  {% for question in rejected_questions %}
-  <div id="{{ question._id }}" class="question">
-    <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}">{{ question.text }}</a></p>
-    <p class="question_metadata">Comment: <em>{{ question.reject_comment }}</em><br>
-    Category: {{ question.genre.name }}<br>
-    Rejected {% module TimeSince(question.reject_date) %} ago
-    </p>
-  </div>
-  {% end %}
-</div>
-{% end %}
-
-<div id="submitted_questions">
-  <h3>Submitted Questions ({{ submitted_questions.count() }})</h3>
+  <div class="left">
+  <h3>Your questions</h3>
+  <p>Your questions have been played XXX times already!</p>
+  <form action="{{ reverse_url('questions_search') }}" id="search">
+  <input name="q" size="30" value="{{ q }}">
+  </form>
+  
+  <ul id="questions">
+  
+  {% if submitted_questions.count() %}
   {% for question in submitted_questions %}
+  <li>
+   <img src="{{ modules.StaticURL('images/waiting.png') }}" style="float:left">
+   <div id="{{ question._id }}" class="question">
+    <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}">{{ question.text }}</a></p>
+    <p class="question_metadata"><em>{% if is_admin_user %}By: {{ modules.ShowUser(question.author) }} | {% end %}
+    Category: {{ question.genre.name }} |
+    Submitted {{ modules.TimeSince(question.submit_date) }} ago
+    </em></p>
+   </div>
+  </li>
+  {% end %}
+  {% end %}
+  
+  
+  
+  {% if draft_questions.count() %}
+  	{% for question in draft_questions %}
+  	<li>
+  	<div id="{{ question._id }}" class="question">
+  	  <p class="question_text"><a href="{{ reverse_url('edit_question', question._id ) }}">{{ question.text }}</a></p>
+  	  <p class="question_metadata"><em>Category: {{ question.genre.name }} | 
+  	  Added {{ modules.TimeSince(question.add_date) }} ago
+  	  </em></p>
+  	</div>
+    </li>
+  	{% end %}
+  {% end %}
+  
+  {% if rejected_questions.count() %}
+  {% for question in rejected_questions %}
+  <li>
+  <img src="{{ modules.StaticURL('images/rejected.png') }}" style="float:left">
   <div id="{{ question._id }}" class="question">
     <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}">{{ question.text }}</a></p>
-    <p class="question_metadata">{% if is_admin_user %}By: {% module ShowUser(question.author) %}<br>{% end %}
-    Category: {{ question.genre.name }}<br>
-    Submitted {% module TimeSince(question.submit_date) %} ago
-    </p>
+    <p class="question_metadata"><em>Comment: {{ question.reject_comment }} | 
+    Category: {{ question.genre.name }} | 
+    Rejected {{ modules.TimeSince(question.reject_date) }} ago
+    </em></p>
   </div>
+  </li>
   {% end %}
-  {% if not submitted_questions.count() %}
-  <div>
-    <p><em>None at the momqent</em></p>
+
+  {% end %}
+    </ul>
+  
+  
+  
   </div>
-  {% end %}
 </div>
 
-{% if accepted_questions_count %}
-<div id="accepted_questions">
-  <h3>Accepted Questions ({{ accepted_questions_count }})</h3>
-  <p>For your
-  {% if accepted_questions_count == 1 %}
-  one accepted question
-  {% else %}
-  {{ accepted_questions_count }} accepted questions
-  {% end %}
-  to be published (by the administrator)
-  your questions first need to be reviewed by other people a bit.
-  Just wait.</p>
-  {% if all_accepted_questions_count %}
-  <p>To help out, <a href="{{ reverse_url('review_random') }}">review other people's questions</a> whilst you wait.
-  </p>
-  {% end %}
-</div>
-{% end %}
-
-{% if published_questions_count %}
-<div id="published_questions">
-  <h3>Published Questions ({{ published_questions_count }})</h3>
-  <p>Your {% if published_questions_count==1 %}question{% else %}{{ published_questions_count }} questions{% end %}
-  has been played {{ played_questions_count }} times!</p>
-  <p><a href="{{ reverse_url('questions_published') }}">See all your published questions</a></p>
-</div>
-{% end %}
-
-<h3>Categories</h3>
-
-<p>There are currently <strong>{{ count_all_approved_genres }} approved categories</strong><br>
-<a href="{{ reverse_url('all_categories') }}">See them all spread out</a>
-</p>
 
 {% end %}

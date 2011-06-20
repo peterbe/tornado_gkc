@@ -1,29 +1,41 @@
 {% extends "help_base.html" %}
 
 {% block content_inner %}
+<div class="box">
+<div class="right">
+<h4>Technology</h4>
+<p>This web app was written in <a href="http://www.tornadoweb.org/">Tornado Python web framework</a>
+and <a href="https://github.com/MrJoes/tornadio">tornadio</a> and <a href="http://socket.io">socket.io</a> 
+for the actual game part.</p>
 
-<h1>About</h1>
+<p>You'll need a modern browser to play - Chrome and Safari work best, and if you're using Firefox, you'll need Flash enabled.</p>
+</div>
+<div class="left">
+<h3>About</h3>
 
-<p>Kwissle was written and maintained by <a href="http://www.peterbe.com" class="yellow">Peter Bengtsson</a>
-</p>
+<p>Kwissle is one of the first real-time general knowledge quiz games of its kind on the web. It uses bleeding edge technology to pit your wits against real opponents in a contest of knowledge and speed.</p>
 
-<p>It's goal is to have lots of people playing, having fun and learning something. 
+<p>Our goal is to have lots of people playing, having fun and learning something. 
 To make that possible, the site needs to employ some clever game metrics to make
 it worthwhile to come back and play more. Also, for lots of people to be able to 
-play a lot we need lots of questions. <span class="yellow">All questions are crowd source</span>, i.e.
+play a lot we need lots of questions. All questions are crowd source, i.e.
 <a href="/help/a-good-question">by you</a>.
 </p>
 
-<p><span class="yellow">Anybody can <a href="{{ reverse_url('add_question') }}">add a question</a></span> 
+<p>Anybody can <a href="{{ reverse_url('add_question') }}">add a question</a> 
 and everybody
 is encouraged to <a href="{{ reverse_url('review_random') }}">review other peoples questions</a>
 so that ultimately your contributed questions can be published by the administrator. <br>
 More info about the <a href="/help/question-workflow">question workflow available here</a>.
 </p>
 
-<p>This web app was written in <a href="http://www.tornadoweb.org/">Tornado Python web framework</a>
-and <a href="https://github.com/MrJoes/tornadio">tornadio</a> and <a href="http://socket.io">socket.io</a> 
-for the actual game part.
+
+<p>Kwissle was written and maintained by <a href="http://www.peterbe.com" class="yellow">Peter Bengtsson</a>
 </p>
+
+<p>
+</p>
+</div>
+</div>
 
 {% end %}
