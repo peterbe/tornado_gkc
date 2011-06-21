@@ -39,10 +39,13 @@ def main(*args):
         checked_play_ids = set()
         clear_count = 0
         for played_question in db.PlayedQuestion.collection.find():
-            play_id = played_question['play'].id
-            if play_id in checked_play_ids:
-                continue
-            if db.Play.collection.one({'_id': play_id}):
+            try:
+                play_id = played_question['play'].id
+                if play_id in checked_play_ids:
+                    continue
+            except AttributeError:
+                play_id = None
+            if play_id and db.Play.collection.one({'_id': play_id}):
                 checked_play_ids.add(play_id)
             else:
                 db.PlayedQuestion.collection.remove(played_question['_id'])
