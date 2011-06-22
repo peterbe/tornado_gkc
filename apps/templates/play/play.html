@@ -24,9 +24,31 @@
 
     <div id="scoreboard" style="display:none"></div>
 
-    <div id="play_right" style="display:none">
+    <div id="play_right">
+
+    <form action="." id="challenge-computer" style="display:none">
+      {% if user_settings and (user_settings.twitter or user_settings.facebook or user_settings.google) %}
+      {% else %}
+        <p>Got no one to play against? Wanna play against everyone?</p>
+      {% end %}
+      <p></p>
+      <p>
+      <input type="submit" value="Play against computer">
+      <a class="more-info" href="#challenge-computer-info">[more info]</a>
+      </p>
+      <p style="display:none" class="more-info">
+      By playing against the computer you're effectively playing against
+      <strong>everyone</strong>. The computer will answer "randomly" but
+      based on how everyone has faired on each question when played in the
+      past. For example, if 30% of players know the answer to a particular
+      question, there's a 30% chance the computer will give the right answer.<br>
+      How quick the computer answers depends on how many people have got the
+      question right or wrong.
+      </p>
+    </form>
+
     {% if user_settings and (user_settings.twitter or user_settings.facebook or user_settings.google) %}
-    <div id="besocial">
+    <div id="besocial" style="display:none">
       <p><span class="yellow">No one to play against?</span><br>
       Then challenge your friends in some way!</p>
       {% if user_settings.twitter %}
@@ -53,26 +75,6 @@
     </div>
     {% end %}
 
-    <form action="." id="challenge-computer">
-      {% if user_settings and (user_settings.twitter or user_settings.facebook or user_settings.google) %}
-      {% else %}
-        <p>Got no one to play against? Wanna play against everyone?</p>
-      {% end %}
-      <p></p>
-      <p>
-      <input type="submit" value="Play against computer">
-      <a class="more-info" href="#challenge-computer-info">[more info]</a>
-      </p>
-      <p style="display:none" class="more-info">
-      By playing against the computer you're effectively playing against
-      <strong>everyone</strong>. The computer will answer "randomly" but
-      based on how everyone has faired on each question when played in the
-      past. For example, if 30% of players know the answer to a particular
-      question, there's a 30% chance the computer will give the right answer.<br>
-      How quick the computer answers depends on how many people have got the
-      question right or wrong.
-      </p>
-    </form>
 
     </div><!-- /#play_right -->
 

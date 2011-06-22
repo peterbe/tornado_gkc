@@ -410,11 +410,11 @@ $(function() {
        if (!first_wait) return false;
        socket.send({against_computer:1});
        return false;
-     });
+     }).show(700);
 
      setTimeout(function() {
        if (!$('.error:visible').size() && !Question.is_initialized()) {
-         $('#play_right').show(700);
+         $('#besocial').show(700);
        }
      }, 5 * 1000);
 
