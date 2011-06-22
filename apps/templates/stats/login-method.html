@@ -18,7 +18,7 @@ log in with different methods but have the same username.</p>
 <script>
 head.js('{% module StaticURL('js/ext/highcharts/highcharts.js') %}', function() {
 
-  var PERCENTAGES = {{ percentages }};
+  var PERCENTAGES = {% raw percentages %};
   var colors = Highcharts.getOptions().colors;
   var categories = ['Google', 'Twitter', 'Facebook'];
   var SERIES = [{
