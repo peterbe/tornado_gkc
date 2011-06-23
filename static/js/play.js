@@ -537,7 +537,7 @@ $(function() {
           $('<a>')
             .attr('href', '/play/highscore/')
               .attr('title', 'Click to see where you are in the Highscore list')
-                .text("You just earn yourself " + response.increment + " more Kwissle points!")
+                .text("You just earned yourself " + response.increment + " more Kwissle points!")
                   .appendTo($('.points'));
           $('<br>')
             .appendTo($('.points'));
