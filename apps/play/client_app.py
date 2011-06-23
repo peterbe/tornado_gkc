@@ -387,8 +387,7 @@ class Application(tornado.web.Application):
 
     def __init__(self, database_name, **kwargs):
         handlers = [tornadio.get_router(Client).route()]
-        if kwargs.get('debug'):
-            handlers.append((r"/battles", BattlesDebugHandler))
+        handlers.append((r"/battles", BattlesDebugHandler))
         tornado.web.Application.__init__(self, handlers, **kwargs)
         self.database_name = database_name
         self.con = connection
