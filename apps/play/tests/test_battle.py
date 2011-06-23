@@ -68,3 +68,13 @@ class BattleTestCase(unittest.TestCase):
         self.assertTrue(battle.check_answer('rght'))
         self.assertTrue(battle.check_answer('rigght'))
         self.assertTrue(battle.check_answer(' CORRREct'))
+
+    def test_dead_or_not(self):
+        battle = Battle(10)
+        self.assertTrue(battle.updated)
+        self.assertTrue(not battle.is_dead(10))
+        self.assertRaises(AssertionError, battle.is_dead, 0)
+        battle.updated -= 11
+        self.assertTrue(battle.is_dead(10))
+        battle.still_alive()
+        self.assertTrue(not battle.is_dead(10))

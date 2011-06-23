@@ -86,7 +86,13 @@ class Client(tornadio.SocketConnection):
         """called when the client has connected successfully"""
         self.send(dict(your_name=self.user_name))
         battle = None
+
+        _del_battles = set()
         for created_battle in self.battles:
+            if created_battle.is_dead(10):
+                _del_battles.add(created_battle)
+                continue
+
             if created_battle.is_open():
                 if self in created_battle:
                     self.send(dict(error={'message':'Already in an open battle',
@@ -95,6 +101,9 @@ class Client(tornadio.SocketConnection):
                 battle = created_battle
                 logging.debug("%r joining battle: %r" % (self.user_name, battle))
                 break
+        for bad_battle in _del_battles:
+            self.battles.remove(bad_battle)
+
         if not battle:
             battle = Battle(10, # specify how long the waiting delay is
                             no_questions=self.application_settings['debug'] and 5 or 10
@@ -194,6 +203,9 @@ class Client(tornadio.SocketConnection):
                 if outcome['alternatives']:
                     self._get_alternatives(battle, bot)
                 self._check_answer(battle, bot, '**deliberately wrong**')
+
+        elif message.get('still_alive'):
+            battle.still_alive()
 
         else: # pragma: no cover
             print message
@@ -349,12 +361,34 @@ class Client(tornadio.SocketConnection):
             if battle.play_id:
                 battle.save_play(self.db, halted=True)
 
+class BattlesDebugHandler(tornado.web.RequestHandler):
+    def get(self):
+        out = ['BATTLES:']
+        for i, battle in enumerate(self.application.battles):
+            line = []
+            line.append(('%s.' % (i + 1)).ljust(3))
+            line.append(str(id(battle)).ljust(15))
+            line.append((', '.join(repr(x.user_name) for x in battle.participants)).ljust(50))
+            if battle.is_dead(10):
+                line.append('DEAD')
+            elif battle.is_stopped():
+                line.append('STOPPED')
+            elif battle.is_open():
+                line.append('OPEN')
+            else:
+                line.append('IN ACTION!')
+            out.append(''.join(line))
+        self.set_header("Content-Type", "text/plain")
+        self.write('\n'.join(out))
+
 class Application(tornado.web.Application):
     battles = set()
     current_client_battles = {}
 
     def __init__(self, database_name, **kwargs):
         handlers = [tornadio.get_router(Client).route()]
+        if kwargs.get('debug'):
+            handlers.append((r"/battles", BattlesDebugHandler))
         tornado.web.Application.__init__(self, handlers, **kwargs)
         self.database_name = database_name
         self.con = connection

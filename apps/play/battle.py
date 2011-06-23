@@ -34,6 +34,7 @@ class Battle(object):
         self.genres_only = genres_only
         self.language = language
         self.play_id = None
+        self.updated = time.time()
 
     def __repr__(self):
         vs = ' vs. '.join(['%s:%r' % (x.user_id, x.user_name) for x in self.participants])
@@ -63,6 +64,13 @@ class Battle(object):
     def send_wait(self, seconds, next_message):
         self.min_wait_delay = time.time() + seconds
         self.send_to_all(dict(wait=seconds, message=next_message))
+
+    def is_dead(self, age):
+        assert age
+        return time.time() > self.updated + age
+
+    def still_alive(self):
+        self.updated = time.time()
 
     def is_waiting(self):
         return self.min_wait_delay and self.min_wait_delay > time.time()

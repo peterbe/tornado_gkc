@@ -357,16 +357,18 @@ var socket
 ;
 
 $(function() {
-   socket = new io.Socket(null, {port: CONFIG.SOCKET_PORT, rememberTransport: false});
-   socket.connect();
+  socket = new io.Socket(null, {port: CONFIG.SOCKET_PORT, rememberTransport: false});
+  socket.connect();
 
-   var waiting_message_interval = setInterval(function() {
-      var text = $('#waiting .message').text();
-      if (text.length > 50) {
-         text = text.replace(/\.{3,50}/, '...');
-      }
-      $('#waiting .message').text(text + '.');
-   }, 1000);
+  var waiting_message_interval = setInterval(function() {
+    var text = $('#waiting .message').text();
+    if (text.length > 50) {
+      text = text.replace(/\.{3,50}/, '...');
+    }
+    $('#waiting .message').text(text + '.');
+  }, 1000);
+
+  var still_alive_interval;
 
    socket.on('connect', function() {
       /*
@@ -430,6 +432,12 @@ $(function() {
          $('#answer').attr('readonly', 'readonly').attr('disabled', 'disabled');
          alternatives.load();
       });
+
+     var delay = 3;
+     still_alive_interval = setInterval(function() {
+       socket.send({still_alive: true});
+       delay += 0.1;
+     }, Math.ceil(delay * 1000));
    });
 
   var first_wait = true;
