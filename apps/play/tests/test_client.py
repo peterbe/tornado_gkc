@@ -754,6 +754,37 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['winner']['you_won'])
         self.assertTrue(not client2._sent[-1]['winner']['you_won'])
 
+    def test_bot_sending_answer_too_late(self):
+        user, client, request = self._create_connected_client('peterbe')
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 1
+        client.on_message(dict(against_computer=1))
+
+        q1 = self._create_question()
+        qk1 = self._create_question_knowledge(q1, {
+          'right': 1.0,
+          'wrong': 0.,
+          'alternatives_right': 0.,
+          'alternatives_wrong': 0.,
+          'too_slow': 0.,
+          'timed_out': 0.,
+          'users': 10,
+        })
+
+        battle.min_wait_delay -= client._sent[-1]['wait']
+        client.on_message(dict(next_question=1))
+
+        self.assertTrue(client._sent[-1]['bot_answers'])
+        bot_answers_seconds = client._sent[-1]['bot_answers']
+
+        self.assertTrue(client._sent[-2]['question'])
+        battle.min_wait_delay -= bot_answers_seconds
+        client.on_message(dict(answer='Yes'))
+        client.on_message(dict(bot_answers='Yes'))
+
+        self.assertTrue(client._sent[-1]['winner'])
+        self.assertTrue(client._sent[-1]['winner']['you_won'])
+
     def test_playing_against_computer(self):
         user, client, request = self._create_connected_client('peterbe')
         client.on_message(dict(against_computer=1))
