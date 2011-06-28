@@ -205,7 +205,16 @@ head.ready(function() {
       }
    });
 
-
+  $('.image-toggle a').click(function() {
+    if ($('.image-info:visible').size()) {
+      // info has been shown
+      $('.image-info').hide(200);
+    } else {
+      $('input.add-image:hidden').show();
+      $('.image-info').show(200);
+    }
+    return false;
+  });
 
 
    // on the Edit question page

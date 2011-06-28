@@ -29,7 +29,12 @@ var CHARTS = [];
   {% for question in questions %}
   <div class="question-outer">
     <div id="{{ question._id }}" class="question">
-      <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}" class="yellow">{{ question.text }}</a></p>
+      <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}" class="yellow">{{ question.text }}</a>
+      {% if question.has_image() %}
+      <a title="Question has an image"
+         href="{{ reverse_url('view_question', question._id ) }}">{% module ShowQuestionImageThumbnail(question.get_image(), (20, 20)) %}</a>
+      {% end %}
+      </p>
       <p class="question_metadata">
       Category: {{ question.genre.name }}<br>
       Published {% module TimeSince(question.publish_date) %} ago

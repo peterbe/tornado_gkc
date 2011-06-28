@@ -1,5 +1,7 @@
 import os.path as op
-HERE = op.abspath(op.dirname(__file__))
+ROOT = op.abspath(op.dirname(__file__))
+path = lambda *a: op.join(ROOT, *a)
+
 PROJECT_TITLE = u"Kwissle"
 TAG_LINE = "a real-time general knowledge quiz battle game"
 APPS = (
@@ -23,12 +25,14 @@ WEBMASTER = 'webmaster@kwissle.com'
 ADMIN_EMAILS = ['peterbe@gmail.com', 'ashleynoval@gmail.com']
 
 TWITTER_CONSUMER_KEY = 'UcZ80RJk7x4FVWE0d93ig'
-TWITTER_CONSUMER_SECRET = open(op.join(HERE, 'twitter_consumer_secret')).read().strip()
+TWITTER_CONSUMER_SECRET = open(path('twitter_consumer_secret')).read().strip()
 
 FACEBOOK_API_KEY = '0bdf577fe3dc898fc740a3999a1f1ce0'
-FACEBOOK_SECRET = open(op.join(HERE, 'facebook_consumer_secret')).read().strip()
+FACEBOOK_SECRET = open(path('facebook_consumer_secret')).read().strip()
 
-XAPIAN_LOCATION = op.join(HERE, 'xapian_db')
+XAPIAN_LOCATION = path('xapian_db')
+
+THUMBNAIL_DIRECTORY = path('static/thumbnails')
 
 try:
     from local_settings import *

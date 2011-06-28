@@ -1,3 +1,4 @@
+import mimetypes
 from pymongo.objectid import InvalidId, ObjectId
 import re
 import datetime
@@ -17,7 +18,7 @@ import settings
 from models import STATES, DRAFT, SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
 from models import VERDICTS, VERIFIED, UNSURE, WRONG, TOO_EASY, TOO_HARD
 
-from forms import QuestionForm
+from forms import QuestionForm, QuestionImageForm
 
 class QuestionsBaseHandler(BaseHandler):
     def get_base_options(self):
@@ -288,7 +289,7 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
         questions = (self.db.Question
                       .find({'author.$id': options['user']._id,
                              'state': 'PUBLISHED'})
-                      .sort('publish_date'))
+                      .sort('publish_date', -1))
         options['questions'] = questions
         options['page_title'] = "Your published questions"
         self.render("questions/published.html", **options)
@@ -335,7 +336,11 @@ class AddQuestionHandler(QuestionsBaseHandler):
             question.state = DRAFT
             question.save()
 
-            if not self.get_argument('save_as_draft', False) and \
+            if self.get_argument('add_image', False):
+                self.push_flash_message("Question added",
+                "Now you can upload an image to it")
+                goto_url = self.reverse_url('new_question_image', question._id)
+            elif not self.get_argument('save_as_draft', False) and \
               self.can_submit_question(question):
                 self.push_flash_message("Question added",
                 "Your question has been added and can now be submitted")
@@ -487,6 +492,69 @@ class EditQuestionHandler(QuestionsBaseHandler):
 
         else:
             self.get(question_id, form=form)
+
+@route('/questions/(\w{24})/image/new/$', name="new_question_image")
+class NewQuestionImageHandler(QuestionsBaseHandler):
+
+    @tornado.web.authenticated
+    def get(self, question_id, form=None):
+        options = self.get_base_options()
+        question = self.must_find_question(question_id, options['user'])
+        if not self.can_edit_question(question, options['user']):
+            raise HTTPError(403, "Can't edit this question")
+        options['question'] = question
+        if form is None:
+            initial = dict()
+            form = QuestionImageForm(**initial)
+        options['form'] = form
+        if question.has_image():
+            options['page_title'] = "New question image"
+        else:
+            options['page_title'] = "Add question image"
+        self.render('questions/new_image.html', **options)
+
+    @tornado.web.authenticated
+    def post(self, question_id):
+        user = self.get_current_user()
+        question = self.must_find_question(question_id, user)
+        if not self.can_edit_question(question, user):
+            raise HTTPError(403, "Can't edit this question")
+        #print "FILES", self.request.files
+        data = djangolike_request_dict(self.request.files)
+        form = QuestionImageForm(data)
+        if form.validate():
+            image = form.image.data
+            if not any([image['filename'].lower().endswith(x)
+                        for x in ('.png', '.jpg')]):
+                raise HTTPError(400)
+
+            question_image = (self.db.QuestionImage
+              .one({'question.$id': question._id}))
+            if not question_image:
+                question_image = self.db.QuestionImage()
+                question_image.question = question
+            question_image.save()
+            assert isinstance(image['body'], str), type(image['body'])
+            type_, __ = mimetypes.guess_type(image['filename'])
+            with question_image.fs.new_file('original') as f:
+                f.content_type = type_
+                f.write(image['body'])
+
+            self.push_flash_message(
+              "Image added!",
+              "Question now has an image."
+            )
+
+            if question.state == DRAFT and self.can_submit_question(question):
+                goto_url = self.reverse_url('submit_question', question._id)
+            else:
+                goto_url = self.reverse_url('edit_question', question._id)
+
+            self.redirect(goto_url)
+        else:
+            self.get(question_id, form=form)
+
+
 
 @route('/questions/(\w{24})/submitted/$', name="submitted_question")
 class QuestionSubmittedHandler(QuestionsBaseHandler):
@@ -911,7 +979,8 @@ class ReviewAcceptedQuestionHandler(QuestionsBaseHandler):
                 options['difficulty_total'] = '-'
             options['page_title'] = "Review accepted question"
             options['can_edit'] = self.can_edit_question(question, options['user'])
-
+            options['question_knowledge'] = (self.db.QuestionKnowledge
+                                          .one({'question.$id': question._id}))
             self.render("questions/view.html", **options)
         else:
             options['page_title'] = "No questions to review"

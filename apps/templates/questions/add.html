@@ -25,6 +25,11 @@
 
 <form action="" class="question" method="post">{% module xsrf_form_html() %}
 
+<p class="image-toggle">
+<a href="#">Want to make a picture question?</a><br>
+<span class="image-info" style="display:none">Easy! Add the question first and then you can upload an image.</span>
+</p>
+
 {% for field in form %}
   <p class="field">
     {% raw field.label %}
@@ -35,6 +40,7 @@
   </p>
 {% end %}
 <div>
+  <input style="display:none" class="add-image" name="add_image" type="submit" value="Save and upload image" title="You can submit the question after you have uploaded a question">
   <input type="submit" value="Save and confirm to submit" title="You have to confirm the question before submitting">
   <input type="submit" name="save_as_draft" value="Save as draft" title="You can return and work on it any time">
 </div>

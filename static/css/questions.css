@@ -33,6 +33,9 @@ p.question_metadata {
   margin-left:20px;
   margin-top:0.1em;
 }
+p.question_thumbnail {
+  margin-right:10px;
+}
 
 th { text-align: left; }
 

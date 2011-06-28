@@ -4,6 +4,8 @@ from pprint import pprint
 import tornado.web
 from apps.questions.models import DIFFICULTIES
 
+from thumbnailer import ShowQuestionImageThumbnail
+
 class RenderField(tornado.web.UIModule):
     def render(self, field):
         try:

@@ -28,9 +28,19 @@
 {% end %}
 
 <form action="" class="question" method="post">{% module xsrf_form_html() %}
+
+<div>
+{% if question.has_image() %}
+  <a title="Click to upload a different image"
+     href="{{ reverse_url('new_question_image', question._id) }}">{% module ShowQuestionImageThumbnail(question.get_image(), (100, 100)) %}</a>
+{% else %}
+  <a href="{{ reverse_url('new_question_image', question._id) }}">Add an image to the question</a>
+{% end %}
+</div>
+
 {% for field in form %}
   <p class="field">
-    {{ field.label }}
+    {% raw field.label %}
     {% module RenderField(field) %}
     {% if field.errors %}
        <ul class="errors">{% for error in field.errors %}<li>{{ error }}</li>{% end %}</ul>

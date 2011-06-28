@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block extra_js %}
+{% module Static("js/question_image.js") %}
+{% end %}
+
+{% block content_inner %}
+
+<p>
+<a href="{{ reverse_url('edit_question', question._id) }}" class="btn">&larr; back to editing question</a></p>
+
+{% if form.errors %}
+    <ul class="errors general-errors">
+        {% for field_name, field_errors in [(n,form.errors[n]) for n in form.errors if form.errors[n]] %}
+            {% for error in field_errors %}
+                <li>{% raw form[field_name].label %} {% raw error %}</li>
+            {% end %}
+        {% end %}
+    </ul>
+{% end %}
+
+{% if question.has_image() %}
+<div>
+  <h4>Current image</h4>
+  <p>{% module ShowQuestionImageThumbnail(question.get_image(), (300, 300), alt=question.text) %}</p>
+
+</div>
+{% end %}
+<form action="." class="image" method="post" enctype="multipart/form-data"
+>{% module xsrf_form_html() %}
+
+{% for field in form %}
+  <p class="field">
+    {% raw field.label %}
+    {% module RenderField(field) %}
+    {% if field.errors %}
+       <ul class="errors">{% for error in field.errors %}<li>{% raw error %}</li>{% end %}</ul>
+    {% end %}
+  </p>
+{% end %}
+<div>
+  <input type="submit" value="Upload" title="You can preview it and edit after">
+  <a href="{{ reverse_url('edit_question', question._id) }}" class="btn">cancel</a></p>
+</div>
+</form>
+
+{% end %}

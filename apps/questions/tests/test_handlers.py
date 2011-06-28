@@ -1,3 +1,4 @@
+import os
 import base64
 import json
 import re
@@ -587,3 +588,206 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         response = admin_client.get(url)
         self.assertEqual(response.code, 200)
+
+    def test_adding_question_with_image(self):
+        self._login()
+        user = self.db.User.one(username='peterbe')
+        assert user
+
+        maths = self.db.Genre()
+        maths.name = u'Celebs'
+        maths.approved = True
+        maths.save()
+
+        url = self.reverse_url('add_question')
+        data = dict(text=u"H\ex3r mar dU? ",
+                    answer="Bra   ",
+                    accept="Hyffsat",
+                    alternatives=" Bra  \nOk\nFine\nIlla",
+                    genre="Life ",
+                    spell_correct='yes',
+                    comment=""
+                    )
+        # simulate clicking on the right submit button
+        data['add_image'] = 1
+        response = self.client.post(url, data)
+        self.assertEqual(response.code, 302)
+        question, = self.db.Question.find()
+        assert question.answer == u'Bra'
+        new_image_url = self.reverse_url('new_question_image', question._id)
+        self.assertEqual(response.headers['Location'], new_image_url)
+
+        response = self.client.get(new_image_url)
+        self.assertTrue('type="file"' in response.body)
+        edit_url = self.reverse_url('edit_question', question._id)
+        self.assertTrue(edit_url in response.body)
+
+        here = os.path.dirname(__file__)
+        image_data = open(os.path.join(here, 'image.png'), 'rb').read()
+        content_type, data = encode_multipart_formdata([('image', 'image.png')],
+                                         [('image', 'image.png', image_data)])
+        response = self.client.post(new_image_url, data,
+                                    headers={'Content-Type': content_type})
+        self.assertEqual(response.code, 302)
+        question, = self.db.Question.find()
+        submit_url = self.reverse_url('submit_question', question._id)
+        self.assertEqual(response.headers['location'], submit_url)
+        # don't submit yet but check that there's a thumbnail on the submit
+        # confirmation page
+        response = self.client.get(submit_url)
+        img_tag = self._find_thumbnail_tag(response.body)
+        self.assertTrue(img_tag)
+        self.assertEqual(img_tag['alt'], question.text)
+        response = self.client.get(img_tag['src'])
+        from PIL import Image
+        from cStringIO import StringIO
+        img = Image.open(StringIO(response.body))
+        self.assertEqual(img.size, (75,18)) # known from fixture
+        self.assertEqual(img_tag['width'], '75')
+        self.assertEqual(img_tag['height'], '18')
+
+        # go back and change image
+        edit_url = self.reverse_url('edit_question', question._id)
+        response = self.client.get(edit_url)
+        img_tag = self._find_thumbnail_tag(response.body)
+        self.assertTrue(img_tag)
+
+#        new_image_url = self.reverse_url('new_question_image', question._id)
+        response = self.client.get(new_image_url)
+        self.assertEqual(response.code, 200)
+
+        img_tag = self._find_thumbnail_tag(response.body)
+        self.assertTrue(img_tag)
+        self.assertEqual(img_tag['alt'], question.text)
+
+        image_data = open(os.path.join(here, 'screenshot.jpg'), 'rb').read()
+        content_type, data = encode_multipart_formdata([('image', 'image.jpg')],
+                                         [('image', 'image.jpg', image_data)])
+        response = self.client.post(new_image_url, data,
+                                    headers={'Content-Type': content_type})
+        self.assertEqual(response.code, 302)
+        self.assertEqual(response.headers['location'], submit_url)
+
+        response = self.client.get(submit_url)
+        img_tag = self._find_thumbnail_tag(response.body)
+        self.assertTrue(img_tag)
+        self.assertEqual(img_tag['alt'], question.text)
+        response = self.client.get(img_tag['src'])
+        from PIL import Image
+        from cStringIO import StringIO
+        img = Image.open(StringIO(response.body))
+        self.assertEqual(img.size, (300, 236)) # known from fixture
+        self.assertEqual(img_tag['width'], '300')
+        self.assertEqual(img_tag['height'], '236')
+
+        # now submit it
+        response = self.client.post(submit_url, {})
+        self.assertEqual(response.code, 302)
+        question, = self.db.Question.find()
+        self.assertEqual(question.state, 'SUBMITTED')
+
+        admin = TestClient(self)
+        self._login('admin',
+                    email=settings.ADMIN_EMAILS[0],
+                    client=admin)
+
+        response = admin.get(self.reverse_url('questions'))
+        self.assertTrue('Submitted Questions (1)' in response.body)
+        img_tag = self._find_thumbnail_tag(response.body)
+        self.assertTrue(img_tag)
+
+        response = self.client.get(img_tag['src'])
+        img = Image.open(StringIO(response.body))
+        self.assertEqual(img.size, (20, 16)) # known from fixture
+        self.assertEqual(img_tag['width'], '20')
+        self.assertEqual(img_tag['height'], '16')
+
+        response = admin.get(self.reverse_url('view_question', question._id))
+        img_tag = self._find_thumbnail_tag(response.body)
+        self.assertTrue(img_tag)
+        self.assertEqual(img_tag['alt'], question.text)
+        response = self.client.get(img_tag['src'])
+        img = Image.open(StringIO(response.body))
+        self.assertEqual(img.size, (300, 236)) # known from fixture
+        self.assertEqual(img_tag['width'], '300')
+        self.assertEqual(img_tag['height'], '236')
+
+        accept_url = self.reverse_url('accept_question', question._id)
+        response = admin.post(accept_url, {})
+        self.assertEqual(response.code, 302)
+        question, = self.db.Question.find()
+        self.assertEqual(question.state, 'ACCEPTED')
+
+        bob = TestClient(self)
+        self._login('bob',
+                    email='bob@test.com',
+                    client=bob)
+        random_review_url = self.reverse_url('review_random')
+        response = bob.get(random_review_url)
+        img_tag = self._find_thumbnail_tag(response.body)
+        self.assertTrue(img_tag)
+        self.assertEqual(img_tag['alt'], question.text)
+        response = self.client.get(img_tag['src'])
+        img = Image.open(StringIO(response.body))
+        self.assertEqual(img.size, (300, 236)) # known from fixture
+        self.assertEqual(img_tag['width'], '300')
+        self.assertEqual(img_tag['height'], '236')
+
+        publish_url = self.reverse_url('publish_question', question._id)
+        response = admin.post(publish_url, {})
+        self.assertEqual(response.code, 302)
+        question, = self.db.Question.find()
+        self.assertEqual(question.state, 'PUBLISHED')
+
+        published_url = self.reverse_url('questions_published')
+        response = self.client.get(published_url)
+        img_tag = self._find_thumbnail_tag(response.body)
+        self.assertTrue(img_tag)
+
+        response = self.client.get(img_tag['src'])
+        img = Image.open(StringIO(response.body))
+        self.assertEqual(img.size, (20, 16)) # known from fixture
+        self.assertEqual(img_tag['width'], '20')
+        self.assertEqual(img_tag['height'], '16')
+
+
+    def _find_thumbnail_tag(self, content):
+        return list(self._find_thumbnail_tags(content))[0]
+
+    def _find_thumbnail_tags(self, content):
+        for each in re.findall('<img\s*[^>]+>', content):
+            attrs = dict(re.findall('(\w+)="([^"]+)"', each))
+            if 'thumbnails' in attrs['src']:
+                yield attrs
+
+
+
+import mimetypes
+def encode_multipart_formdata(fields, files):
+    """
+    fields is a sequence of (name, value) elements for regular form fields.
+    files is a sequence of (name, filename, value) elements for data to be uploaded as files
+    Return (content_type, body) ready for httplib.HTTP instance
+    """
+    BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
+    CRLF = '\r\n'
+    L = []
+    for (key, value) in fields:
+        L.append('--' + BOUNDARY)
+        L.append('Content-Disposition: form-data; name="%s"' % key)
+        L.append('')
+        L.append(value)
+    for (key, filename, value) in files:
+        L.append('--' + BOUNDARY)
+        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+        L.append('Content-Type: %s' % get_content_type(filename))
+        L.append('')
+        L.append(value)
+    L.append('--' + BOUNDARY + '--')
+    L.append('')
+    body = CRLF.join(L)
+    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
+    return content_type, body
+
+def get_content_type(filename):
+    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'

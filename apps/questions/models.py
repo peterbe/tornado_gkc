@@ -63,6 +63,22 @@ class Question(BaseDocument):
       'language': u'en-gb',
     }
 
+    def has_image(self):
+        return bool(self.db.QuestionImage
+                     .find({'question.$id': self._id})
+                     .count())
+
+    def get_image(self):
+        return self.db.QuestionImage.one({'question.$id': self._id})
+
+
+@register
+class QuestionImage(BaseDocument):
+    __collection__ = 'question_images'
+    structure = {
+      'question': Question,
+    }
+    gridfs = {'files':['original']}
 
 #OK = u"OK"
 VERIFIED = u"VERIFIED"

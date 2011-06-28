@@ -54,11 +54,17 @@
   <h3>Submitted Questions ({{ submitted_questions.count() }})</h3>
   {% for question in submitted_questions %}
   <div id="{{ question._id }}" class="question">
-    <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}">{{ question.text }}</a></p>
+    <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}">{{ question.text }}</a>
+    {% if question.has_image() %}
+    <a title="Question has an image"
+       href="{{ reverse_url('view_question', question._id ) }}">{% module ShowQuestionImageThumbnail(question.get_image(), (20, 20)) %}</a>
+    {% end %}
+    </p>
     <p class="question_metadata">{% if is_admin_user %}By: {% module ShowUser(question.author) %}<br>{% end %}
     Category: {{ question.genre.name }}<br>
     Submitted {% module TimeSince(question.submit_date) %} ago
     </p>
+
   </div>
   {% end %}
   {% if not submitted_questions.count() %}

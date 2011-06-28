@@ -1,3 +1,5 @@
+import mimetypes
+import os
 from mongokit import RequireFieldError, ValidationError
 import datetime
 import unittest
@@ -10,8 +12,8 @@ class ModelsTestCase(BaseModelsTestCase):
         user = self.db.User()
         user.username = u"something"
         user.save()
-        question = self.db.Question()
 
+        question = self.db.Question()
         question.text = u"Who wrote what?"
         question.answer = u"Dickens"
         question.accept = [u"Charles Dickens"]
@@ -115,3 +117,39 @@ class ModelsTestCase(BaseModelsTestCase):
                           (2, "four"),
                           (3, "one"),
                           (4, "three")])
+
+    def test_question_image_basics(self):
+        user = self.db.User()
+        user.username = u"something"
+        user.save()
+
+        question = self.db.Question()
+        question.text = u"Who wrote what?"
+        question.answer = u"Dickens"
+        question.accept = [u"Charles Dickens"]
+        question.alternatives = [u"Dickens", u"One", u"Two", u"Three"]
+        question.spell_check = True
+        question.comment = u"Some Comment"
+        genre = self.db.Genre()
+        genre.name = u"Lit"
+        genre.save()
+        question.genre = genre
+        question.author = user
+        question.save()
+
+        self.assertFalse(question.has_image())
+
+        question_image = self.db.QuestionImage()
+        question_image.question = question
+        question_image.save()
+        here = os.path.dirname(__file__)
+        image_data = open(os.path.join(here, 'image.png'), 'rb').read()
+        with question_image.fs.new_file('original') as f:
+            type_, __ = mimetypes.guess_type('image.png')
+            f.content_type = type_
+            f.write(image_data)
+        self.assertTrue(question.has_image())
+
+        original = question_image.fs.get_last_version('original')
+        self.assertEqual(original.length, len(image_data))
+        self.assertEqual(original.content_type, 'image/png')

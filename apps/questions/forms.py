@@ -1,4 +1,6 @@
-from wtforms import Form, BooleanField, TextField, TextAreaField, validators
+import os
+from wtforms import (Form, BooleanField, TextField, TextAreaField, validators,
+                     FileField)
 from wtforms.widgets import html_params, escape, TextInput
 from cgi import escape
 
@@ -41,37 +43,62 @@ class MultilinesWidget(object):
         return '\n'.join(htmls)
 
 
+################################################################################
 class QuestionForm(BaseForm):
-    text = TextField("Question", [validators.Required(),
-                              validators.Length(min=5, max=60)],
+    text = TextField("Question",
+                     [validators.Required(), validators.Length(min=5, max=60)],
                      description="Make sure the question ends with a ?",
                      widget=TextInputWithMaxlength(60),
                      id="id_text")
-    answer = TextField("Answer", [validators.Required(),
-                                  validators.Length(min=1, max=15)],
+    answer = TextField("Answer",
+                       [validators.Required(),
+                        validators.Length(min=1, max=15)],
                       description="Make it reasonably short and easy to type",
                       widget=TextInputWithMaxlength(15),
                       id="id_answer")
-    accept = TextAreaField("Also accept (aliases for the correct answer)", widget=MultilinesWidget(length=3, vertical=True),
+    accept = TextAreaField("Also accept (aliases for the correct answer)",
+                           widget=MultilinesWidget(length=3, vertical=True),
                            description="Other answers that are also correct")
-    alternatives = TextAreaField("Alternatives (1 correct, 3 incorrect ones)", [validators.Required()],
-                                 description="The answer has to be one of the alternatives",
+    alternatives = TextAreaField("Alternatives (1 correct, 3 incorrect ones)",
+                                 [validators.Required()],
+                                 description='The answer has to be one of '\
+                                             'the alternatives',
                                  widget=MultilinesWidget(length=4))
-    genre = TextField("Category (most popular ones, feel free to use Other)", [validators.Required()],
-                      description='Try to use big groups like "Geography" instead of "European capitals"')
-    spell_correct = BooleanField("Allow spelling mistakes", description="Whether small spelling mistakes should be accepted")
+    genre = TextField("Category (most popular ones, feel free to use Other)",
+                      [validators.Required()],
+                      description='Try to use big groups like "Geography" '\
+                                  'instead of "European capitals"')
+    spell_correct = BooleanField("Allow spelling mistakes",
+                                 description="Whether small spelling mistakes "\
+                                             "should be accepted")
     comment = TextAreaField("Comment",
-                            description="Any references or links to strengthen your answer")
+                            description="Any references or links to "\
+                                        "strengthen your answer")
 
     def validate(self, *args, **kwargs):
         success = super(QuestionForm, self).validate(*args, **kwargs)
         if success:
             # check invariants
             if self.data['answer'].lower() not in self.data['alternatives'].lower():
-                self._fields['alternatives'].errors.append("Answer not in alternatives")
+                (self._fields['alternatives']
+                  .errors.append("Answer not in alternatives"))
                 success = False
         return success
 
 
 class EditQuestionForm(QuestionForm):
     pass
+
+class QuestionImageForm(BaseForm):
+    image = FileField("Image",
+                      [validators.Required()],
+                      id="id_image")
+
+    def validate(self, *args, **kwargs):
+        success = super(QuestionImageForm, self).validate(*args, **kwargs)
+        if success:
+            filename = self.data['image']['filename'].lower()
+            __, ext = os.path.splitext(filename)
+            if ext not in ('.png', '.jpg'):
+                success = False
+        return success

@@ -27,6 +27,10 @@
 <em>none</em>
 {% end %}
 
+{% if question.has_image() %}
+<br><strong>Image:</strong><br>
+{% module ShowQuestionImageThumbnail(question.get_image(), (300, 300), alt=question.text) %}
+{% end %}
 </p>
 
 <form action="" method="post">{% module xsrf_form_html() %}
