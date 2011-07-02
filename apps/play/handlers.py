@@ -1,4 +1,5 @@
 import datetime
+from pprint import pprint
 from collections import defaultdict
 from pymongo import ASCENDING, DESCENDING
 from pymongo.objectid import InvalidId, ObjectId
@@ -99,13 +100,17 @@ class ReplayPlayHandler(BasePlayHandler):
         questions = [dict_plus(self.db.Question.collection.one({'_id':x}))
                       for x in questions]
         genres = {}
+        images = {}
         for q in questions:
             if q._id in genres:
                 name = genres[q._id]
             else:
                 genres[q._id] = u'xxx'
             q.genre = dict_plus(dict(name=genres[q._id]))
-
+        for question_image in (self.db.QuestionImage
+          .find({'question.$id': {'$in':[x._id for x in questions]}})):
+            images[question_image.question._id] = question_image
+        options['images'] = images
         options['questions'] = questions
         options['outcomes'] = outcomes
         options['totals'] = totals
@@ -219,3 +224,34 @@ class UpdatePointsJSONHandler(BasePlayHandler):
                              highscore_position_before=highscore_position_before,
                              highscore_position=play_points.highscore_position,
                              ))
+
+@route('/play/render_image_attributes/', name="render_image_attributes")
+class RenderImageAttributesHandler(BaseHandler):
+
+    def get(self):
+        search = {'render_attributes': None}
+        search = {}
+        all_attrs = []
+        limit = int(self.get_argument('limit', 99))
+
+        _module = self.application.ui_modules['ShowQuestionImageThumbnail']
+        module = _module(self)
+        outs = []
+        for question_image in (self.db.QuestionImage.collection
+                                .find(search)
+                                .limit(limit)):
+            if not self.db.Question.collection.one({'_id': question_image['question'].id}):
+                self.db.QuestionImage.collection.remove({'_id': question_image['_id']})
+                continue
+            question_image = self.db.QuestionImage.one({'_id': question_image['_id']})
+            outs.append((repr(question_image.question.text),
+                         module.render(question_image, (300, 300),
+                                alt=question_image.question.text,
+                                save_render_attributes=True,
+                                return_json=True)))
+
+        self.set_header("Content-Type", "text/plain")
+        if outs:
+            self.write('\n\n'.join('\n'.join(x) for x in outs))
+        else:
+            self.write('nothing\n')

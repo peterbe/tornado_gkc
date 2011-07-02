@@ -30,6 +30,7 @@ class Battle(object):
         self.attempted = set()
         self.timed_out = set()
         self.current_question = None
+        self.loaded_image = set()
         self.current_question_sent = None
         self.genres_only = genres_only
         self.language = language
@@ -62,7 +63,12 @@ class Battle(object):
         return client.user_id in [x.user_id for x in self.participants]
 
     def send_wait(self, seconds, next_message):
-        self.min_wait_delay = time.time() + seconds
+        # the browser is told to wait for this many 'seconds' until it's allowed
+        # to send the next "next_question=true" command.
+        # Due to the inaccuracy of the timer in some browers, it might actually
+        # fire slightly faster than this.
+        # Therefore, allow for a tiny margin of error of being too quick.
+        self.min_wait_delay = time.time() + seconds - 0.1
         self.send_to_all(dict(wait=seconds, message=next_message))
 
     def is_dead(self, age):
@@ -87,7 +93,7 @@ class Battle(object):
     def has_more_questions(self):
         return len(self.sent_questions) < self.no_questions
 
-    def send_question(self, question, knowledge=None):
+    def send_question(self, question, knowledge=None, image=None):
         self.sent_questions.add(question)
         self.current_question = question
         self.current_question_sent = time.time()
@@ -96,6 +102,8 @@ class Battle(object):
           'text': question.text,
           'genre': question.genre.name,
         }
+        if image is not None:
+            packaged_question['image'] = image
         self.send_to_all(dict(question=packaged_question,
                               thinking_time=self.thinking_time))
         if knowledge:
@@ -115,6 +123,7 @@ class Battle(object):
         self.clear_answered()
         self.clear_timed_out()
         self.clear_loaded_alternatives()
+        self.clear_loaded_image()
 
     ## Convenient macros
 
@@ -143,6 +152,7 @@ class Battle(object):
         self.timed_out = set()
 
     def has_all_timed_out(self):
+
         return len(self.timed_out) == len(self.participants)
 
     def timed_out_too_soon(self):
@@ -318,3 +328,18 @@ class Battle(object):
         else:
             raise Exception("Invalid parameters. Has to be something")
         played_question.save()
+
+    ## Image
+    ##
+
+    def has_image(self):
+        return self.current_question.has_image()
+
+    def remember_loaded_image(self, client):
+        self.loaded_image.add(client)
+
+    def clear_loaded_image(self):
+        self.loaded_image = set()
+
+    def has_all_loaded_image(self):
+        return len(self.loaded_image) == len(self.participants)

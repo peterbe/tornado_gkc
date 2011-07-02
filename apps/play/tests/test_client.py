@@ -1,3 +1,5 @@
+import mimetypes
+import os
 from pymongo.objectid import ObjectId
 import datetime
 import time
@@ -123,6 +125,26 @@ class ClientTestCase(BaseTestCase):
         self.created_questions = cq + 1
 
         return q
+
+    def _attach_image(self, question):
+        question_image = self.db.QuestionImage()
+        question_image.question = question
+        question_image.render_attributes = {
+          'src': '/static/image.jpg',
+          'width': 300,
+          'height': 260,
+          'alt': question.text
+        }
+        question_image.save()
+
+        here = os.path.dirname(__file__)
+        image_data = open(os.path.join(here, 'image.jpg'), 'rb').read()
+        with question_image.fs.new_file('original') as f:
+            type_, __ = mimetypes.guess_type('image.jpg')
+            f.content_type = type_
+            f.write(image_data)
+
+        assert question.has_image()
 
     def _create_connected_client(self, username, request=None):
         client = MockClient(self)
@@ -250,8 +272,10 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(last_message['wait'] > 0)
         # the added 0.1 is to adjust for the time it takes to get
         # here in the tests
-        self.assertTrue((battle.min_wait_delay + 0.1) >=
-                        (time.time() + last_message['wait']))
+        a = battle.min_wait_delay + 0.2
+        b = time.time() + last_message['wait']
+        self.assertTrue(a >= b)
+
 
         # if you try to ask for next question too early you get an error
         client.on_message(dict(next_question=1))
@@ -754,6 +778,26 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['winner']['you_won'])
         self.assertTrue(not client2._sent[-1]['winner']['you_won'])
 
+    def test_sending_timed_out_too_late(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 1
+        q1 = self._create_question()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        client.on_message(dict(answer='Yes'))
+        client2.on_message(dict(timed_out=1))
+
+        self.assertTrue(client._sent[-1]['winner'])
+        self.assertTrue(client2._sent[-1]['winner'])
+
+        self.assertTrue(client._sent[-1]['winner']['you_won'])
+        self.assertTrue(not client2._sent[-1]['winner']['you_won'])
+
     def test_bot_sending_answer_too_late(self):
         user, client, request = self._create_connected_client('peterbe')
         battle = client.current_client_battles[str(user._id)]
@@ -1007,6 +1051,149 @@ class ClientTestCase(BaseTestCase):
                 self.assertTrue(play.finished)
                 self.assertTrue(play.draw)
                 self.assertTrue(not play.winner)
+
+    def test_play_questions_with_image(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 2
+        q1 = self._create_question()
+        self._attach_image(q1)
+        q2 = self._create_question()
+        self._attach_image(q2)
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        self.assertTrue(client._sent[-1]['question']['image'])
+        self.assertTrue(client2._sent[-1]['question']['image'])
+        image = client._sent[-1]['question']['image']
+        self.assertTrue(image['src'])
+        self.assertTrue(image['width'])
+        self.assertTrue(image['height'])
+        self.assertTrue(image['alt'])
+
+        client.on_message(dict(loaded_image=1))
+        # meaning it took client2 1 second load the image
+        battle.min_wait_delay -= 1
+        client2.on_message(dict(loaded_image=1))
+
+        self.assertTrue(client._sent[-1]['show_image'])
+        self.assertTrue(client2._sent[-1]['show_image'])
+
+        client.on_message(dict(answer='Yes'))
+
+        self.assertTrue(client._sent[-3]['answered']['right'])
+        self.assertTrue(client2._sent[-3]['answered']['too_slow'])
+        self.assertEqual(client._sent[-2]['update_scoreboard'],
+                        [u'peterbe', 3])
+        self.assertEqual(client2._sent[-2]['update_scoreboard'],
+                        [u'peterbe', 3])
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
+
+    def test_answer_before_loaded_image(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 1
+        q1 = self._create_question()
+        self._attach_image(q1)
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        self.assertTrue(client._sent[-1]['question']['image'])
+        self.assertTrue(client2._sent[-1]['question']['image'])
+
+
+        # if you try to send an answer before both clients have
+        # acknowledged loading the image you get an error
+        client.on_message(dict(answer='Yes'))
+        self.assertEqual(client._sent[-1]['error']['code'],
+                         errors.ERROR_ANSWER_BEFORE_IMAGE_LOADED)
+
+
+    def test_answer_before_loaded_image_second_question(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 2
+        q1 = self._create_question()
+        self._attach_image(q1)
+        q2 = self._create_question()
+        self._attach_image(q2)
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        self.assertTrue(client._sent[-1]['question']['image'])
+        self.assertTrue(client2._sent[-1]['question']['image'])
+
+        client.on_message(dict(loaded_image=1))
+        # meaning it took client2 1 second load the image
+        battle.min_wait_delay -= 1
+        client2.on_message(dict(loaded_image=1))
+
+        self.assertTrue(client._sent[-1]['show_image'])
+        self.assertTrue(client2._sent[-1]['show_image'])
+
+        client.on_message(dict(answer='Yes'))
+
+        self.assertTrue(client._sent[-3]['answered']['right'])
+        self.assertTrue(client2._sent[-3]['answered']['too_slow'])
+        self.assertEqual(client._sent[-2]['update_scoreboard'],
+                        [u'peterbe', 3])
+        self.assertEqual(client2._sent[-2]['update_scoreboard'],
+                        [u'peterbe', 3])
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        client2.on_message(dict(next_question=1))
+
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        self.assertTrue(client._sent[-1]['question']['image'])
+        self.assertTrue(client2._sent[-1]['question']['image'])
+
+        client.on_message(dict(loaded_image=1))
+        # if you try to send an answer before both clients have
+        # acknowledged loading the image you get an error
+        client.on_message(dict(answer='Yes'))
+        client2.on_message(dict(loaded_image=1))
+
+        self.assertEqual(client._sent[-1]['error']['code'],
+                         errors.ERROR_ANSWER_BEFORE_IMAGE_LOADED)
+
+    def test_next_question_timing(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 2
+        q1 = self._create_question()
+        q2 = self._create_question()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        client.on_message(dict(alternatives=1))
+        client.on_message(dict(answer='Yes'))
+
+        self.assertTrue(client._sent[-3]['answered']['right'])
+        self.assertTrue(client2._sent[-3]['answered']['too_slow'])
+
+        self.assertTrue(client._sent[-2]['update_scoreboard'])
+        self.assertTrue(client2._sent[-2]['update_scoreboard'])
+
+
+        return
+
+
+        print client._sent[-1]
+        print client2._sent[-1]
 
 
         return

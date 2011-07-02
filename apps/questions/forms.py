@@ -99,6 +99,6 @@ class QuestionImageForm(BaseForm):
         if success:
             filename = self.data['image']['filename'].lower()
             __, ext = os.path.splitext(filename)
-            if ext not in ('.png', '.jpg'):
+            if ext not in ('.png', '.jpg', '.gif'):
                 success = False
         return success

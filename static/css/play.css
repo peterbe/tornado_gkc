@@ -11,7 +11,7 @@ h3 { margin-top:0; margin-bottom:2px; }
 #you_won h1 { color:green; }
 #you_lost h2 { color:red; }
 #you_drew h2 { color:orange; }
-#scoreboard { float:right; /*width:200px;*/ }
+#scoreboard { position:absolute; top:10px; right:50px; }
 #scoreboard .score { font-size:1.2em; }
 #scoreboard .increment { font-size:1.2em; color:green; }
 #scoreboard .score, #scoreboard .increment { height:20px; text-align:right; width:30px; }
@@ -47,17 +47,18 @@ h3 { margin-top:0; margin-bottom:2px; }
 #error_disconnected { margin-bottom:20px; }
 #sound-switch { }
 #exit {
-  padding:10px;
-  margin-bottom:30px;
-  /*
-  border-left:1px solid #333;
-  border-right:1px solid #333;
-  border-bottom:1px solid #666;
+    padding:10px;
+    margin-bottom:30px;
+    /*
+    border-left:1px solid #333;
+    border-right:1px solid #333;
+    border-bottom:1px solid #666;
 
-  border-radius-bottomright: 15px;
-  -moz-border-radius-bottomright:15px;
-  border-radius-bottomleft: 15px;
-  -moz-border-radius-bottomleft:15px;
-  -webkit-border-radius:0 0 15px 0;
-  */
+    border-radius-bottomright: 15px;
+    -moz-border-radius-bottomright:15px;
+    border-radius-bottomleft: 15px;
+    -moz-border-radius-bottomleft:15px;
+    -webkit-border-radius:0 0 15px 0;
+    */
 }
+#images { float:right; width:301px; }

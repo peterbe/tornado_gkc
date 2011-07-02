@@ -109,6 +109,8 @@ var Question = (function() {
       $('#respond').show();
       $('#waiting').hide();
       $('#your_name').hide();
+      $('#play_right').remove();
+
       _initialized = true;
     },
     load_question: function(question) {
@@ -126,16 +128,37 @@ var Question = (function() {
       $('#typed:hidden').show();
       $('#answer').removeAttr('readonly').removeAttr('disabled').val('');
       $('#question li.current').removeClass('current').addClass('past');
+      $('#images img').remove();
+      var question_text = question.text;
+      if (question.image) {
+        question_text = '(image question) ' + question_text;
+      }
       $('#question').append($('<li>', {id: question.id}
                              ).addClass('current')
-                            .append($('<span>', {text: question.text})));
+                            .append($('<span>', {text: question_text})));
       $('#alternatives').fadeTo(0, 1.0);
       $('#alert').hide();
       $('#gossip').hide();
       Clock.stop();
-      Clock.start(this.timed_out);
-      $('#answer').focus();
 
+      if (question.image) {
+        // don't start the timer
+        $('li.current').hide();
+        var image = $('<img>')
+          .attr('width', question.image.width)
+            .attr('height', question.image.height)
+              .attr('alt', question.image.alt)
+                .ready(function() {
+                  send({loaded_image: 1});
+                  //$('li.current').show();
+                  //Clock.start(this.timed_out);
+                  //$('#answer').focus();
+                }).appendTo($('#images'));
+        image.attr('src', question.image.src);
+      } else {
+        Clock.start(this.timed_out);
+        $('#answer').focus();
+      }
       // check if an image was loaded to the previous question
       if (!$('img', $('li.past').eq(-1)).size()) {
         $('li.past').eq(-1)
@@ -145,9 +168,15 @@ var Question = (function() {
           }));
       }
     },
+    show_image: function() {
+      $('li.current').show();
+      L($('li.current'));
+      Clock.start(this.timed_out);
+      $('#answer').focus();
+    },
     bot_answers: function(seconds) {
       _timer_bot = setTimeout(function() {
-        socket.send({bot_answers: true});
+        send({bot_answers: true});
       }, seconds * 1000);
     },
     timed_out: function() {
@@ -197,6 +226,7 @@ var Question = (function() {
       Clock.stop();
       $('#timer').hide();
       $('#input').hide();
+      $('#images img').remove();
       if (information && information.message) {
         $('#information p').text(information.message);
         $('#information').show();
@@ -410,7 +440,7 @@ $(function() {
 
      $('#challenge-computer').submit(function() {
        if (!first_wait) return false;
-       socket.send({against_computer:1});
+       send({against_computer:1});
        return false;
      }).show(700);
 
@@ -435,7 +465,7 @@ $(function() {
 
      var delay = 3;
      still_alive_interval = setInterval(function() {
-       socket.send({still_alive: true});
+       send({still_alive: true});
        delay += 0.1;
      }, Math.ceil(delay * 1000));
    });
@@ -446,17 +476,21 @@ $(function() {
     __log_message(obj, false);
     if (obj.question) {
       clearInterval(waiting_message_interval);
+      clearInterval(still_alive_interval);
       Question.load_question(obj.question);
+    } else if (obj.show_image) {
+      Question.show_image();
     } else if (obj.wait && obj.message) {
       if (first_wait) {
-        if (CONFIG.ENABLE_SOUNDS && soundManager) {
-          soundManager.play(CONFIG.SOUNDS['be_ready']);
-        }
-        Title.show_temporarily("Ready!? Game about to start!!");
         $('#your_name').hide();
         $('#challenge-computer').hide();
         $('#waiting').hide();
         $('#play_right').remove();
+
+        if (CONFIG.ENABLE_SOUNDS && soundManager) {
+          soundManager.play(CONFIG.SOUNDS['be_ready']);
+        }
+        Title.show_temporarily("Ready!? Game about to start!!");
       }
       var seconds_left = obj.wait;
       Gossip.count_down(obj.wait, function(seconds) {

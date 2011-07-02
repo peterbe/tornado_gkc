@@ -1,6 +1,7 @@
 {% extends "../base.html" %}
 
 {% block extra_head %}
+{% module Static("css/ext/fancybox/jquery.fancybox-1.3.4.css") %}
 <style>
 th { text-align:left; color: #FFEA00; }
 th.points, td.points { text-align:right; }
@@ -46,7 +47,14 @@ span.maxlength-maxed { color:red; }
   <tbody>
     <tr>
       <td>{{ i + 1 }}.</td>
-      <td>{{ question.text }}</td>
+      <td>{{ question.text }}
+      {% if images.get(question._id) %}
+      <a class="thumbnail"
+         href="{% module GetQuestionImageThumbnailSrc(images[question._id], (300, 300)) %}">
+      {% module ShowQuestionImageThumbnail(images[question._id], (20, 20)) %}
+      </a>
+      {% end %}
+      </td>
       <td>{{ question.answer }}</td>
       <!--<td>{{ question.genre.name }}</td>-->
       {% for player_name in player_names %}
@@ -90,7 +98,8 @@ span.maxlength-maxed { color:red; }
 
 {% block extra_js %}
 <script>
-head.js(JS_URLS.maxlength_countdown, function() {
+head.js(JS_URLS.maxlength_countdown, JS_URLS.fancybox, function() {
+  $("a.thumbnail").fancybox();
   if (location.hash.search(/message_sent/) > -1) {
     $('#message_sent').show();
   } else {

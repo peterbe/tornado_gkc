@@ -16,6 +16,7 @@ from apps.play.battle import Battle
 from apps.play import errors
 from mongokit import Connection
 from cookies import CookieParser
+
 import settings
 
 from bot import ComputerClient
@@ -137,7 +138,9 @@ class Client(tornadio.SocketConnection):
 
         elif message.get('next_question'):
             # this is going to be hit twice, within nanoseconds of each other.
-            if battle.min_wait_delay > time.time():
+            t = time.time()
+            if battle.min_wait_delay > t:
+                logging.info('%r min_wait_delay=%r, t=%r'%(self, battle.min_wait_delay,t))
                 client.send(dict(error={'message': 'Too soon',
                                       'code': errors.ERROR_NEXT_QUESTION_TOO_SOON}))
                 return
@@ -147,14 +150,20 @@ class Client(tornadio.SocketConnection):
             if not battle.current_question:
                 question = self._get_next_question(battle)
                 if question:
+                    image = None
+                    if question.has_image():
+                        image = question.get_image().render_attributes
+
                     battle.current_question = question
                     if battle.has_computer_participant():
                         qk = (self.db.QuestionKnowledge.collection
                               .one({'question.$id': question._id}))
                         battle.send_question(battle.current_question,
-                                             knowledge=qk)
+                                             knowledge=qk,
+                                             image=image)
                     else:
-                        battle.send_question(battle.current_question)
+                        battle.send_question(battle.current_question,
+                                             image=image)
                     battle.save_played_question(self.db)
                 else:
                     battle.send_to_all(
@@ -207,15 +216,24 @@ class Client(tornadio.SocketConnection):
         elif message.get('still_alive'):
             battle.still_alive()
 
+        elif message.get('loaded_image'):
+            if not battle.is_stopped():
+                self._loaded_image(battle, self)
+
         else: # pragma: no cover
             print message
-            raise NotImplementedError("Unrecognized message")
+            raise NotImplementedError("Unrecognized message %r" % message)
+
+    def _loaded_image(self, battle, client):
+        battle.remember_loaded_image(client)
+        if battle.has_all_loaded_image():
+            battle.send_to_all(dict(show_image=1))
 
     def _timed_out(self, battle, client):
         if not battle.current_question:
             # happens if the timed_out is sent even though someone has
             # already answered correctly
-            assert battle.is_waiting()
+            assert battle.is_waiting() or battle.is_stopped()
             return
         if battle.timed_out_too_soon():
             logging.debug("time.time():%s current_question_sent+thinking_time:%s"
@@ -244,7 +262,16 @@ class Client(tornadio.SocketConnection):
             # form submitted too late
             return
         if battle.has_answered(client):
-            client.send({'error': 'You have already answered this question'})
+            #client.send({'error': 'You have already answered this question'})
+            client.send(dict(error={'message':'You have already answered this question',
+                                    'code': errors.ERROR_ANSWERED_TWICE}))
+            return
+        if battle.has_image() and not battle.has_all_loaded_image():
+            client.send(dict(error={
+              'message':'Not all participants have loaded the question',
+              'code': errors.ERROR_ANSWER_BEFORE_IMAGE_LOADED
+            }))
+            battle.stop()
             return
         battle.remember_answered(client)
         if battle.check_answer(answer):
@@ -335,9 +362,13 @@ class Client(tornadio.SocketConnection):
                 #print
                 if question.author and str(question.author._id) in battle_user_ids:
                     search['_id']['$nin'].append(question._id)
-                elif battle.has_computer_participant() and not has_question_knowledge(question):
-
+                elif question.has_image() and not question.get_image().render_attributes:
+                    logging.warn("render_attributes missing for %r" % question.get_image()._id)
                     search['_id']['$nin'].append(question._id)
+                elif battle.has_computer_participant() and not has_question_knowledge(question):
+                    search['_id']['$nin'].append(question._id)
+#                elif not question.has_image():
+#                    search['_id']['$nin'].append(question._id)
                 else:
                     return question
 

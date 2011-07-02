@@ -589,6 +589,55 @@ class HandlersTestCase(BaseHTTPTestCase):
         response = admin_client.get(url)
         self.assertEqual(response.code, 200)
 
+    def test_published_questions(self):
+        self._login()
+        url = self.reverse_url('questions_published')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+
+        maths = self.db.Genre()
+        maths.name = u'Maths'
+        maths.approved = True
+        maths.save()
+
+        celebs = self.db.Genre()
+        celebs.name = u'Celebs'
+        celebs.approved = True
+        celebs.save()
+
+        user = self.db.User.one()
+        assert user
+
+        now = datetime.datetime.now()
+
+        q1 = self.db.Question()
+        q1.author = user
+        q1.text = u'Question 1?'
+        q1.answer = u'yes'
+        q1.genre = maths
+        q1.publish_date = now
+        q1.state = PUBLISHED
+        q1.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        self.assertTrue('Question 1?' in response.body)
+        self.assertTrue('Maths' in response.body)
+
+        question_image = self.db.QuestionImage()
+        question_image.question = q1
+        question_image.save()
+        here = os.path.dirname(__file__)
+        image_data = open(os.path.join(here, 'image.png'), 'rb').read()
+        with question_image.fs.new_file('original') as f:
+            type_, __ = mimetypes.guess_type('image.png')
+            f.content_type = type_
+            f.write(image_data)
+        self.assertTrue(q1.has_image())
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        self.assertTrue('/thumbnails/' in response.body)
+
     def test_adding_question_with_image(self):
         self._login()
         user = self.db.User.one(username='peterbe')
@@ -683,6 +732,12 @@ class HandlersTestCase(BaseHTTPTestCase):
         # now submit it
         response = self.client.post(submit_url, {})
         self.assertEqual(response.code, 302)
+        submitted_url = self.reverse_url('submitted_question', question._id)
+        self.assertEqual(submitted_url, response.headers['location'])
+        # view that
+        response = self.client.get(submitted_url)
+        self.assertEqual(response.code, 200)
+
         question, = self.db.Question.find()
         self.assertEqual(question.state, 'SUBMITTED')
 

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block extra_head %}
+{% module Static("css/ext/fancybox/jquery.fancybox-1.3.4.css") %}
 <style>
 .question-outer {
   clear:left;
@@ -30,9 +31,11 @@ var CHARTS = [];
   <div class="question-outer">
     <div id="{{ question._id }}" class="question">
       <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}" class="yellow">{{ question.text }}</a>
+
       {% if question.has_image() %}
-      <a title="Question has an image"
-         href="{{ reverse_url('view_question', question._id ) }}">{% module ShowQuestionImageThumbnail(question.get_image(), (20, 20)) %}</a>
+      <a class="thumbnail"
+         href="{% module GetQuestionImageThumbnailSrc(question.get_image(), (300, 300)) %}"
+         >{% module ShowQuestionImageThumbnail(question.get_image(), (20, 20)) %}</a>
       {% end %}
       </p>
       <p class="question_metadata">
@@ -91,5 +94,10 @@ var CHARTS = [];
 
 
 {% block extra_js %}
+<script>
+head.js(JS_URLS.fancybox, function() {
+  $("a.thumbnail").fancybox();
+});
+</script>
 
 {% end %}

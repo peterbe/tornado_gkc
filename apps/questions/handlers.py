@@ -13,6 +13,7 @@ from apps.main.handlers import BaseHandler
 from utils.routes import route, route_redirect
 from utils.send_mail import send_email
 from utils.stopwords import strip_stopwords
+from utils import dict_plus
 import settings
 
 from models import STATES, DRAFT, SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
@@ -525,7 +526,7 @@ class NewQuestionImageHandler(QuestionsBaseHandler):
         if form.validate():
             image = form.image.data
             if not any([image['filename'].lower().endswith(x)
-                        for x in ('.png', '.jpg')]):
+                        for x in ('.png', '.jpg', '.gif')]):
                 raise HTTPError(400)
 
             question_image = (self.db.QuestionImage

@@ -44,10 +44,14 @@
     </form>
 
   {% else %}
+    {% if question.state == 'PUBLISHED' %}
+    <!-- nothing at the moment -->
+    {% else %}
     <form action="{{ reverse_url('accept_question', question._id) }}" method="post" id="accept">
       {% module xsrf_form_html() %}
       <div><input type="submit" value="Accept"></div>
     </form>
+    {% end %}
   {% end %}
   {% else %}
   <p><em>Question not submitted yet</em></p>
@@ -126,7 +130,7 @@
 
 {% if question.has_image() %}
 <br><strong>Image:</strong><br>
-{% module ShowQuestionImageThumbnail(question.get_image(), (300, 300), alt=question.text) %}
+{% module ShowQuestionImageThumbnail(question.get_image(), (300, 300), alt=question.text, save_render_attributes=True) %}
 {% end %}
 </p>
 

@@ -77,6 +77,7 @@ class QuestionImage(BaseDocument):
     __collection__ = 'question_images'
     structure = {
       'question': Question,
+      'render_attributes': dict,
     }
     gridfs = {'files':['original']}
 
