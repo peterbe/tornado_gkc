@@ -8,20 +8,29 @@
 #authenticators p {
   float:left;
   width:33%;
-
+}
+#anonymous_play_points {
 }
 </style>
 {% end %}
 
 {% block content_inner %}
 
-{% if user %}
+{% if user and not user.anonymous %}
 <p>You're already logged in as <code>{{ user.username }}</code>.
 Do you want to
 <a href="{{ reverse_url('logout') }}">log out</a>
 or perhaps <a href="{{ reverse_url('settings') }}">change your settings</a>?
 
 {% else %}
+
+{% if anonymous_play_points %}
+<div id="anonymous_play_points" class="anonymous">
+<p>If you sign in, you'll transfer your <strong class="yellow">{{ anonymous_play_points }} Kwissle points</strong>
+you have already earned.</p>
+</div>
+{% end %}
+
 <h3>Kwissle will NOT post things into your account. Ever!</h3>
 
 <div id="authenticators">

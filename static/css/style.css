@@ -89,3 +89,4 @@ form.question textarea {
 }
 
 a.bold { font-weight:bold; }
+div.anonymous { margin:20px; padding:20px 50px; border:1px solid #ccc; }

@@ -1,0 +1,23 @@
+/* Specifically for replay.html */
+
+table.battle th { text-align:left; color: #FFEA00; }
+table.battle th.points,
+table.battle td.points { text-align:right; }
+.winner h2 { float:right; }
+span.maxlength-countdown { padding-left:5px; font-size:80%; }
+span.maxlength-maxed { color:red; }
+#id_message { width:300px; }
+.anonymous a { font-size:1.4em; }
+
+/* Specifically for replays.html */
+.won { color:green; font-weight: bold; }
+.draw { color:orange; }
+.loss { color:red }
+table#stats {
+  float:right;
+  margin-right:50px;
+}
+table#stats td {
+  font-size:1.6em;
+  padding-right:25px;
+}

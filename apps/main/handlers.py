@@ -244,7 +244,7 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
                 elif user.email:
                     user_name = user.email
                 else:
-                    user_name = "stranger"
+                    user_name = user.username
                 options['user_name'] = user_name
 
             # override possible settings
@@ -435,12 +435,60 @@ class BaseAuthHandler(BaseHandler):
             return s.lower().replace(' ','').replace('-','')
         return '%s%s' % (simple(first_name), simple(last_name))
 
+    def post_login_successful(self, user, previous_user=None):
+        """executed by the Google, Twitter and Facebook authentication handlers"""
+        if previous_user is None:
+            if self.get_cookie('previous_user', None):
+                previous_user_id = self.get_cookie('previous_user')
+                previous_user = self.db.User.one({'_id': ObjectId(previous_user_id)})
+
+        if previous_user:
+            # change every PlayedQuestion
+            for played_question in self.db.PlayedQuestion.find({'user.$id': previous_user._id}):
+                played_question.user = user
+                played_question.save()
+
+            # change every PlayPoint done with the previous user
+            previous_play_points = self.db.PlayPoints.one({'user.$id': user._id})
+            for play_points in self.db.PlayPoints.find({'user.$id': previous_user._id}):
+                play_points.user = user
+                play_points.save()
+
+                if previous_play_points:
+                    previous_play_points.merge(play_points)
+
+
+            for play in self.db.Play.find({'users.$id': previous_user._id}):
+                play.users.remove(previous_user)
+                play.users.append(user)
+                play.save()
+
+            for msg in self.db.PlayMessage.find({'from.$id': previous_user._id}):
+                msg['from'] = user
+                msg.save()
+
+            for msg in self.db.PlayMessage.find({'to.$id': previous_user._id}):
+                msg.to = user
+                msg.save()
+
+            previous_user.delete()
+
+
 route_redirect('/login', '/login/', name='login_shortcut')
 @route('/login/', name='login')
 class LoginHandler(BaseAuthHandler):
 
     def get(self):
         options = self.get_base_options()
+        anonymous_play_points = None
+        if options['user'] and options['user'].anonymous:
+            play_points = (self.db.PlayPoints
+                            .one({'user.$id': options['user']._id}))
+            if play_points:
+                anonymous_play_points = play_points.points
+            self.set_cookie('previous_user', str(options['user']._id),
+                             expires_days=1)
+        options['anonymous_play_points'] = anonymous_play_points
         self.render("user/login.html", **options)
 
 
@@ -479,18 +527,6 @@ class AuthLoginHandler(BaseAuthHandler): # pragma: no cover
 
         return user
 
-
-    def post(self):
-        logging.warn("Deprecated method. Use social login tools")
-        username = self.get_argument('username')
-        password = self.get_argument('password')
-        try:
-            user = self.check_credentials(username, password)
-        except CredentialsError, msg:
-            return self.write("Error: %s" % msg)
-
-        self.set_secure_cookie("user", str(user._id), expires_days=100)
-        self.redirect(self.get_next_url())
 
 
 @route('/auth/google/', name='auth_google')
@@ -547,19 +583,10 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
         user_settings.google = user_struct
         user_settings.save()
 
+        self.post_login_successful(user)
         self.set_secure_cookie("user", str(user._id), expires_days=100)
         self.redirect(self.get_next_url())
 
-@route('/poop/')
-class PoopHandler(BaseHandler):
-
-    def get(self):
-        from time import time
-        if self.get_secure_cookie('poop'):
-            self.write("YES cookie: %r\n" % self.get_secure_cookie('poop'))
-        else:
-            self.set_secure_cookie('poop', str(time()), expires_days=2)
-            self.write("no cookie\n")
 
 @route('/auth/facebook/', name='auth_facebook')
 class FacebookAuthHandler(BaseAuthHandler, tornado.auth.FacebookMixin):
@@ -629,6 +656,7 @@ class FacebookAuthHandler(BaseAuthHandler, tornado.auth.FacebookMixin):
         user_settings.facebook = user_struct
         user_settings.save()
 
+        self.post_login_successful(user)
         # XXX: expires_days needs to reflect user_struct['session_expires']
         self.set_secure_cookie("user", str(user._id), expires_days=100)
         if new:
@@ -689,6 +717,7 @@ class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
         user_settings.twitter = user_struct
         user_settings.save()
 
+        self.post_login_successful(user)
         self.set_secure_cookie("user", str(user._id), expires_days=100)
         self.redirect(self.get_next_url())
 
@@ -700,7 +729,7 @@ class AuthLogoutHandler(BaseAuthHandler):
         self.redirect(self.get_next_url())
 
 
-@route(r'/help/([\w-]*)')
+@route(r'/help/([\w-]*)', name='help')
 class HelpHandler(BaseHandler):
 
     SEE_ALSO = (

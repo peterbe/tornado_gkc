@@ -575,7 +575,18 @@ $(function() {
     if (obj.play_id) {
       $('a.replay').attr('href', '/play/replay/' + obj.play_id  + '/');
       $.getJSON('/play/update_points.json', {play_id: obj.play_id}, function(response) {
-        if (response.increment) {
+        if (response.anonymous) {
+          $('<span>')
+            .text("You just earned yourself " + response.points + " Kwissle points!")
+              .appendTo($('.points'));
+          $('<br>')
+            .appendTo($('.points'));
+          $('<a>')
+            .attr('href', response.login_url)
+              .attr('title', 'Click to register your high score')
+                .text('Click here to register and save your highscore')
+                  .appendTo($('.points'));
+        } else if (response.increment) {
           $('<a>')
             .attr('href', '/play/highscore/')
               .attr('title', 'Click to see where you are in the Highscore list')

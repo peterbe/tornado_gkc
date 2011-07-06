@@ -25,3 +25,8 @@ class HighscoreBand(tornado.web.UIModule):
             return 100
         else:
             return 1000
+
+class AnonymousPester(tornado.web.UIModule):
+
+    def render(self):
+        return self.render_string("play/_anonymous.html")

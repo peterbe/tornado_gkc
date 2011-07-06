@@ -2,25 +2,26 @@
 
 {% block extra_head %}
 {% module Static("css/ext/fancybox/jquery.fancybox-1.3.4.css") %}
-<style>
-th { text-align:left; color: #FFEA00; }
-th.points, td.points { text-align:right; }
-h2 { float:right; }
-span.maxlength-countdown { padding-left:5px; font-size:80%; }
-span.maxlength-maxed { color:red; }
-#id_message { width:300px; }
-</style>
+{% module Static("css/replay.css") %}
 {% end %}
 
 {% block content_inner %}
+
+<div class="winner">
 {% if play.winner %}
 <h2>Winner: {{ play.winner.username }}</h2>
 {% else %}
 <h2>It's a draw</h2>
 {% end %}
+</div>
 
 <h1>{{ page_title }}</h1>
-<table>
+
+{% if user.anonymous %}
+{% module AnonymousPester() %}
+{% end %}
+
+<table class="battle">
   <thead>
     <tr>
       <th>&nbsp;</th>
@@ -85,9 +86,12 @@ span.maxlength-maxed { color:red; }
 </table>
 
 <p id="message_sent" style="display:none">Cool! Message sent</p>
+
+{% if not user.anonymous %}
 <div id="send_message" style="display:none">
 {% module SendPlayMessageForm(play) %}
 </div>
+{% end %}
 
 <p><a href="{{ reverse_url('play_replays') }}">&larr; Back to all past plays</a>
 &nbsp;

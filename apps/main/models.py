@@ -47,11 +47,13 @@ class User(BaseDocument):
       'password': unicode,
       'first_name': unicode,
       'last_name': unicode,
+      'anonymous': bool,
     }
 
     use_autorefs = True
     required_fields = ['username']
     default_values = {
+      'anonymous': False,
     }
 
     # XXX Move these to indexes.py

@@ -145,11 +145,19 @@ def main(): # pragma: no cover
     tornado.options.parse_command_line()
     if options.showurls:
         for each in route.get_routes():
-            path = each[0]
-            if len(each) == 3 and 'url' in each[2]:
-                print path, '-->', each[2]['url']
+            if isinstance(each, tornado.web.URLSpec):
+                print dir(each.regex)
+                print repr(each.regex.sub('x','y'))
+                print each.name
+                print each.kwargs
+                print each.handler_class
+                print "\n"
             else:
-                print path
+                path = each[0]
+                if len(each) == 3 and 'url' in each[2]:
+                    print path, '-->', each[2]['url']
+                else:
+                    print path
         return
 
     http_server = tornado.httpserver.HTTPServer(Application())

@@ -22,16 +22,19 @@ There are current <strong>{{ count_published_questions }}</strong> published
 {% end %}
 </p>
 
-<!--
-<p>
-<a href="{{ reverse_url('chat') }}">Chat</a>  - to see if there are more people around
-</p>
--->
 {% else %}
+
+<div style="float:right">
+<p><strong>I can't wait!</strong></p>
+
+<h2><a href="{{ reverse_url('start_play') }}">Play now!</a></h2>
+<p>...and sign in later</p>
+
+</div>
 
 <p style="margin-top:60px">
 <strong>How to play</strong>
-<p>
+</p>
 
 <ol>
   <li><a href="{{ reverse_url('login') }}" class="account">Sign in</a></li>

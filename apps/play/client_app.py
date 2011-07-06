@@ -14,7 +14,7 @@ import apps.play.models
 
 from apps.play.battle import Battle
 from apps.play import errors
-from mongokit import Connection
+from mongokit import Connection, MultipleResultsFound
 from cookies import CookieParser
 
 import settings
@@ -339,8 +339,16 @@ class Client(tornadio.SocketConnection):
             search['genre.$id'] = {'$nin': [x._id for x in battle.genres_only]}
 
         def has_question_knowledge(question):
-            qk = (self.db.QuestionKnowledge.collection
+            try:
+                qk = (self.db.QuestionKnowledge.collection
                   .one({'question.$id': question._id}))
+            except mongokit.MultipleResultsFound:
+                logging.warning("For question id %s there are multiple question_knowledge" %
+                                 question._id)
+                for each in (self.db.QuestionKnowledge.collection
+                  .one({'question.$id': question._id})):
+                    qk = each
+                    break
             if qk:
                 return qk['users']
             return False

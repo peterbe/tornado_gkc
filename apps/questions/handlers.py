@@ -8,7 +8,7 @@ from random import randint
 from pprint import pprint
 import tornado.web
 from tornado.web import HTTPError
-from utils.decorators import login_required, login_redirect
+from utils.decorators import login_redirect, authenticated_plus
 from apps.main.handlers import BaseHandler
 from utils.routes import route, route_redirect
 from utils.send_mail import send_email
@@ -21,7 +21,11 @@ from models import VERDICTS, VERIFIED, UNSURE, WRONG, TOO_EASY, TOO_HARD
 
 from forms import QuestionForm, QuestionImageForm
 
+
+
 class QuestionsBaseHandler(BaseHandler):
+
+
     def get_base_options(self):
         options = super(QuestionsBaseHandler, self).get_base_options()
 
@@ -163,7 +167,7 @@ class QuestionPointsHighscoreHandler(QuestionsBaseHandler):
 @route('/questions/points/update/', name='update_question_points')
 class UpdateQuestionPointsHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def post(self):
         you = self.get_current_user()
         if not self.is_admin_user(you):
@@ -190,6 +194,8 @@ class UpdateQuestionPointsHandler(QuestionsBaseHandler):
 
 @route('/questions/genre_names.json$', name="genre_names_json")
 class QuestionsGenreNamesHandler(QuestionsBaseHandler):
+
+    @authenticated_plus(lambda u: not u.anonymous)
     def get(self):
         limit = self.get_argument('limit', None)
         if self.get_argument('separate_popular', False):
@@ -229,7 +235,7 @@ route_redirect('/questions$', '/questions/', name="questions_shortcut")
 class QuestionsHomeHandler(QuestionsBaseHandler):
     DEFAULT_BATCH_SIZE = 20
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def get(self):
         options = self.get_base_options()
         options['page_title'] = "Questions dashboard"
@@ -284,7 +290,7 @@ route_redirect('/questions/published$', '/questions/published/')
 class QuestionsHomeHandler(QuestionsBaseHandler):
     DEFAULT_BATCH_SIZE = 200
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def get(self):
         options = self.get_base_options()
         questions = (self.db.Question
@@ -299,7 +305,7 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
 @route('/questions/add/$', name="add_question")
 class AddQuestionHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def get(self, form=None):
         options = self.get_base_options()
         if form is None:
@@ -308,7 +314,7 @@ class AddQuestionHandler(QuestionsBaseHandler):
         options['page_title'] = "Add question"
         self.render("questions/add.html", **options)
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def post(self):
         data = djangolike_request_dict(self.request.arguments)
         if 'alternatives' in data:
@@ -365,7 +371,7 @@ class djangolike_request_dict(dict):
 @route('/questions/(\w{24})/$', name="view_question")
 class ViewQuestionHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def get(self, question_id):
         options = self.get_base_options()
         question = self.must_find_question(question_id, options['user'])
@@ -391,7 +397,7 @@ class ViewQuestionHandler(QuestionsBaseHandler):
 @route('/questions/(\w{24})/edit/$', name="edit_question")
 class EditQuestionHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def get(self, question_id, form=None):
         options = self.get_base_options()
         question = self.must_find_question(question_id, options['user'])
@@ -410,7 +416,7 @@ class EditQuestionHandler(QuestionsBaseHandler):
         options['page_title'] = "Edit question"
         self.render('questions/edit.html', **options)
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def post(self, question_id):
         user = self.get_current_user()
         question = self.must_find_question(question_id, user)
@@ -497,7 +503,7 @@ class EditQuestionHandler(QuestionsBaseHandler):
 @route('/questions/(\w{24})/image/new/$', name="new_question_image")
 class NewQuestionImageHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def get(self, question_id, form=None):
         options = self.get_base_options()
         question = self.must_find_question(question_id, options['user'])
@@ -514,7 +520,7 @@ class NewQuestionImageHandler(QuestionsBaseHandler):
             options['page_title'] = "Add question image"
         self.render('questions/new_image.html', **options)
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def post(self, question_id):
         user = self.get_current_user()
         question = self.must_find_question(question_id, user)
@@ -560,7 +566,7 @@ class NewQuestionImageHandler(QuestionsBaseHandler):
 @route('/questions/(\w{24})/submitted/$', name="submitted_question")
 class QuestionSubmittedHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def get(self, question_id):
         options = self.get_base_options()
         question = self.must_find_question(question_id, options['user'])
@@ -584,7 +590,7 @@ class QuestionSubmittedHandler(QuestionsBaseHandler):
 @route('/questions/(\w{24})/submit/$', name="submit_question")
 class SubmitQuestionHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def get(self, question_id):
         options = self.get_base_options()
         question = self.must_find_question(question_id, options['user'])
@@ -597,7 +603,7 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
         options['page_title'] = "Submit question"
         self.render('questions/submit.html', **options)
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def post(self, question_id):
         user = self.get_current_user()
         question = self.must_find_question(question_id, user)
@@ -635,7 +641,7 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
 @route('/questions/(\w{24})/comment/$', name="comment_question")
 class CommentQuestionHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def post(self, question_id):
         user = self.get_current_user()
         question = self.must_find_question(question_id, user)
@@ -702,7 +708,7 @@ class CommentQuestionHandler(QuestionsBaseHandler):
 @route('/questions/(\w{24})/reject/$', name="reject_question")
 class RejectQuestionHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def post(self, question_id):
         user = self.get_current_user()
         if not self.is_admin_user(user):
@@ -750,7 +756,7 @@ class RejectQuestionHandler(QuestionsBaseHandler):
 @route('/questions/(\w{24})/accept/$', name="accept_question")
 class AcceptQuestionHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def post(self, question_id):
         user = self.get_current_user()
         if not self.is_admin_user(user):
@@ -786,7 +792,7 @@ class AcceptQuestionHandler(QuestionsBaseHandler):
 @route('/questions/(\w{24})/publish/$', name="publish_question")
 class PublishQuestionHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def post(self, question_id):
         user = self.get_current_user()
         if not self.is_admin_user(user):
@@ -816,7 +822,7 @@ class PublishQuestionHandler(QuestionsBaseHandler):
 @route('/questions/(\w{24})/retract/$', name="retract_question")
 class RetractQuestionHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def post(self, question_id):
         user = self.get_current_user()
         question = self.must_find_question(question_id, user)
@@ -835,7 +841,7 @@ class RetractQuestionHandler(QuestionsBaseHandler):
 @route('/questions/review/random/$', name="review_random")
 class RandomReviewQuestionHandler(QuestionsBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated_plus(lambda u: not u.anonymous)
     def get(self):
         options = self.get_base_options()
         user = self.get_current_user()

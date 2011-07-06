@@ -13,7 +13,7 @@ APPS = (
 )
 DATABASE_NAME = "gkc"
 
-LOGIN_URL = "/auth/login/"
+LOGIN_URL = "/login/"
 #NODE_URL = "http://%(host)s:8888/start"
 #NODE_DOMAIN = 'kwissle.com'
 

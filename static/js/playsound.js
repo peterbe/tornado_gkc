@@ -27,7 +27,6 @@ soundManager.onready(function(status) {
          $.post(SOUND_CONFIG.settings_toggle_url, {sound:'on'});
          return false;
       });
-
    } else {
       CONFIG.ENABLE_SOUNDS = false;
       $('#sound-switch').hide();

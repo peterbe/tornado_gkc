@@ -31,6 +31,8 @@ def main(*args):
             play = db.Play.find_random()
             if play.finished:
                 for user in play.users:
+                    if user.anonymous:
+                        continue
                     if user not in recent_users:
                         recent_users.append(user)
 
@@ -42,6 +44,8 @@ def main(*args):
             if _broken:
                 break
             for user in play.users:
+                if user.anonymous:
+                    continue
                 if user not in recent_users:
                     recent_users.append(user)
                 if len(recent_users) >= max_users:

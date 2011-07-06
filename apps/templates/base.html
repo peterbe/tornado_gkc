@@ -21,13 +21,19 @@
       <h1><a href="/">{{ PROJECT_TITLE }}</a></h1>
 
       <div id="login" class="topnav">
+        <p>
         {% if user %}
-        <p><a href="{{ reverse_url('settings') }}" class="account">Hi {{ user_name }}</a>
+          {% if user.anonymous %}
+          <a href="{{ reverse_url('login') }}" class="account">Hi {{ user_name }}</a>
+          {% else %}
+          <a href="{{ reverse_url('settings') }}" class="account">Hi {{ user_name }}</a>
+          {% end %}
         {% if is_admin_user %}(admin){% end %}
-        <a href="{{ reverse_url('logout') }}" class="log-out">log out</a></p>
+        <a href="{{ reverse_url('logout') }}" class="log-out">log out</a>
         {% else %}
-        <p><a href="{{ reverse_url('login') }}" class="account">Login &amp; sign-up</a></p>
+        <a href="{{ reverse_url('login') }}" class="account">Login &amp; sign-up</a>
         {% end %}
+        </p>
 
         {% block extra_login %}
         {% if total_play_points %}

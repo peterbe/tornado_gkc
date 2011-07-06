@@ -279,6 +279,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(response.code, 403)
 
     def test_genre_names_json(self):
+        self._login()
         url = self.reverse_url('genre_names_json')
         response = self.client.get(url)
         self.assertEqual(response.code, 200)

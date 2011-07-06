@@ -101,6 +101,14 @@ class PlayPoints(BaseDocument):
                 self.highscore_position = position
             _prev_points = pp.points
 
+    def merge(self, play_points):
+        self.points += play_points.points
+        self.wins += play_points.wins
+        self.losses += play_points.losses
+        self.draws += play_points.draws
+        play_points.delete()
+        self.save()
+        self.update_highscore_position()
 
     @staticmethod
     def calculate(user):
@@ -119,6 +127,7 @@ class PlayPoints(BaseDocument):
         play_points.wins = 0
         play_points.losses = 0
         play_points.draws = 0
+
         for play in db.Play.collection.find(search):
             play = dict_plus(play)
 

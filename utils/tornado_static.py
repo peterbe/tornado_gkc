@@ -114,7 +114,6 @@ class StaticURL(tornado.web.UIModule):
 
         n, ext = os.path.splitext(new_name)
         new_name = "%s.%s%s" % (n, youngest, ext)
-
         if os.path.isfile(new_name):
             # conversion and preparation has already been done!
             # No point doing it again, so just exit here

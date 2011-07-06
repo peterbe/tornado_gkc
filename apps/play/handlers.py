@@ -1,4 +1,6 @@
 import datetime
+from string import zfill
+from random import randint
 from pprint import pprint
 from collections import defaultdict
 from pymongo import ASCENDING, DESCENDING
@@ -36,8 +38,24 @@ route_redirect('/play/start$', '/play/start/', name='start_play_redirect')
 @route('/play/start/$', name='start_play')
 class StartPlayingHandler(BasePlayHandler):
 
-    @tornado.web.authenticated
+    def _get_next_anonymous_username(self):
+        #count = self.db.User.find({'anonymous': True}).count()
+        def random_username():
+            return u'anonymous%s' % zfill(randint(1, 1000), 4)
+        username = random_username()
+        while self.db.User.collection.one({'username': username}):
+            username = random_username()
+        return username
+
     def get(self):
+        if not self.get_current_user():
+            # create a anoynmous temporary user and
+            user = self.db.User()
+            user.username = self._get_next_anonymous_username()
+            user.anonymous = True
+            user.save()
+            self.set_secure_cookie("user", str(user._id), expires_days=1)
+
         self.redirect(self.reverse_url('play'))
 
 
@@ -216,6 +234,13 @@ class UpdatePointsJSONHandler(BasePlayHandler):
         highscore_position_before = getattr(play_points_before,
                                             'highscore_position', None)
         play_points = PlayPoints.calculate(user)
+
+        if user.anonymous:
+            login_url = self.reverse_url('login')
+            self.write_json(dict(anonymous=True,
+                                 login_url=login_url,
+                                 points=play_points.points))
+            return
 
         increment = play_points.points - points_before
         self.write_json(dict(increment=increment,

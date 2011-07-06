@@ -1,23 +1,15 @@
 {% extends "../base.html" %}
 
 {% block extra_head %}
-<style>
-.won { color:green; font-weight: bold; }
-.draw { color:orange; }
-.loss { color:red }
-table#stats {
-  float:right;
-  margin-right:50px;
-}
-table#stats td {
-  font-size:1.6em;
-  padding-right:25px;
-}
-</style>
+{% module Static("css/replay.css") %}
 {% end %}
 
 {% block content_inner %}
 <h1>{{ page_title }}</h1>
+
+{% if user.anonymous %}
+{% module AnonymousPester() %}
+{% end %}
 
 <table id="stats">
   <tr>
