@@ -388,7 +388,7 @@ var socket
 
 $(function() {
   socket = new io.Socket(null, {port: CONFIG.SOCKET_PORT, rememberTransport: false});
-  socket.connect();
+
 
   var waiting_message_interval = setInterval(function() {
     var text = $('#waiting .message').text();
@@ -400,7 +400,7 @@ $(function() {
 
   var still_alive_interval;
 
-   socket.on('connect', function() {
+  socket.on('connect', function() {
       /*
        * Commented out because it breaks things horribly.
        * It would be better if re-connection just worked without
@@ -469,6 +469,7 @@ $(function() {
        delay += 0.1;
      }, Math.ceil(delay * 1000));
    });
+
 
   var first_wait = true;
   socket.on('message', function(obj) {
@@ -601,6 +602,7 @@ $(function() {
       });
     }
   });
+  socket.connect();
 
   $('a').click(function() {
     confirm_exit = false;
