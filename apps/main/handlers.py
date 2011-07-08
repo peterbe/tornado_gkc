@@ -127,7 +127,7 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
                    subject,
                    out.getvalue(),
                    self.application.settings['webmaster'],
-                   settings.DEVELOP_EMAILS,
+                   settings.DEVELOPER_EMAILS,
                    )
         except:
             logging.error("Failed to send email",

@@ -1,13 +1,5 @@
-* Loading images:
-
-// good:
-var image = new Image();
-image.onload = function() {
-  // always called
-  alert('image loaded');
-);
-image.src = 'image.jpg';
-	
+* Upgrade to socket.io 0.7
+http://socket.io/#announcement
 
 * Consider http://stanlemon.net/projects/jgrowl.html
 
