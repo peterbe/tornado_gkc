@@ -241,13 +241,13 @@ class HandlersTestCase(BaseHTTPTestCase):
         q1 = self._create_question()
         q2 = self._create_question()
 
-        # 1 point
+        # 3 point
         pq1a = self.db.PlayedQuestion()
         pq1a.play = play
         pq1a.question = q1
         pq1a.user = user
         pq1a.answer = u'yes'
-        pq1a.alternatives = True
+        pq1a.alternatives = False
         pq1a.right = True
         pq1a.save()
 
@@ -270,31 +270,32 @@ class HandlersTestCase(BaseHTTPTestCase):
         pq2a.right = False
         pq2a.save()
 
-        # 3 points
+        # 1 point
         pq2b = self.db.PlayedQuestion()
         pq2b.play = play
         pq2b.question = q2
         pq2b.user = bob
         pq2b.answer = u'yes'
+        pq2b.alternatives = True
         pq2b.right = True
         pq2b.save()
 
-        play.winner = bob
+        play.winner = user
         play.finished = datetime.datetime.now()
         play.save()
 
         from apps.play.models import PlayPoints
         play_points_user = PlayPoints.calculate(user)
         self.assertEqual(play_points_user.draws, 0)
-        self.assertEqual(play_points_user.wins, 0)
-        self.assertEqual(play_points_user.losses, 1)
-        self.assertEqual(play_points_user.points, 1)
+        self.assertEqual(play_points_user.wins, 1)
+        self.assertEqual(play_points_user.losses, 0)
+        self.assertEqual(play_points_user.points, 3)
 
         play_points_bob = PlayPoints.calculate(bob)
         self.assertEqual(play_points_bob.draws, 0)
-        self.assertEqual(play_points_bob.wins, 1)
-        self.assertEqual(play_points_bob.losses, 0)
-        self.assertEqual(play_points_bob.points, 3)
+        self.assertEqual(play_points_bob.wins, 0)
+        self.assertEqual(play_points_bob.losses, 1)
+        self.assertEqual(play_points_bob.points, 1)
 
         # lastly, both people send each other a message
         msg1 = self.db.PlayMessage()
@@ -314,7 +315,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         url = self.reverse_url('login')
         response = self.client.get(url)
         self.assertEqual(response.code, 200)
-        self.assertTrue('1 Kwissle point' in response.body)
+        self.assertTrue('3 Kwissle points' in response.body)
 
         from apps.main.handlers import TwitterAuthHandler
         TwitterAuthHandler.get_authenticated_user = \
@@ -336,6 +337,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(self.db.PlayedQuestion.find({'user.$id': peterbe._id}).count(), 2)
         self.assertEqual(self.db.PlayPoints.find({'user.$id': peterbe._id}).count(), 1)
         self.assertEqual(self.db.Play.find({'users.$id': peterbe._id}).count(), 1)
+        self.assertEqual(self.db.Play.find({'winner.$id': peterbe._id}).count(), 1)
         self.assertEqual(self.db.PlayMessage.find({'from.$id': peterbe._id}).count(), 1)
         self.assertEqual(self.db.PlayMessage.find({'to.$id': peterbe._id}).count(), 1)
 

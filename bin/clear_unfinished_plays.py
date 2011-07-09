@@ -12,16 +12,40 @@ define("clear_orphans", default=False, help="clear all played question orphans",
 
 def main(*args):
     tornado.options.parse_command_line()
+    from apps.main.models import User, connection
     from apps.play.models import Play, PlayedQuestion
-    from mongokit import Connection
-    con = Connection()
-    con.register([Play, PlayedQuestion])
-    db = con.gkc
+    from pymongo.objectid import InvalidId, ObjectId
+    db = connection.gkc
     unfinished = db.Play.find({'finished': None})
     if options.verbose:
         print unfinished.count(), "unfinished plays"
     for play in unfinished:
         play.delete()
+
+    if options.clear_orphans:
+        checked_user_ids = set()
+        bad_play_ids = set()
+        clear_count = 0
+        for play in db.Play.collection.find():
+            for user_ref in play['users']:
+                if user_ref.id in checked_user_ids:
+                    continue
+                if db.User.one({'_id': user_ref.id}):
+                    checked_user_ids.add(user_ref.id)
+                else:
+                    bad_play_ids.add(play['_id'])
+        for play in db.Play.collection.find({'winner': {'$ne': None}}):
+            user_ref = play['winner']
+            if user_ref.id in checked_user_ids:
+                continue
+            if db.User.one({'_id': user_ref.id}):
+                checked_user_ids.add(user_ref.id)
+            else:
+                bad_play_ids.add(play['_id'])
+        if bad_play_ids:
+            for _id in bad_play_ids:
+                db.Play.collection.remove(_id)
+            clear_count += len(bad_play_ids)
 
     qless_plays = 0
     for play in db.Play.find():
@@ -34,7 +58,7 @@ def main(*args):
     if options.verbose:
         print qless_plays, "plays with not all questions completed"
 
-    from pymongo.objectid import InvalidId, ObjectId
+
     if options.clear_orphans:
         checked_play_ids = set()
         clear_count = 0

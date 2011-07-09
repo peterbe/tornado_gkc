@@ -463,6 +463,10 @@ class BaseAuthHandler(BaseHandler):
                 play.users.append(user)
                 play.save()
 
+            for play in self.db.Play.find({'winner.$id': previous_user._id}):
+                play.winner = user
+                play.save()
+
             for msg in self.db.PlayMessage.find({'from.$id': previous_user._id}):
                 msg['from'] = user
                 msg.save()
