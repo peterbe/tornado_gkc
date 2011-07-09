@@ -171,9 +171,12 @@ class StaticURL(tornado.web.UIModule):
         new_name = os.path.join(prefix, os.path.basename(new_name))
         _name_conversion[basic_name] = new_name
         save_name_conversion()
-        cdn_prefix = self.handler.get_cdn_prefix()
-        if cdn_prefix:
-            new_name = cdn_prefix + new_name
+
+        ## Commented out, because I don't want to use CDN when it might take 5 seconds
+        # to generate the new file.
+        #cdn_prefix = self.handler.get_cdn_prefix()
+        #if cdn_prefix:
+        #    new_name = cdn_prefix + new_name
         return new_name
 
 
