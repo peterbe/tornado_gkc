@@ -89,6 +89,7 @@ class Application(tornado.web.Application):
               or 'utils.send_mail.backends.pickle.EmailBackend',
             webmaster=settings.WEBMASTER,
             admin_emails=settings.ADMIN_EMAILS,
+            UGLIFYJS_LOCATION=os.path.expanduser('~/bin/uglifyjs'),
             CLOSURE_LOCATION=os.path.join(os.path.dirname(__file__),
                                       "static", "compiler.jar"),
             YUI_LOCATION=os.path.join(os.path.dirname(__file__),

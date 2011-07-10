@@ -8,7 +8,7 @@ suitable for aggressive HTTP caching.
 (c) mail@peterbe.com
 """
 
-__version__ = '1.2'
+__version__ = '1.3'
 
 import os
 import cPickle
@@ -124,12 +124,12 @@ class StaticURL(tornado.web.UIModule):
               .get('optimize_static_content', True)
 
             if do_optimize_static_content:
+                uglifyjs_location = self.handler\
+                  .settings.get('UGLIFYJS_LOCATION')
                 closure_location = self.handler\
                   .settings.get('CLOSURE_LOCATION')
                 yui_location = self.handler\
                   .settings.get('YUI_LOCATION')
-                #print "* ", closure_location, os.path.isfile(closure_location) and "Exists" or "Doesn't exist"
-                #print "* ", yui_location, os.path.isfile(yui_location) and "Exists" or "Doesn't exist"
 
             for full_path in full_paths:
                 f = open(full_path)
@@ -138,9 +138,14 @@ class StaticURL(tornado.web.UIModule):
                     if len(full_paths) > 1:
                         destination.write('/* %s */\n' % os.path.basename(full_path))
                     if do_optimize_static_content and not self._already_optimized_filename(full_path):
-                        if closure_location:
+                        if uglifyjs_location:
+                            code = run_uglify_js_compiler(code, uglifyjs_location,
+                              verbose=self.handler.settings.get('debug', False))
+                        elif closure_location:
+                        #if closure_location:
+                            orig_code = code
                             code = run_closure_compiler(code, closure_location,
-                          verbose=self.handler.settings.get('debug', False))
+                              verbose=self.handler.settings.get('debug', False))
                         elif yui_location:
                             code = run_yui_compressor(code, 'js', yui_location,
                           verbose=self.handler.settings.get('debug', False))
@@ -288,7 +293,31 @@ def _run_closure_compiler(jscode, jar_location, advanced_optmization=False): # p
           "OSError: %s. Try again by making a small change and reload" % msg
     if stderrdata:
         return "/* ERRORS WHEN RUNNING CLOSURE COMPILER\n" + stderrdata + '\n*/\n' + jscode
+    return stdoutdata
 
+def run_uglify_js_compiler(code, location, verbose=False): # pragma: no cover
+    if verbose:
+        t0 = time()
+    r = _run_uglify_js_compiler(code, location)
+    if verbose:
+        t1 = time()
+        a, b = len(code), len(r)
+        c = round(100 * float(b) / a, 1)
+        print "UglifyJS took", round(t1 - t0, 4),
+        print "seconds to compress %d bytes into %d (%s%%)" % (a, b, c)
+    return r
+
+def _run_uglify_js_compiler(jscode, location, options=''): # pragma: no cover
+    cmd = "%s %s" % (location, options)
+    proc = Popen(cmd, shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+    try:
+        (stdoutdata, stderrdata) = proc.communicate(jscode)
+    except OSError, msg:
+        # see comment on OSErrors inside _run_yui_compressor()
+        stderrdata = \
+          "OSError: %s. Try again by making a small change and reload" % msg
+    if stderrdata:
+        return "/* ERRORS WHEN RUNNING UGLIFYJS COMPILER\n" + stderrdata + '\n*/\n' + jscode
     return stdoutdata
 
 def run_yui_compressor(code, type_, jar_location, verbose=False): # pragma: no cover
