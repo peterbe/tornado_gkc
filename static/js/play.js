@@ -205,13 +205,13 @@ var Question = (function() {
         $('#you_drew').fadeIn(300);
       } else {
         if (you_won) {
-          if (CONFIG.ENABLE_SOUNDS && soundManager) {
+          if (CONFIG.ENABLE_SOUNDS && soundManager && CONFIG.SOUNDS) {
             soundManager.play(CONFIG.SOUNDS['you_won']);
           }
           Title.show_temporarily("You won!! Congratulations!", 30);
           $('#you_won').fadeIn(300);
         } else {
-          if (CONFIG.ENABLE_SOUNDS && soundManager) {
+          if (CONFIG.ENABLE_SOUNDS && soundManager && CONFIG.SOUNDS) {
             soundManager.play(CONFIG.SOUNDS['you_lost']);
           }
           Title.show_temporarily("You lost. Sorry(?)", 30);
@@ -488,7 +488,7 @@ $(function() {
         $('#waiting').hide();
         $('#play_right').remove();
 
-        if (CONFIG.ENABLE_SOUNDS && soundManager) {
+        if (CONFIG.ENABLE_SOUNDS && soundManager && CONFIG.SOUNDS) {
           soundManager.play(CONFIG.SOUNDS['be_ready']);
         }
         Title.show_temporarily("Ready!? Game about to start!!");
