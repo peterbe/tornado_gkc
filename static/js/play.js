@@ -170,7 +170,6 @@ var Question = (function() {
     },
     show_image: function() {
       $('li.current').show();
-      L($('li.current'));
       Clock.start(this.timed_out);
       $('#answer').focus();
     },
@@ -178,6 +177,9 @@ var Question = (function() {
       _timer_bot = setTimeout(function() {
         send({bot_answers: true});
       }, seconds * 1000);
+    },
+    clear_bot_answers: function() {
+      clearTimeout(_timer_bot);
     },
     timed_out: function() {
       if (_timer_bot) clearTimeout(_timer_bot);
@@ -384,6 +386,7 @@ var socket
 , dead_battle = false
 , confirm_exit = true
 , has_connected = false
+, still_alive_interval
 ;
 
 $(function() {
@@ -397,8 +400,6 @@ $(function() {
     }
     $('#waiting .message').text(text + '.');
   }, 1000);
-
-  var still_alive_interval;
 
   socket.on('connect', function() {
       /*
@@ -493,6 +494,7 @@ $(function() {
         }
         Title.show_temporarily("Ready!? Game about to start!!");
       }
+      Question.clear_bot_answers();
       var seconds_left = obj.wait;
       Gossip.count_down(obj.wait, function(seconds) {
         return 'Next question in ' + seconds + ' seconds';
@@ -518,6 +520,7 @@ $(function() {
     } else if (obj.alternatives) {
       alternatives.show(obj.alternatives);
     } else if (obj.stop) {
+      Question.clear_bot_answers();
       Question.stop(obj.stop);
     } else if (obj.has_answered) {
       var msg = obj.has_answered + ' has answered but was wrong';
@@ -602,6 +605,11 @@ $(function() {
       });
     }
   });
+  socket.on('disconnect', function() {
+    clearInterval(waiting_message_interval);
+    clearInterval(still_alive_interval);
+  });
+
   socket.connect();
 
   $('a').click(function() {

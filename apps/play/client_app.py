@@ -196,7 +196,6 @@ class Client(tornadio.SocketConnection):
 
         elif message.get('bot_answers'):
             if not battle.current_question:
-                assert battle.is_waiting() or battle.is_stopped()
                 return
 
             outcome = battle.bot_answer

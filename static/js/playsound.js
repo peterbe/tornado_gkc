@@ -1,3 +1,4 @@
+// depends on ext/soundmanager/soundmanager2
 soundManager.url = SOUND_CONFIG.url;
 soundManager.onready(function(status) {
    if (status.success) {
