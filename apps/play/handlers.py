@@ -213,8 +213,13 @@ class PlayHighscoreHandler(BaseHandler):
 
     def get(self):
         options = self.get_base_options()
+        search = {'points':{'$gt':0}}
+        computer = (self.db.User.collection
+          .one({'username': settings.COMPUTER_USERNAME}))
+        if computer:
+            search['user.$id'] = {'$ne': computer['_id']}
         play_points = (self.db.PlayPoints
-                       .find({'points':{'$gt':0}})
+                       .find(search)
                        .sort('points', -1)
                        )
         options['play_points'] = play_points

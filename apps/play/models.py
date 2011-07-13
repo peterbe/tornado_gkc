@@ -83,9 +83,14 @@ class PlayPoints(BaseDocument):
     required_fields = ['user','points']
 
     def update_highscore_position(self):
+        search = {'points':{'$gt': 0}}
+        computer = (self.db.User.collection
+          .one({'username': settings.COMPUTER_USERNAME}))
+        if computer:
+            search['user.$id'] = {'$ne': computer['_id']}
         pps = (
           self.db.PlayPoints
-          .find({'points':{'$gt': 0}})
+          .find(search)
           .sort('points', -1)
           )
         return_position = None

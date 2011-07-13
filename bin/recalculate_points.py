@@ -6,6 +6,7 @@ if p not in sys.path:
 
 import tornado.options
 from tornado.options import define, options
+import settings
 
 define("verbose", default=False, help="be louder", type=bool)
 define("all", default=False, help="recalculate all users", type=bool)
@@ -51,7 +52,12 @@ def main(*args):
                 if len(recent_users) >= max_users:
                     _broken = True
                     break
+    computer = (db.User.collection
+          .one({'username': settings.COMPUTER_USERNAME}))
+
     for user in recent_users:
+        if computer and user._id == computer['_id']:
+            continue
         play_points = PlayPoints.calculate(user)
         if options.verbose and not options.all:
             print user.username.ljust(20), play_points.points
