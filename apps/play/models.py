@@ -4,6 +4,7 @@ import datetime
 from apps.main.models import BaseDocument, User, register
 from apps.questions.models import Question
 from utils import dict_plus
+import settings
 
 @register
 class Play(BaseDocument):

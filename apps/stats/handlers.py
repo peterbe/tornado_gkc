@@ -72,6 +72,10 @@ class NumbersHandler(BaseHandler):
                           number=self.db.PlayedQuestion
                             .find().count() / 2))
 
+        facts.append(dict(label='Questions with images',
+                          number=self.db.QuestionImage
+                            .find().count() / 2))
+
         options['facts'] = [Getter(x) for x in facts]
         options['page_title'] = "Numbers"
         self.render('stats/numbers.html', **options)
