@@ -75,3 +75,33 @@ class NumbersHandler(BaseHandler):
         options['facts'] = [Getter(x) for x in facts]
         options['page_title'] = "Numbers"
         self.render('stats/numbers.html', **options)
+
+
+@route('/stats/times', name='stats_times_played')
+class TimesPlayedHandler(BaseHandler):
+
+    def get(self):
+        options = self.get_base_options()
+        options['page_title'] = "Number of times registered users have played"
+        played_times = defaultdict(int)
+        for user in self.db.User.collection.find({'anonymous': False}):
+            plays = (self.db.Play
+              .find({'finished': {'$ne':None},
+                     'users.$id': user['_id']})
+              .count())
+            if plays < 3:
+                played_times[plays] += 1
+            elif plays < 10:
+                played_times['< 10'] += 1
+            else:
+                played_times['>= 10'] += 1
+
+        total = sum(played_times.values())
+        percentages = {}
+        for key, count in played_times.items():
+            percentages[key] = int(100.0 * count / total)
+        options['percentages'] = percentages
+        options['keys'] = sorted(played_times.keys())
+        options['times'] = played_times
+
+        self.render('stats/times.html', **options)
