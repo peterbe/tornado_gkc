@@ -15,12 +15,10 @@ define("random", default=False, help="pick random users", type=bool)
 
 def main(*args):
     tornado.options.parse_command_line()
-    from apps.main.models import User
+    from apps.main.models import User, connection
     from apps.play.models import Play, PlayPoints, PlayedQuestion
-    from mongokit import Connection
-    con = Connection()
-    con.register([Play, User, PlayPoints, PlayedQuestion])
-    db = con.gkc
+    #con.register([Play, User, PlayPoints, PlayedQuestion])
+    db = connection.gkc
     if options.all:
         max_users = 999999
     else:
