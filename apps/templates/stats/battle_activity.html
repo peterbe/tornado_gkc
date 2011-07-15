@@ -1,0 +1,11 @@
+{% extends "../base.html" %}
+
+{% block content_inner %}
+<h2>Stats: {{ page_title }}</h2>
+
+<div id="graph-container"></div>
+{% end %}
+
+{% block extra_js %}
+{% module Static('js/battle_activity.js') %}
+{% end %}

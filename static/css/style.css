@@ -4,7 +4,7 @@ html, body {
   padding: 0;
 }
 body {
-  background: #000 url("../images/darker.png") repeat;
+  background: #2b2b2b url("../images/darker.png") repeat;
   /*
   background: #000000 url("../images/black-back3.png") repeat;
   background: -webkit-gradient(radial, 50% 50%, 10, 50% 50%, 900, from(rgba(0,0,0,0)), to(rgba(0,0,0,1))), url("../images/black-back3.png") repeat;
