@@ -1,3 +1,5 @@
+from time import mktime
+from pprint import pprint
 import datetime
 from collections import defaultdict
 from pymongo import ASCENDING, DESCENDING
@@ -103,5 +105,54 @@ class TimesPlayedHandler(BaseHandler):
         options['percentages'] = percentages
         options['keys'] = sorted(played_times.keys())
         options['times'] = played_times
-
         self.render('stats/times.html', **options)
+
+
+@route('/stats/battle-activity', name='stats_battle_activity')
+class BattleActivityHandler(BaseHandler):
+
+    def get(self):
+        options = self.get_base_options()
+        options['page_title'] = "Battle activity"
+        self.render('stats/battle_activity.html', **options)
+
+
+@route('/stats/battle-activity\.json$', name='stats_battle_activity_json')
+class BattleActivityHandler(BaseHandler):
+
+    def get(self):
+        data = []
+        solos = {}#defaultdict(int)
+        multis = {}#defaultdict(int)
+        computer = (self.db.User.collection
+          .one({'username': settings.COMPUTER_USERNAME}))
+
+        # the day the battle against computer was introduced
+        june_21 = datetime.datetime(2011, 6, 21, 0, 0, 0)
+        search = {'finished': {'$ne': None,
+                               '$gte': june_21}}
+
+        for each in self.db.Play.collection.find(search).sort('finished').limit(1):
+            date = each['finished']
+        for each in self.db.Play.collection.find(search).sort('finished', -1).limit(1):
+            max_ = each['finished']
+
+        jump = datetime.timedelta(days=1)
+        while date < max_:
+            timestamp = int(mktime(date.timetuple()))
+            solos[timestamp] = 0
+            multis[timestamp] = 0
+            for play in (self.db.Play.collection
+                         .find({'finished': {'$gte': date,
+                                             '$lt': date + jump}})):
+                if computer['_id'] in [x.id for x in play['users']]:
+                    solos[timestamp] += 1
+                else:
+                    multis[timestamp] += 1
+            date += jump
+
+        solos = [dict(t=k, c=v) for (k, v) in solos.items()]
+        multis = [dict(t=k, c=v) for (k, v) in multis.items()]
+        #solos = sorted(solos, lambda x,y: cmp(x['t'], y['t']))
+        #multis = sorted(multis, lambda x,y: cmp(x['t'], y['t']))
+        self.write_json(dict(solos=solos, multis=multis))
