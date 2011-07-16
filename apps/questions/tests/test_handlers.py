@@ -180,6 +180,11 @@ class HandlersTestCase(BaseHTTPTestCase):
         bob = self.db.User()
         bob.username = u"bob"
         bob.save()
+        maths = self.db.Genre()
+        maths.name = u"Maths"
+        maths.approved = True
+        maths.save()
+
         q1 = self.db.Question()
         q1.text = u"One?"
         q1.answer = u"1"
@@ -187,6 +192,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         q1.submit_date = datetime.datetime.now()
         q1.accept_date = datetime.datetime.now()
         q1.state = ACCEPTED
+        q1.genre = maths
         q1.save()
 
         q2 = self.db.Question()
@@ -196,6 +202,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         q2.submit_date = datetime.datetime.now()
         q2.accept_date = datetime.datetime.now()
         q2.state = ACCEPTED
+        q2.genre = maths
         q2.save()
 
         cookie = self._login()
@@ -207,6 +214,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         q3.submit_date = datetime.datetime.now()
         q3.accept_date = datetime.datetime.now()
         q3.state = ACCEPTED
+        q3.genre = maths
         q3.save()
 
         url = self.reverse_url('review_random')
