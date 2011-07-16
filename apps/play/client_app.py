@@ -164,6 +164,8 @@ class Client(tornadio.SocketConnection):
                     else:
                         battle.send_question(battle.current_question,
                                              image=image)
+                    if not image:
+                        battle.set_now()
                     battle.save_played_question(self.db)
                 else:
                     battle.send_to_all(
@@ -226,6 +228,7 @@ class Client(tornadio.SocketConnection):
     def _loaded_image(self, battle, client):
         battle.remember_loaded_image(client)
         if battle.has_all_loaded_image():
+            battle.set_now()
             battle.send_to_all(dict(show_image=1))
 
     def _timed_out(self, battle, client):
@@ -273,6 +276,7 @@ class Client(tornadio.SocketConnection):
             battle.stop()
             return
         battle.remember_answered(client)
+        time_ = battle.get_time()
         if battle.check_answer(answer):
             # client got it right!!
             points = 3
@@ -289,6 +293,7 @@ class Client(tornadio.SocketConnection):
             battle.increment_score(client, points)
             battle.save_played_question(self.db, client,
                                         answer=answer,
+                                        time_=time_,
                                         right=True)
             battle.close_current_question()
             if battle.has_more_questions():
@@ -309,6 +314,7 @@ class Client(tornadio.SocketConnection):
             )
             battle.save_played_question(self.db, client,
                                         answer=answer,
+                                        time_=time_,
                                         right=False)
 
             if battle.has_everyone_answered():

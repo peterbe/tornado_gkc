@@ -44,6 +44,7 @@ class PlayedQuestion(BaseDocument):
       'answer': unicode,
       'alternatives': bool,
       'timed_out': bool,
+      'time': float,
     }
 
     default_values = {

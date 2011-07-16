@@ -36,6 +36,7 @@ class Battle(object):
         self.language = language
         self.play_id = None
         self.updated = time.time()
+        self.now = None
 
     def __repr__(self):
         vs = ' vs. '.join(['%s:%r' % (x.user_id, x.user_name) for x in self.participants])
@@ -104,14 +105,13 @@ class Battle(object):
         }
         if image is not None:
             packaged_question['image'] = image
+
         self.send_to_all(dict(question=packaged_question,
                               thinking_time=self.thinking_time))
         if knowledge:
             # depend on how easy the question is the bot will send
             # and answer in X seconds
             bot_answer = predict_bot_answer(self.thinking_time, knowledge)
-            #print "BOT_ANSWER"
-            #pprint(bot_answer)
             self.bot_answer = bot_answer
             self.send_to_all(dict(bot_answers=bot_answer['seconds']))
         else:
@@ -124,6 +124,12 @@ class Battle(object):
         self.clear_timed_out()
         self.clear_loaded_alternatives()
         self.clear_loaded_image()
+
+    def set_now(self):
+        self.now = time.time()
+
+    def get_time(self):
+        return time.time() - self.now
 
     ## Convenient macros
 
@@ -296,7 +302,8 @@ class Battle(object):
                              right=None,
                              answer=None,
                              alternatives=None,
-                             timed_out=None):
+                             timed_out=None,
+                             time_=None):
         assert self.play_id
         play = self.get_play(db)
         if participant is None:
@@ -327,6 +334,8 @@ class Battle(object):
             played_question.timed_out = bool(timed_out)
         else:
             raise Exception("Invalid parameters. Has to be something")
+        if time_ is not None:
+            played_question.time = time_
         played_question.save()
 
     ## Image

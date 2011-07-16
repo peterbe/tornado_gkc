@@ -77,6 +77,9 @@
           {% else %}
           +3
           {% end %}
+          {% if outcome.time %}
+          <span class="time-seconds">({{ '%.1f'%outcome.time }} sec)</span>
+          {% end %}
         {% end %}
       </td>
       {% end %}
