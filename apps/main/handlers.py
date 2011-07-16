@@ -30,7 +30,7 @@ from utils import parse_datetime, niceboolean, \
 from forms import SettingsForm
 import settings
 
-
+from apps.questions.models import ACCEPTED
 #from config import *
 
 
@@ -314,6 +314,20 @@ class HomeHandler(BaseHandler):
         user = options['user']
         options['count_published_questions'] = \
           self.db.Question.find({'state': 'PUBLISHED'}).count()
+
+        accepted_questions_count = None
+        if user:
+            accepted_questions_count = 0
+            for q in (self.db.Question.collection
+                      .find({'state': ACCEPTED})):
+                #if not self.db.Question
+                if not (self.db.QuestionReview
+                       .find({'question.$id': q['_id'],
+                              'user.$id': user._id})
+                       .count()):
+                    accepted_questions_count += 1
+
+        options['accepted_questions_count'] = accepted_questions_count
 
         past_plays = 0
         if user:

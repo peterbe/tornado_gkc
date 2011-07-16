@@ -22,9 +22,7 @@ from models import VERDICTS, VERIFIED, UNSURE, WRONG, TOO_EASY, TOO_HARD
 from forms import QuestionForm, QuestionImageForm
 
 
-
 class QuestionsBaseHandler(BaseHandler):
-
 
     def get_base_options(self):
         options = super(QuestionsBaseHandler, self).get_base_options()
@@ -272,7 +270,7 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
         )
         played_questions_count = 0
         for q in (self.db.Question.collection
-        .find(dict(_user_search, state=PUBLISHED))):
+          .find(dict(_user_search, state=PUBLISHED))):
             played_questions_count += (self.db.PlayedQuestion
               .find({'question.$id': q['_id']}).count())
         options['played_questions_count'] = played_questions_count / 2
@@ -962,12 +960,27 @@ class ReviewAcceptedQuestionHandler(QuestionsBaseHandler):
             raise HTTPError(403)
 
         skip = int(self.get_argument('skip', 0))
+        verified_only = bool(self.get_argument('verified_only', False))
+        while not options.get('question'):
+            questions = self.db.Question.find({'state': ACCEPTED})\
+              .skip(skip).limit(1).sort('accept_date', -1)
+            question = None
+            if skip >= questions.count():
+                break
+            if not questions.count():
+                break
+            for question in questions:
+                if verified_only:
+                   if not (self.db.QuestionReview
+                          .find({'question.$id': question._id,
+                                 'verdict': VERIFIED})
+                          .count()):
+                       skip += 1
+                       break
+                options['question'] = question
+
         options['skip'] = skip
-        questions = self.db.Question.find({'state': ACCEPTED})\
-          .skip(skip).limit(1).sort('accept_date', -1)
-        question = None
-        for question in questions:
-            options['question'] = question
+        options['verified_only'] = verified_only
 
         if question:
             options['reviews'] = self.db.QuestionReview.find({'question.$id':question._id}).sort('add_date', 1)
@@ -996,7 +1009,11 @@ class ReviewAcceptedQuestionHandler(QuestionsBaseHandler):
     @tornado.web.authenticated
     def post(self):
         skip = int(self.get_argument('skip'))
-        self.redirect(self.reverse_url('review_accepted') + "?skip=%d" % (skip + 1))
+        url = self.reverse_url('review_accepted')
+        url += "?skip=%d" % (skip + 1)
+        if self.get_argument('verified_only', False):
+            url += "&verified_only=%s" % self.get_argument('verified_only')
+        self.redirect(url)
 
 
 route_redirect('/questions/categories$', '/questions/categories/', name="all_categories_shortcut")

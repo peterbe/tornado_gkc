@@ -32,8 +32,11 @@
     {% if skip is not None %}
       <form action="{{ reverse_url('review_accepted') }}" method="post" id="skip">
         {% module xsrf_form_html() %}
-        <div><input type="hidden" name="skip" value="{{ skip }}">
-        <input type="submit" value="Skip"></div>
+        <div>
+          <input type="hidden" name="skip" value="{{ skip }}">
+          <input type="hidden" name="verified_only" value="{{ verified_only }}">
+          <input type="submit" value="Skip">
+        </div>
       </form>
     {% end %}
 
@@ -121,9 +124,12 @@
 <strong>Alternatives:</strong>
 <span>{{ ', '.join(question.alternatives) }}</span>
 <br>
+<strong>Category:</strong>
+<span>{{ question.genre.name }}</span>
+<br>
 <strong>Comments:</strong>
 {% if question.comment %}
-<span>{{ question.comment }}</span>
+<span>{% raw linkify(question.comment) %}</span>
 {% else %}
 <em>none</em>
 {% end %}

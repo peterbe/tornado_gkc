@@ -8,10 +8,10 @@
   (written by other people) that needs
   <a href="{{ reverse_url('review_random') }}" title="click to review a random accepted question">reviewing</a>
   {% if is_admin_user %}
-    |
+    <br>Admin only:
     <a href="{{ reverse_url('review_accepted') }}" title="click to review accepted question">accepted</a>,
+    <a href="{{ reverse_url('review_accepted') }}?verified_only=1" title="Review accepted questions with one or more verified review">accepted (verified)</a>,
     <a href="{{ reverse_url('all_questions') }}" title="complete table of all questions">all</a>
-    (admin only)
   {% end %}
 {% end %}
 </p>

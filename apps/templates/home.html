@@ -12,6 +12,11 @@ Kwissle is a real-time general knowledge quiz battle game.
 There are current <strong>{{ count_published_questions }}</strong> published
 <a href="{{ reverse_url('questions') }}">Questions</a>.
 <a href="{{ reverse_url('add_question') }}">Wanna contribute some more?</a>
+{% if accepted_questions_count %}
+<br>or help out <a href="{{ reverse_url('review_random') }}" rel="nofollow"
+               title="Click to review accepted questions so they can be published"
+               >reviewing the {{ accepted_questions_count }} accepted questions</a>
+{% end %}
 </p>
 
 <p>
