@@ -10,6 +10,7 @@ APPS = (
   'play',
   'chat',
   'stats',
+  'widget',
 )
 DATABASE_NAME = "gkc"
 
@@ -34,6 +35,8 @@ FACEBOOK_SECRET = open(path('facebook_consumer_secret')).read().strip()
 XAPIAN_LOCATION = path('xapian_db')
 
 THUMBNAIL_DIRECTORY = path('static/thumbnails')
+
+DEFAULT_WIDGET_CACHE_TIME = 20 # seconds
 
 try:
     from local_settings import *

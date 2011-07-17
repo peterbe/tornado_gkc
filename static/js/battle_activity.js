@@ -89,7 +89,7 @@ head.js(JS_URLS.highcharts, function() {
                }
             },
             marker: {
-               lineWidth: 1
+               lineWidth: 0
             }
          }
       },

@@ -1,5 +1,6 @@
 import datetime
 from apps.main.models import BaseDocument, User, register
+from utils.edit_distance import EditDistance
 
 @register
 class Genre(BaseDocument):
@@ -70,6 +71,21 @@ class Question(BaseDocument):
 
     def get_image(self):
         return self.db.QuestionImage.one({'question.$id': self._id})
+
+    def check_answer(self, answer):
+        answer = answer.lower().strip()
+        if answer == self.answer.lower():
+            return True
+        elif self.accept:
+            if answer in [x.lower() for x in self.accept]:
+                return True
+        if self.spell_correct:
+            ed = EditDistance([self.answer.lower()] +
+                              [x.lower() for x in self.accept])
+            if ed.match(answer):
+                return True
+
+        return False
 
 
 @register

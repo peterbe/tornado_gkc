@@ -36,3 +36,4 @@ xapian_db/
 bin/.indexed_document_since
 static/thumbnails/
 utils/send_mail/pickled_messages/
+widget.js

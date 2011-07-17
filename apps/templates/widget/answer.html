@@ -1,0 +1,47 @@
+{% extends "../base.html" %}
+
+{% block extra_head %}
+<style>
+#wrap h1,
+#wrap h2 { text-align:center; margin:50px;}
+.play-time h3 { margin-bottom:3px; margin-top:60px; }
+</style>
+{% end %}
+
+
+{% block content_inner %}
+
+
+{% if right %}
+<h1>Excellent!!</h1>
+  {% if alternatives %}
+    {% if qk_alternatives_comment %}
+    <h2>{% raw qk_alternatives_comment %}</h2>
+    {% end %}
+  {% else %}
+  <h2>And you managed it without alternatives!</h2>
+  {% end %}
+
+{% else %}
+<h2>Sorry, the correct answer is <em>{{ question.answer }}</em></h2>
+{% end %}
+
+{% if knowledge_comment %}
+<p class="knowledge">
+  {% raw knowledge_comment %}
+</p>
+{% end %}
+
+{% if not right and question.comment %}
+  <p>Question comment from the author of the question:<br>
+  {% raw linkify(question.comment) %}
+  </p>
+{% end %}
+
+
+<div class="play-time">
+<h3>Wanna play a real Kwissle battle?</h3>
+<p><a href="/">Go to the home page and click on <strong>Play!</strong> &rarr;</a></p>
+</div>
+
+{% end %}

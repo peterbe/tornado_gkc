@@ -14,6 +14,7 @@ TEST_MODULES = [
     'apps.play.tests.test_models',
     'apps.play.tests.test_client',
     'apps.play.tests.test_battle',
+    'apps.widget.tests.test_handlers',
 ]
 
 def all():

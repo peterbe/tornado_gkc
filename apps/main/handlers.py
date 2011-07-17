@@ -195,6 +195,9 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
             self.set_header("Content-Type", "application/json; charset=UTF-8")
         self.write(tornado.escape.json_encode(struct))
 
+    def write_jsonp(self, callback, struct):
+        self.set_header("Content-Type", "text/javascript; charset=UTF-8")
+        self.write('%s(%s)' % (callback, tornado.escape.json_encode(struct)))
 
     def serialize_dict(self, data):
         for key, value in data.items():
