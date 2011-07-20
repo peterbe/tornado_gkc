@@ -70,7 +70,7 @@ def main(*args):
     then = today - datetime.timedelta(days=MIN_AGE)
     users = db.User.find({
       'anonymous': True,
-      'modify_date': {'$lt': then}
+      'add_date': {'$lt': then}
     }).sort('add_date')
     count = 0
     if options.verbose:
