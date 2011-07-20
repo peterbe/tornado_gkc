@@ -2,7 +2,10 @@ import datetime
 from collections import defaultdict
 from pprint import pprint
 import tornado.web
+from apps.main.models import connection
 from apps.questions.models import DIFFICULTIES
+from utils import dict_plus
+import settings
 
 from thumbnailer import ShowQuestionImageThumbnail
 from thumbnailer import GetQuestionImageThumbnailSrc
@@ -16,7 +19,7 @@ class RenderField(tornado.web.UIModule):
 
 class QuestionShortStats(tornado.web.UIModule):
     def render(self, question):
-        db = question.db
+        db = connection[settings.DATABASE_NAME]
         difficulties = {
           0: 0, # about right
           1: 0, # easy
@@ -29,7 +32,8 @@ class QuestionShortStats(tornado.web.UIModule):
         }
         count = 0
         search = {'question.$id': question._id}
-        for review in db.QuestionReview.find(search):
+        for review in db.QuestionReview.collection.find(search):
+            review = dict_plus(review)
             difficulties[review['difficulty']] += 1
             rating = review['rating']
             if rating == 2: # legacy
@@ -60,6 +64,7 @@ class QuestionShortStats(tornado.web.UIModule):
                         alternatives += 1
                 else:
                     tooslows += 1
+
         answers = {
           'right': 0,
           'wrong': 0,

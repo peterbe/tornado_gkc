@@ -32,14 +32,14 @@ var CHARTS = [];
     <div id="{{ question._id }}" class="question">
       <p class="question_text"><a href="{{ reverse_url('view_question', question._id ) }}" class="yellow">{{ question.text }}</a>
 
-      {% if question.has_image() %}
+      {% if question._id in images %}
       <a class="thumbnail"
-         href="{% module GetQuestionImageThumbnailSrc(question.get_image(), (300, 300)) %}"
-         >{% module ShowQuestionImageThumbnail(question.get_image(), (20, 20)) %}</a>
+         href="{% module GetQuestionImageThumbnailSrc(images[question._id], (300, 300)) %}"
+         >{% module ShowQuestionImageThumbnail(images[question._id], (20, 20)) %}</a>
       {% end %}
       </p>
       <p class="question_metadata">
-      Category: {{ question.genre.name }}<br>
+      Category: {{ genres[question._id].name }}<br>
       Published {% module TimeSince(question.publish_date) %} ago
       </p>
     </div>

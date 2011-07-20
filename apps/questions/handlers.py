@@ -285,16 +285,37 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
 
 route_redirect('/questions/published$', '/questions/published/')
 @route('/questions/published/$', name="questions_published")
-class QuestionsHomeHandler(QuestionsBaseHandler):
+class PublishedQuestionsHomeHandler(QuestionsBaseHandler):
     DEFAULT_BATCH_SIZE = 200
 
     @authenticated_plus(lambda u: not u.anonymous)
     def get(self):
         options = self.get_base_options()
-        questions = (self.db.Question
+        questions = (self.db.Question.collection
                       .find({'author.$id': options['user']._id,
                              'state': 'PUBLISHED'})
                       .sort('publish_date', -1))
+        questions = [dict_plus(x) for x in questions]
+
+        genres = {}
+        _genres = {}
+        images = {}
+        for q in (self.db.Question.collection
+                      .find({'author.$id': options['user']._id,
+                             'state': 'PUBLISHED'})):
+            q = dict_plus(q)
+
+            if q['genre'].id not in _genres:
+                _genres[q['genre'].id] = dict_plus(self.db.Genre.collection
+                                                  .one({'_id': q['genre'].id}))
+            genres[q._id] = _genres[q['genre'].id]
+            if (self.db.QuestionImage.collection
+                .one({'question.$id': q._id})):
+                images[q._id] = (self.db.QuestionImage
+                     .one({'question.$id': q._id}))
+
+        options['genres'] = genres
+        options['images'] = images
         options['questions'] = questions
         options['page_title'] = "Your published questions"
         self.render("questions/published.html", **options)
