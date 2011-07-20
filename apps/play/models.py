@@ -32,6 +32,17 @@ class Play(BaseDocument):
     def get_other_user(self, this_user):
         return [x for x in self.users if x != this_user][0]
 
+    def delete(self):
+        try:
+            for pq in (self.db.PlayedQuestion
+                       .find({'play.$id': self['_id']})):
+                pq.delete()
+            for pm in (self.db.PlayMessage
+                       .find({'play.$id': self['_id']})):
+                pm.delete()
+        finally:
+            super(Play, self).delete()
+
 
 @register
 class PlayedQuestion(BaseDocument):

@@ -237,3 +237,80 @@ class ModelsTestCase(BaseModelsTestCase):
 
         play3.draw = True
         play3.save()
+
+    def test_delete_play_deletes_other_things(self):
+        user1 = self.db.User()
+        user1.username = u'peter'
+        user1.save()
+
+        user2 = self.db.User()
+        user2.username = u'chris'
+        user2.save()
+
+        q1 = self._create_question()
+
+        # play1
+        play1 = self.db.Play()
+        play1.users = [user1, user2]
+        play1.no_players = 2
+        play1.no_questions = 3
+        play1.started = datetime.datetime.now()
+        play1.finished = datetime.datetime.now() + datetime.timedelta(seconds=1)
+        play1.save()
+
+        # play1
+        play2 = self.db.Play()
+        play2.users = [user2, user1]
+        play2.no_players = 2
+        play2.no_questions = 3
+        play2.started = datetime.datetime.now()
+        play2.finished = datetime.datetime.now() + datetime.timedelta(seconds=2)
+        play2.save()
+
+        pq1 = self.db.PlayedQuestion() ; pq2 = self.db.PlayedQuestion()
+        pq1.play = play1               ; pq2.play = play1
+        pq1.question = q1              ; pq2.question = q1
+        pq1.user = user1               ; pq2.user = user2
+        pq1.right = True               ; pq2.right = False
+        pq1.answer = u'Yes'            ; pq2.answer = u'Wrong'
+        pq1.save()                     ; pq2.save()
+
+        pq1 = self.db.PlayedQuestion() ; pq2 = self.db.PlayedQuestion()
+        pq1.play = play2               ; pq2.play = play2
+        pq1.question = q1              ; pq2.question = q1
+        pq1.user = user1               ; pq2.user = user2
+        pq1.right = True               ; pq2.right = False
+        pq1.answer = u'Yes'            ; pq2.answer = u'Wrong'
+        pq1.save()                     ; pq2.save()
+
+        msg1 = self.db.PlayMessage()
+        msg1.play = play1
+        msg1['from'] = user1
+        msg1.to = user2
+        msg1.message = u"msg"
+        msg1.read = False
+        msg1.save()
+
+        msg2 = self.db.PlayMessage()
+        msg2.play = play2
+        msg2['from'] = user2
+        msg2.to = user1
+        msg2.message = u"msg other"
+        msg2.read = False
+        msg2.save()
+
+        self.assertEqual(self.db.PlayedQuestion.find().count(), 4)
+        self.assertEqual(self.db.PlayedQuestion
+                         .find({'play.$id': play1._id}).count(), 2)
+
+        self.assertEqual(self.db.PlayMessage.find().count(), 2)
+        self.assertEqual(self.db.PlayMessage
+                        .find({'play.$id': play1._id}).count(), 1)
+
+        # let the madness begin!
+        play1.delete()
+        self.assertEqual(self.db.PlayedQuestion.find().count(), 2)
+
+        self.assertEqual(self.db.PlayMessage.find().count(), 1)
+        self.assertEqual(self.db.PlayMessage
+                        .find({'play.$id': play1._id}).count(), 0)

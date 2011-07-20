@@ -36,6 +36,19 @@ class ModelsTestCase(BaseModelsTestCase):
         model = self.db.UserSettings
         self.assertEqual(model.find({'user.$id': user._id}).count(), 1)
 
+    def test_delete_user_deletes_settings(self):
+        user = self.db.User()
+        user.username = u'peterbe'
+        user.save()
+
+        settings = self.db.UserSettings()
+        settings.user = user
+        settings.save()
+
+        assert self.db.UserSettings.find().count() == 1
+        user.delete()
+        self.assertEqual(self.db.UserSettings.find().count(), 0)
+
     def test_usersettings_bool_keys(self):
 
         keys = UserSettings.get_bool_keys()

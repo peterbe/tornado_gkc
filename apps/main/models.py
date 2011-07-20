@@ -79,6 +79,15 @@ class User(BaseDocument):
         else:
             raise NotImplementedError("No checking clear text passwords")
 
+    def delete(self):
+        try:
+            for us in (self.db.UserSettings
+                       .find({'user.$id': self['_id']})):
+                us.delete()
+        finally:
+            super(User, self).delete()
+
+
 @register
 class UserSettings(BaseDocument):
     __collection__ = 'user_settings'
