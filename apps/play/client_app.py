@@ -23,6 +23,10 @@ from bot import ComputerClient
 
 class Client(tornadio.SocketConnection):
 
+    def send(self, *args, **kwargs):
+        #print "--->", args
+        super(Client, self).send(*args, **kwargs)
+
     def __repr__(self):
         try:
             info = repr(self.user_name)
@@ -119,6 +123,7 @@ class Client(tornadio.SocketConnection):
     def on_message(self, message, client=None):
         if client is None:
             client = self
+        #print "<--", repr(message)
         if not hasattr(client, 'user_id'):
             return
 
@@ -139,10 +144,15 @@ class Client(tornadio.SocketConnection):
         elif message.get('next_question'):
             # this is going to be hit twice, within nanoseconds of each other.
             t = time.time()
+            if not hasattr(battle, 'min_wait_delay'):
+                # something is very wrong!
+                print "current_question", getattr(battle, 'current_question', '*no current question*')
+                print repr(battle)
+
             if battle.min_wait_delay > t:
-                logging.info('%r min_wait_delay=%r, t=%r'%(self, battle.min_wait_delay,t))
+                logging.debug('%r min_wait_delay=%r, t=%r'%(self, battle.min_wait_delay,t))
                 client.send(dict(error={'message': 'Too soon',
-                                      'code': errors.ERROR_NEXT_QUESTION_TOO_SOON}))
+                                        'code': errors.ERROR_NEXT_QUESTION_TOO_SOON}))
                 return
             if battle.stopped:
                 #client.send({'error': 'Battle already stopped'})
@@ -235,6 +245,10 @@ class Client(tornadio.SocketConnection):
         if not battle.current_question:
             # happens if the timed_out is sent even though someone has
             # already answered correctly
+            print "current_question", getattr(battle, 'current_question', '*no current question*')
+            print repr(battle)
+            print getattr(battle, 'min_wait_delay', '*no min_wait_delay*')
+            print repr(client)
             assert battle.is_waiting() or battle.is_stopped()
             return
         if battle.timed_out_too_soon():
@@ -370,9 +384,6 @@ class Client(tornadio.SocketConnection):
                 #   a) written by any of the participants of the battle
                 #   b) hasn't been reviewed by any of the participants
                 #   c) questions played in the past
-                #print question
-                #print has_question_knowledge(question)
-                #print
                 if question.author and str(question.author._id) in battle_user_ids:
                     search['_id']['$nin'].append(question._id)
                 elif question.has_image() and not question.get_image().render_attributes:

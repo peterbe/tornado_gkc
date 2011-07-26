@@ -1,6 +1,8 @@
 import datetime
 from apps.main.tests.base import BaseHTTPTestCase, TestClient
 from utils.http_test_client import TestClient
+import settings
+
 
 class HandlersTestCase(BaseHTTPTestCase):
     def test_starting_play(self):
@@ -224,3 +226,57 @@ class HandlersTestCase(BaseHTTPTestCase):
         flash_message = self.db.FlashMessage.one({'user.$id': user2._id})
         assert flash_message
         self.assertEqual(flash_message.text, u'hi!')
+
+    def test_highscore(self):
+        user1 = self.db.User()
+        user1.username = u'peterbe'
+        user1.save()
+        user2 = self.db.User()
+        user2.username = u'chris'
+        user2.save()
+        computer = self.db.User()
+        computer.username = settings.COMPUTER_USERNAME
+        computer.save()
+
+
+        pp1 = self.db.PlayPoints()
+        pp1.user = user1
+        pp1.points = 20
+        pp1.wins = 2
+        pp1.losses = 3
+        pp1.draws = 0
+        pp1.save()
+        pp1.update_highscore_position()
+        self.assertEqual(pp1.highscore_position, 1)
+
+        pp2 = self.db.PlayPoints()
+        pp2.user = user2
+        pp2.points = 30
+        pp2.wins = 3
+        pp2.losses = 2
+        pp2.draws = 0
+        pp2.save()
+        pp2.update_highscore_position()
+        self.assertEqual(pp2.highscore_position, 1)
+        pp1 = self.db.PlayPoints.one({'_id': pp1._id})
+        self.assertEqual(pp1.highscore_position, 2)
+
+        ppC = self.db.PlayPoints()
+        ppC.user = computer
+        ppC.points = 25
+        ppC.wins = 3
+        ppC.losses = 3
+        ppC.draws = 0
+        ppC.save()
+        ppC.update_highscore_position()
+        pp1 = self.db.PlayPoints.one({'_id': pp1._id})
+        self.assertEqual(pp1.highscore_position, 2)
+        pp2 = self.db.PlayPoints.one({'_id': pp2._id})
+        self.assertEqual(pp2.highscore_position, 1)
+
+        url = self.reverse_url('play_highscore')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        self.assertTrue(-1 < response.body.find(user2.username)
+                           < response.body.find(user1.username))
+        self.assertTrue(computer.username not in response.body)

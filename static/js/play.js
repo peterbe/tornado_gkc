@@ -68,10 +68,11 @@ var Clock = (function() {
         // p is percentage of time left
         // max rumble speed is 200 (quite arbitrary)
         var rumbleSpeed;
-        if (p < 30) {
+        if (p < 40) {
           rumbleSpeed = 1 * p;
           var range;
           if (p < 1) range = 8;
+          else if (p < 3) range = 6;
           else if (p < 5) range = 4;
           else if (p < 10) range = 3;
           else range = 2;
@@ -150,9 +151,6 @@ var Question = (function() {
               .attr('alt', question.image.alt)
                 .ready(function() {
                   send({loaded_image: 1});
-                  //$('li.current').show();
-                  //Clock.start(this.timed_out);
-                  //$('#answer').focus();
                 }).appendTo($('#images'));
         image.attr('src', question.image.src);
       } else {
@@ -326,6 +324,7 @@ var alternatives = (function() {
 })();
 
 function __log_message(msg, inbound) {
+  if (!$('#log:visible').size()) return;
    var el = $('<p>');
    var d = new Date();
    var line = '<em>';
@@ -344,7 +343,6 @@ function __log_message(msg, inbound) {
    }
    el.html(line);
 
-   //document.getElementById('log').appendChild(el);
    el.appendTo('#log');
    document.getElementById('log').scrollTop = 1000000;
 }
@@ -499,6 +497,7 @@ $(function() {
       Gossip.count_down(obj.wait, function(seconds) {
         return 'Next question in ' + seconds + ' seconds';
       });
+
       setTimeout(function() {
         send(obj.message);
       }, obj.wait * 1000);
@@ -529,15 +528,16 @@ $(function() {
     } else if (obj.answered) {
       $('#timer').hide();
       $('#input').hide();
+      Clock.stop();
       if (obj.answered.right) {
-        Clock.stop();
+        //Clock.stop();
         Question.right_answer();
       } else if (obj.answered.too_slow) {
         Question.too_slow();
       } else if (obj.answered.beaten) {
         Question.beaten();
       } else {
-        Clock.stop();
+        //Clock.stop();
         Question.wrong_answer();
       }
     } else if (obj.disconnected) {

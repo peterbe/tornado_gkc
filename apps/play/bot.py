@@ -1,10 +1,13 @@
 import random
 
 class ComputerClient(object):
+
     def __init__(self, user_id, user_name='Computer'):
         self.user_id = user_id
         self.user_name = user_name
+
     def send(self, msg):
+        #print "-C->", msg
         pass
 
 
@@ -43,6 +46,8 @@ def predict_bot_answer(max_time, knowledge):
     else:
         sec_range = (2 * third(max_time), max_time)
 
+    # XXX: I'm wondering, if the 'seconds == sec_range[1]' it should perhaps
+    # not bother since it's not possible to answer in the last second. Maybe.
     seconds = random.randint(sec_range[0], sec_range[1])
 
     # lay out all the possible outcomes
