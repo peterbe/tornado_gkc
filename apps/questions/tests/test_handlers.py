@@ -18,6 +18,26 @@ class LoginError(Exception):
 
 class HandlersTestCase(BaseHTTPTestCase):
 
+    def setUp(self):
+        super(HandlersTestCase, self).setUp()
+        if '__test' not in settings.THUMBNAIL_DIRECTORY:
+            settings.THUMBNAIL_DIRECTORY += '__test'
+
+    def tearDown(self):
+        super(HandlersTestCase, self).setUp()
+        assert '__test' in settings.THUMBNAIL_DIRECTORY
+        self._rm_thumbnails(settings.THUMBNAIL_DIRECTORY)
+
+    def _rm_thumbnails(self, dir, rmdir=False):
+        for each in os.listdir(dir):
+            path = os.path.join(dir, each)
+            if os.path.isdir(path):
+                self._rm_thumbnails(path, rmdir=True)
+            elif os.path.isfile(path):
+                os.remove(path)
+        if rmdir and not os.listdir(dir):
+            os.rmdir(dir)
+
     def test_questions_shortcut(self):
         cookie = self._login() # using fixtures
 
@@ -96,6 +116,77 @@ class HandlersTestCase(BaseHTTPTestCase):
         data = dict(data, text="A new question?")
         response = self.client.post(edit_url, data)
         self.assertEqual(response.code, 302)
+
+    def test_adding_question_with_same_accept(self):
+        url = self.reverse_url('add_question')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 302)
+
+        self._login()
+        user = self.db.User.one(username='peterbe')
+        assert user
+
+        url = self.reverse_url('add_question')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+
+        assert not self.db.Question.find().count()
+        data = dict(text=u"H\ex3r mar dU? ",
+                    answer="Bra   ",
+                    accept="brA",
+                    alternatives=" Bra  \nOk\nFine\nIlla",
+                    genre="Life ",
+                    spell_correct='yes',
+                    comment="  \nSome\nComment\t"
+                    )
+        response = self.client.post(url, data)
+        self.assertEqual(response.code, 302)
+        redirected_to = response.headers['Location']
+        assert self.db.Question.find().count()
+        question, = self.db.Question.find()
+        self.assertEqual(question.answer, u'Bra')
+        self.assertEqual(question.alternatives,
+                         [u'Bra', u'Ok', u'Fine', u'Illa'])
+        self.assertEqual(question.accept, [])
+
+    def test_edit_question_with_same_accept(self):
+        cookie = self._login()
+        user = self.db.User.one(username='peterbe')
+        assert user
+
+        question = self.db.Question()
+        question.text = u"Who wrote what?"
+        question.answer = u"Dickens"
+        question.accept = [u"Charles Dickens"]
+        question.alternatives = [u"Dickens", u"One", u"Two", u"Three"]
+        question.spell_check = True
+        question.comment = u"Some Comment"
+        genre = self.db.Genre()
+        genre.name = u"Lit"
+        genre.save()
+        question.genre = genre
+        question.author = user
+        question.state = DRAFT
+        question.save()
+
+        url = self.reverse_url('edit_question', question._id)
+        data = dict(answer="Wilde",
+                    text="Who was gay?",
+                    accept='wilde',
+                    alternatives=['Oscar','Wilde','Shake','Spere'],
+                    comment="\tchanged\n",
+                    genre='lit',
+                    )
+        response = self.client.post(url, data)
+        #self.assertEqual(response.code, 200)
+        #self.assertTrue('errors' in response.body)
+        #data['alternatives'] = ['wilde','Dickens','Shake','Spere']
+        response = self.client.post(url, data)
+        self.assertEqual(response.code, 302)
+
+        question = self.db.Question.one({'answer':u"Wilde"})
+        self.assertEqual(question.accept, [])
+
 
     def test_edit_and_submit(self):
         cookie = self._login()
@@ -645,7 +736,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertTrue(q1.has_image())
         response = self.client.get(url)
         self.assertEqual(response.code, 200)
-        self.assertTrue('/thumbnails/' in response.body)
+        self.assertTrue('/thumbnails' in response.body)
 
     def test_adding_question_with_image(self):
         self._login()
@@ -710,7 +801,6 @@ class HandlersTestCase(BaseHTTPTestCase):
         img_tag = self._find_thumbnail_tag(response.body)
         self.assertTrue(img_tag)
 
-#        new_image_url = self.reverse_url('new_question_image', question._id)
         response = self.client.get(new_image_url)
         self.assertEqual(response.code, 200)
 
@@ -813,6 +903,76 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(img.size, (20, 16)) # known from fixture
         self.assertEqual(img_tag['width'], '20')
         self.assertEqual(img_tag['height'], '16')
+
+
+    def test_editing_question_with_image(self):
+        self._login()
+        user = self.db.User.one(username='peterbe')
+        assert user
+
+        maths = self.db.Genre()
+        maths.name = u'Celebs'
+        maths.approved = True
+        maths.save()
+
+        question = self.db.Question()
+        question.author = user
+        question.text = u'How?'
+        question.answer = u'yes'
+        question.alternatives = [u'yes', u'no', u'maybe', u'ok']
+        question.genre = maths
+        question.save()
+
+        here = os.path.dirname(__file__)
+        image_data = open(os.path.join(here, 'image.png'), 'rb').read()
+        question_image = self.db.QuestionImage()
+        question_image.question = question
+        question_image.save()
+
+        type_, __ = mimetypes.guess_type('image.png')
+        with question_image.fs.new_file('original') as f:
+            f.content_type = type_
+            f.write(image_data)
+
+        question_image, = self.db.QuestionImage.find()
+        assert not question_image.render_attributes
+
+        edit_question_url = self.reverse_url('edit_question', question._id)
+        response = self.client.get(edit_question_url)
+        first_src = self._find_thumbnail_tag(response.body)['src']
+        first_height = self._find_thumbnail_tag(response.body)['height']
+        assert first_height == '18'  # know your fixtures :)
+        new_image_url = self.reverse_url('new_question_image', question._id)
+        self.assertTrue(new_image_url in response.body)
+
+        question_image, = self.db.QuestionImage.find()
+        first_render_attributes = question_image.render_attributes
+        assert first_render_attributes
+
+        response = self.client.get(new_image_url)
+        assert self._find_thumbnail_tag(response.body)['height'] == '18'
+
+        # prepare to upload a different one
+
+        image_data = open(os.path.join(here, 'screenshot.jpg'), 'rb').read()
+        content_type, data = encode_multipart_formdata([('image', 'image.jpg')],
+                                         [('image', 'image.jpg', image_data)])
+        response = self.client.post(new_image_url, data,
+                                    headers={'Content-Type': content_type})
+        self.assertEqual(response.code, 302)
+        submit_url = self.reverse_url('submit_question', question._id)
+        self.assertEqual(response.headers['location'], submit_url)
+
+        response = self.client.get(edit_question_url)
+        second_src = self._find_thumbnail_tag(response.body)['src']
+        second_height = self._find_thumbnail_tag(response.body)['height']
+
+        self.assertNotEqual(first_src, second_src)
+        self.assertNotEqual(first_height, second_height)
+
+        question_image, = self.db.QuestionImage.find()
+        second_render_attributes = question_image.render_attributes
+        self.assertNotEqual(first_render_attributes, second_render_attributes)
 
 
     def _find_thumbnail_tag(self, content):

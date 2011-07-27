@@ -343,7 +343,8 @@ class AddQuestionHandler(QuestionsBaseHandler):
             question = self.db.Question()
             question.text = form.text.data
             question.answer = form.answer.data
-            question.accept = [form.accept.data]
+            question.accept = [x for x in [form.accept.data]
+                               if x.lower() != question.answer.lower()]
             question.alternatives = [x.strip() for x in
                                      form.alternatives.data.splitlines()]
             assert question.answer in question.alternatives, "answer not in alternatives"
@@ -450,7 +451,8 @@ class EditQuestionHandler(QuestionsBaseHandler):
         if form.validate():
             question.text = form.text.data
             question.answer = form.answer.data
-            question.accept = [x.strip() for x in form.accept.data.splitlines()]
+            question.accept = [x.strip() for x in form.accept.data.splitlines()
+                               if x.strip().lower() != question.answer.lower()]
             question.alternatives = [x.strip() for x in form.alternatives.data.splitlines()]
             if question.answer not in question.alternatives:
                 alts = []
@@ -556,7 +558,10 @@ class NewQuestionImageHandler(QuestionsBaseHandler):
 
             question_image = (self.db.QuestionImage
               .one({'question.$id': question._id}))
-            if not question_image:
+            if question_image:
+                assert question_image.render_attributes
+                question_image.render_attributes = {}
+            else:
                 question_image = self.db.QuestionImage()
                 question_image.question = question
             question_image.save()
