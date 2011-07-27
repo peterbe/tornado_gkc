@@ -1,58 +1,9 @@
 from urlparse import urlparse
-import mimetypes
-import os
 import json
-import datetime
-from apps.main.tests.base import BaseHTTPTestCase, TestClient
+from apps.main.tests.base import BaseHTTPTestCase
 
 
 class HandlersTestCase(BaseHTTPTestCase):
-
-    def _create_question(self,
-                         text=None,
-                         answer=u'yes',
-                         alternatives=None,
-                         accept=None,
-                         spell_correct=False):
-        cq = getattr(self, 'created_questions', 0)
-        genre = self.db.Genre()
-        genre.name = u"Genre %s" % (cq + 1)
-        genre.approved = True
-        genre.save()
-
-        q = self.db.Question()
-        q.text = text and unicode(text) or u'Question %s?' % (cq + 1)
-        q.answer = unicode(answer)
-        q.alternatives = (alternatives and alternatives
-                          or [u'yes', u'no', u'maybe', u'perhaps'])
-        q.genre = genre
-        q.accept = accept and accept or []
-        q.spell_correct = spell_correct
-        q.state = u'PUBLISHED'
-        q.publish_date = datetime.datetime.now()
-        q.save()
-        self.created_questions = cq + 1
-        return q
-
-    def _attach_image(self, question):
-        question_image = self.db.QuestionImage()
-        question_image.question = question
-        question_image.render_attributes = {
-          'src': '/static/image.jpg',
-          'width': 300,
-          'height': 260,
-          'alt': question.text
-        }
-        question_image.save()
-
-        here = os.path.dirname(__file__)
-        image_data = open(os.path.join(here, 'image.jpg'), 'rb').read()
-        with question_image.fs.new_file('original') as f:
-            type_, __ = mimetypes.guess_type('image.jpg')
-            f.content_type = type_
-            f.write(image_data)
-
-        assert question.has_image()
 
     def test_random_question(self):
         q1 = self._create_question()
@@ -62,7 +13,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         self._attach_image(self._create_question())
 
         url = self.reverse_url('widget_random_question_jsonp')
-        response = self.client.get(url, {'callback':'callback'})
+        response = self.client.get(url, {'callback': 'callback'})
         self.assertTrue(
           response.headers['Content-Type']
           .startswith('text/javascript'))
@@ -90,9 +41,9 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         response = self.client.post(url, {})
         self.assertEqual(response.code, 400)
-        response = self.client.post(url, {'id':'_'})
+        response = self.client.post(url, {'id': '_'})
         self.assertEqual(response.code, 400)
-        response = self.client.post(url, {'id':'a' * 24})
+        response = self.client.post(url, {'id': 'a' * 24})
         self.assertEqual(response.code, 404)
 
         q1 = self._create_question()

@@ -1,10 +1,12 @@
 import unittest
 from apps.play.battle import Battle, BattleError
 
+
 class MockClient:
     def __init__(self, user_id, user_name):
         self.user_id = user_id
         self.user_name = user_name
+
 
 class MockQuestion:
     def __init__(self, text, answer, alternatives, accept, spell_correct):
@@ -14,10 +16,30 @@ class MockQuestion:
         self.accept = accept
         self.spell_correct = spell_correct
 
+
 class BattleTestCase(unittest.TestCase):
 
+    def _get_default_rules(self,
+                           thinking_time=10,
+                           no_questions=10,
+                           min_no_people=2,
+                           max_no_people=2,
+                           genres=None):
+
+        rules = dict(
+          thinking_time=thinking_time,
+          no_questions=no_questions,
+          min_no_people=min_no_people,
+          max_no_people=max_no_people,
+          genres=genres is not None and genres or [],
+          pictures_only=False,
+          alternatives_only=False,
+        )
+        return rules
+
     def test_participants(self):
-        battle = Battle(10, min_no_people=2, max_no_people=2)
+        rules = self._get_default_rules()
+        battle = Battle(rules)
         client = MockClient('123', 'peter')
         battle.add_participant(client)
 
@@ -44,10 +66,10 @@ class BattleTestCase(unittest.TestCase):
 
     def test_check_answer_without_spell_correct(self):
         question = MockQuestion("WHy?", "right",
-                                ['one','two','three','four'],
+                                ['one', 'two', 'three', 'four'],
                                 ['correcT'],
                                 False)
-        battle = Battle(10)
+        battle = Battle(self._get_default_rules())
         battle.current_question = question
         self.assertTrue(battle.check_answer('RIGHT'))
         self.assertTrue(battle.check_answer('RIght '))
@@ -57,10 +79,10 @@ class BattleTestCase(unittest.TestCase):
 
     def test_check_answer_with_spell_correct(self):
         question = MockQuestion("WHy?", "right",
-                                ['one','two','three','four'],
+                                ['one', 'two', 'three', 'four'],
                                 ['correcT'],
                                 True)
-        battle = Battle(10)
+        battle = Battle(self._get_default_rules())
         battle.current_question = question
         self.assertTrue(battle.check_answer('RIGHT'))
         self.assertTrue(battle.check_answer('RIght '))
@@ -70,7 +92,7 @@ class BattleTestCase(unittest.TestCase):
         self.assertTrue(battle.check_answer(' CORRREct'))
 
     def test_dead_or_not(self):
-        battle = Battle(10)
+        battle = Battle(self._get_default_rules())
         self.assertTrue(battle.updated)
         self.assertTrue(not battle.is_dead(10))
         self.assertRaises(AssertionError, battle.is_dead, 0)

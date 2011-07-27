@@ -1,5 +1,10 @@
+#__all__ = 'BaseModelsTestCase', 'BaseHTTPTestCase'
+
 import base64
 import time
+import datetime
+import mimetypes
+import os
 import re
 import hmac
 import hashlib
@@ -15,58 +20,122 @@ from apps.main.models import connection
 from utils.http_test_client import TestClient, HTTPClientMixin
 
 
-class BaseModelsTestCase(unittest.TestCase):
+class _DatabaseTestCaseMixin(object):
     _once = False
-    def setUp(self):
+
+    def setup_connection(self):
         if not self._once:
             self._once = True
-            self.con = connection
-            #self.con.register([User, UserSettings])
-            self.db = self.con.test
+            self.db = connection['test']
             self._emptyCollections()
+
+    def teardown_connection(self):
+        # do this every time
+        self._emptyCollections()
 
     def _emptyCollections(self):
         [self.db.drop_collection(x) for x
          in self.db.collection_names()
          if x not in ('system.indexes',)]
 
+    def _create_question(self,
+                         text=None,
+                         answer=u'yes',
+                         alternatives=None,
+                         accept=None,
+                         spell_correct=False):
+        cq = getattr(self, 'created_questions', 0)
+        genre = self.db.Genre()
+        genre.name = u"Genre %s" % (cq + 1)
+        genre.approved = True
+        genre.save()
+
+        q = self.db.Question()
+        q.text = text and unicode(text) or u'Question %s?' % (cq + 1)
+        q.answer = unicode(answer)
+        q.alternatives = (alternatives and alternatives
+                          or [u'yes', u'no', u'maybe', u'perhaps'])
+        q.genre = genre
+        q.accept = accept and accept or []
+        q.spell_correct = spell_correct
+        q.state = u'PUBLISHED'
+        q.publish_date = datetime.datetime.now()
+        q.save()
+
+        self.created_questions = cq + 1
+
+        return q
+
+    def _attach_image(self, question):
+        question_image = self.db.QuestionImage()
+        question_image.question = question
+        question_image.render_attributes = {
+          'src': '/static/image.jpg',
+          'width': 300,
+          'height': 260,
+          'alt': question.text
+        }
+        question_image.save()
+
+        here = os.path.dirname(__file__)
+        image_data = open(os.path.join(here, 'image.jpg'), 'rb').read()
+        with question_image.fs.new_file('original') as f:
+            type_, __ = mimetypes.guess_type('image.jpg')
+            f.content_type = type_
+            f.write(image_data)
+
+        assert question.has_image()
+        return question_image
+
+
+class BaseModelsTestCase(unittest.TestCase, _DatabaseTestCaseMixin):
+
+    def setUp(self):
+        super(BaseModelsTestCase, self).setUp()
+        self.setup_connection()
+
     def tearDown(self):
-        self._emptyCollections()
+        super(BaseModelsTestCase, self).tearDown()
+        self.teardown_connection()
 
 
+class BaseAsyncTestCase(AsyncHTTPTestCase, _DatabaseTestCaseMixin):
 
-class BaseHTTPTestCase(AsyncHTTPTestCase, LogTrapTestCase, HTTPClientMixin):
+    def setUp(self):
+        super(BaseAsyncTestCase, self).setUp()
+        self.setup_connection()
 
-    _once = False
+    def tearDown(self):
+        super(BaseAsyncTestCase, self).tearDown()
+        self.teardown_connection()
+
+
+class BaseHTTPTestCase(BaseAsyncTestCase, HTTPClientMixin):
+
+    #_once = False
     def setUp(self):
         super(BaseHTTPTestCase, self).setUp()
-        if not self._once:
-            self._once = True
-            self._emptyCollections()
 
         self._app.settings['email_backend'] = \
           'utils.send_mail.backends.locmem.EmailBackend'
         self._app.settings['email_exceptions'] = False
         self.client = TestClient(self)
+        #print dir(self)
+        #print self._create_question
 
-    def _emptyCollections(self):
-        db = self.db
-        [db.drop_collection(x) for x
-         in db.collection_names()
-         if x not in ('system.indexes',)]
+#    @property
+#    def db(self):
+#        return self._app.con[self._app.database_name]
 
-    @property
-    def db(self):
-        return self._app.con[self._app.database_name]
-
-    def get_db(self):
-        print "Deprecated. Use self.db instead"
-        return self.db
+#    def get_db(self):
+#        print "Deprecated. Use self.db instead"
+#        return self.db
 
     def get_app(self):
         return app.Application(database_name='test',
                                xsrf_cookies=False,
-                               optimize_static_content=False)
+                               optimize_static_content=False,
+                               embed_static_url=False)
 
     def decode_cookie_value(self, key, cookie_value):
         try:

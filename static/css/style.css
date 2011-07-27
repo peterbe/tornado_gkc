@@ -88,5 +88,10 @@ form.question textarea {
   top:100px;
 }
 
+form ul.errors { padding-left:0; margin-bottom:0; }
+form ul.errors li { list-style-type:none; }
+ul.errors li { color:red; font-weight:bold; }
+form p.field { margin-top:0; }
+
 a.bold { font-weight:bold; }
 div.anonymous { margin:20px; padding:20px 50px; border:1px solid #ccc; }

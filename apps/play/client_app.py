@@ -65,6 +65,20 @@ class Client(tornadio.SocketConnection):
             return
         cookie_parser = CookieParser(request)
         user_id = cookie_parser.get_secure_cookie('user')
+        rules = cookie_parser.get_secure_cookie('rules')
+
+        if rules:
+            rules = self.db.Rules.collection.one({'_id': ObjectId(rules)})
+        if not rules:
+            rules = self.db.Rules.collection.one({'default': True})
+            if not rules:
+                rules = self.db.Rules()
+                rules.no_questions = 10
+                rules.thinking_time = 10
+                rules.genres = []
+                rules.default = True
+                rules.save()
+                rules = dict(rules)
 
         if not user_id:
             logging.debug(
@@ -87,9 +101,9 @@ class Client(tornadio.SocketConnection):
         self.user_name = user.username
         if self.application_settings['debug']:
             self.send({'debug': "Your name is %s" % self.user_name})
-        self._initiate()
+        self._initiate(rules)
 
-    def _initiate(self):
+    def _initiate(self, rules):
         """called when the client has connected successfully"""
         self.send(dict(your_name=self.user_name))
         battle = None
@@ -100,7 +114,7 @@ class Client(tornadio.SocketConnection):
                 _del_battles.add(created_battle)
                 continue
 
-            if created_battle.is_open():
+            if created_battle.is_open(rules):
                 if self in created_battle:
                     self.send(dict(error={'message':'Already in an open battle',
                                           'code': errors.ERROR_ALREADY_IN_OPEN_BATTLE}))
@@ -108,16 +122,15 @@ class Client(tornadio.SocketConnection):
                 battle = created_battle
                 logging.debug("%r joining battle: %r" % (self.user_name, battle))
                 break
+
         for bad_battle in _del_battles:
             self.battles.remove(bad_battle)
 
         if not battle:
-            battle = Battle(10, # specify how long the waiting delay is
-                            no_questions=self.application_settings['debug'] and 5 or 10
-                            )
+            battle = Battle(rules)
             logging.debug("Creating new battle")
             self.battles.add(battle)
-        battle.add_participant(self)
+        battle.add_participant(self, rules)
         self.current_client_battles[self.user_id] = battle
         if battle.ready_to_play():
             battle.commence(self.db)
@@ -256,7 +269,8 @@ class Client(tornadio.SocketConnection):
         if battle.timed_out_too_soon():
             logging.debug("time.time():%s current_question_sent+thinking_time:%s"
                             % (time.time(),
-                            battle.current_question_sent + battle.thinking_time))
+                               battle.current_question_sent +
+                               battle.rules['thinking_time']))
             client.send(dict(error={'message': 'Timed out too soon',
                                     'code': errors.ERROR_TIMED_OUT_TOO_SOON}))
             return
@@ -387,8 +401,8 @@ class Client(tornadio.SocketConnection):
         sent_questions = [x._id for x in battle.sent_questions]
         search = {'state': 'PUBLISHED',
                   '_id':{'$nin': sent_questions + list(recently_played_questions_ids)}}
-        if battle.genres_only:
-            search['genre.$id'] = {'$nin': [x._id for x in battle.genres_only]}
+        if battle.rules['genres']:
+            search['genre.$id'] = {'$in': [x for x in battle.rules['genres']]}
 
         while True:
             count = self.db.Question.find(search).count()
