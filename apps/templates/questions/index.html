@@ -69,7 +69,7 @@
   {% end %}
   {% if not submitted_questions.count() %}
   <div>
-    <p><em>None at the momqent</em></p>
+    <p><em>None at the moment</em></p>
   </div>
   {% end %}
 </div>
@@ -92,6 +92,38 @@
   {% end %}
 </div>
 {% end %}
+
+{% if reviews_count %}
+<div id="reviewed_questions">
+  <h3>Reviewed Questions ({{ reviews_count }})</h3>
+
+  <table border="0">
+  {% for question, reviews in reviewed_questions %}
+    <tr>
+      <td class="question_text" colspan="6"><a href="{{ reverse_url('view_question', question._id ) }}">{{ question.text }}</a></td>
+    </tr>
+      {% for review in reviews %}
+      <tr class="review">
+        <td class="label">Verdict:</td>
+        <td class="value">{% module ShowVerdict(review.verdict) %}</td>
+        <td class="label">Rating:</td>
+        <td class="value">{% module ShowRating(review.rating) %}</td>
+        <td class="label">Difficulty:</td>
+        <td class="value">{% module ShowDifficulty(review.difficulty) %}</td>
+      </tr>
+      {% if review.comment %}
+      <tr>
+        <td class="label">Comment:</td>
+        <td class="comment" colspan="5">{% raw linkify(review.comment) %}</td>
+      <tr>
+      {% end %}
+    {% end %}
+  {% end %}
+  </table>
+
+</div>
+{% end %}
+
 
 {% if published_questions_count %}
 <div id="published_questions">

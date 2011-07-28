@@ -68,10 +68,10 @@
 <table style="width:100%">
   <thead>
   <tr>
-    <td>Verdict</td>
-    <td>Reviewer</td>
-    <td>Difficulty</td>
-    <td>Rating</td>
+    <td class="yellow">Verdict</td>
+    {% if is_admin_user %}<td class="yellow">Reviewer</td>{% end %}
+    <td class="yellow">Difficulty</td>
+    <td class="yellow">Rating</td>
   </tr>
   </thead>
   {% if rating_total %}
@@ -86,11 +86,21 @@
   {% for review in reviews %}
   <tbody class="review">
     <tr>
-      <td><strong>{{ review.verdict }}</strong></td>
+      <td><strong>{% module ShowVerdict(review.verdict) %}</strong></td>
+      {% if is_admin_user %}
       <td>{% module ShowUser(review.user) %}</td>
-      <td>{{ review.difficulty }}</td>
-      <td>{{ review.rating }}</td>
+      {% end %}
+      <td>{% module ShowDifficulty(review.difficulty) %}</td>
+      <td>{% module ShowRating(review.rating) %}</td>
     </tr>
+    {% if review.comment %}
+    <tr>
+      <td colspan="4">
+      <strong class="yellow">Comment:</strong>
+      {% raw linkify(review.comment) %}
+      </td>
+    </tr>
+    {% end %}
   </tbody>
   {% end %}
 </table>
