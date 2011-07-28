@@ -1,3 +1,4 @@
+import datetime
 import time
 import os.path as op
 import logging
@@ -22,6 +23,7 @@ import settings
 from bot import ComputerClient
 
 class Client(tornadio.SocketConnection):
+    is_bot = False
 
     def send(self, *args, **kwargs):
         #print "--->", args
@@ -352,11 +354,6 @@ class Client(tornadio.SocketConnection):
             battle.save_played_question(self.db, client, alternatives=True)
 
     def _get_next_question(self, battle):
-        search = {'state': 'PUBLISHED',
-                  '_id':{'$nin': [x._id for x in battle.sent_questions]}}
-        if battle.genres_only:
-            search['genre.$id'] = {'$nin': [x._id for x in battle.genres_only]}
-
         def has_question_knowledge(question):
             try:
                 qk = (self.db.QuestionKnowledge.collection
@@ -372,12 +369,33 @@ class Client(tornadio.SocketConnection):
                 return qk['users']
             return False
 
+        # don't bother checking if the bot has played them recently
+        battle_user_ids = [x.user_id for x in battle.participants
+                           if not x.is_bot]
+
+        battle_user_object_ids = [ObjectId(x) for x in battle_user_ids]
+        then = datetime.datetime.now() - datetime.timedelta(seconds=60 * 60)
+        recently_played = (self.db.Play.collection
+                           .find({'users.$id': {'$in': battle_user_object_ids},
+                                  'finished': {'$gte': then}
+                                  }))
+        recently_played_ids = [x['_id'] for x in recently_played]
+        recently_played_questions = (self.db.PlayedQuestion.collection
+                                    .find({'play.$id': {'$in': recently_played_ids}}))
+        recently_played_questions_ids = set([x['question'].id for x in recently_played_questions])
+
+        sent_questions = [x._id for x in battle.sent_questions]
+        search = {'state': 'PUBLISHED',
+                  '_id':{'$nin': sent_questions + list(recently_played_questions_ids)}}
+        if battle.genres_only:
+            search['genre.$id'] = {'$nin': [x._id for x in battle.genres_only]}
+
         while True:
             count = self.db.Question.find(search).count()
             if not count:
                 return
             rand = random.randint(0, count)
-            battle_user_ids = [x.user_id for x in battle.participants]
+
             for question in self.db.Question.find(search).limit(1).skip(rand):
                 # XXX at this point we might want to check that the question
                 # hasn't been

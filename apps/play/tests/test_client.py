@@ -1188,6 +1188,203 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-2]['update_scoreboard'])
         self.assertTrue(client2._sent[-2]['update_scoreboard'])
 
+    def test_run_out_recently_played(self):
+        (user, client), (user2, client2) = self._create_two_connected_clients()
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 3
+        print self.db.Play.find().count()
+        q1 = self._create_question()
+        q2 = self._create_question()
+        p = self.db.Play()
+        p.users = [user, user2]
+        p.no_players = 2
+        p.no_questions = 2
+        p.finished = datetime.datetime.now() - datetime.timedelta(seconds=60 * 60 - 1)
+        p.draw = True
+        p.save()
+
+        pq1a = self.db.PlayedQuestion()
+        pq1a.play = p
+        pq1a.question = q1
+        pq1a.user = user
+        pq1a.right = True
+        pq1a.answer = u'yes'
+        pq1a.time = 1.0
+        pq1a.save()
+
+        pq1b = self.db.PlayedQuestion()
+        pq1b.play = p
+        pq1b.question = q1
+        pq1b.user = user2
+        pq1b.right = False
+        pq1b.answer = u'wrong'
+        pq1b.time = 1.0
+        pq1b.save()
+
+        pq2a = self.db.PlayedQuestion()
+        pq2a.play = p
+        pq2a.question = q2
+        pq2a.user = user
+        pq2a.right = False
+        pq2a.answer = u'wrong'
+        pq2a.time = 2.0
+        pq2a.save()
+
+        pq2b = self.db.PlayedQuestion()
+        pq2b.play = p
+        pq2b.question = q2
+        pq2b.user = user2
+        pq2b.right = True
+        pq2b.answer = u'yes'
+        pq2b.time = 2.0
+        pq2b.save()
+
+        q3 = self._create_question()
+        q4 = self._create_question()
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+        client.on_message(dict(alternatives=1))
+        client.on_message(dict(answer='Yes'))
+
+        self.assertTrue(client._sent[-3]['answered']['right'])
+        self.assertTrue(client2._sent[-3]['answered']['too_slow'])
+
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+
+        client.on_message(dict(next_question=1))
+        client2.on_message(dict(next_question=1))
+
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+
+        client2.on_message(dict(alternatives=1))
+        client2.on_message(dict(answer='Yes'))
+
+        self.assertTrue(client._sent[-3]['answered']['too_slow'])
+        self.assertTrue(client2._sent[-3]['answered']['right'])
+
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+
+        self.assertTrue(client._sent[-1]['error'])
+        self.assertTrue(client2._sent[-1]['error'])
+
+        self.assertEqual(client._sent[-1]['error']['code'],
+                         errors.ERROR_NO_MORE_QUESTIONS)
+        self.assertEqual(client2._sent[-1]['error']['code'],
+                         errors.ERROR_NO_MORE_QUESTIONS)
+
+    def test_dont_run_out_recently_played_against_computer(self):
+        user2 = self.db.User()
+        user2.username = u'peppe'
+        user2.save()
+
+        computer = self.db.User()
+        computer.username = settings.COMPUTER_USERNAME
+        computer.save()
+
+        q1 = self._create_question()
+        self._create_question_knowledge(q1, {
+          'right': .8,
+          'wrong': .2,
+          'alternatives_right': 0.,
+          'alternatives_wrong': 0.,
+          'too_slow': 0.,
+          'timed_out': 0.,
+          'users': 10,
+        })
+        q2 = self._create_question()
+        self._create_question_knowledge(q2, {
+          'right': .7,
+          'wrong': .3,
+          'alternatives_right': 0.,
+          'alternatives_wrong': 0.,
+          'too_slow': 0.,
+          'timed_out': 0.,
+          'users': 10,
+        })
+        p = self.db.Play()
+        p.users = [user2, computer]
+        p.no_players = 2
+        p.no_questions = 2
+        p.finished = datetime.datetime.now() - datetime.timedelta(seconds=60 * 60 - 1)
+        p.draw = True
+        p.save()
+
+        pq1a = self.db.PlayedQuestion()
+        pq1a.play = p
+        pq1a.question = q1
+        pq1a.user = user2
+        pq1a.right = True
+        pq1a.answer = u'yes'
+        pq1a.time = 1.0
+        pq1a.save()
+
+        pq1b = self.db.PlayedQuestion()
+        pq1b.play = p
+        pq1b.question = q1
+        pq1b.user = computer
+        pq1b.right = False
+        pq1b.answer = u'wrong'
+        pq1b.time = 1.0
+        pq1b.save()
+
+        pq2a = self.db.PlayedQuestion()
+        pq2a.play = p
+        pq2a.question = q2
+        pq2a.user = user2
+        pq2a.right = False
+        pq2a.answer = u'wrong'
+        pq2a.time = 2.0
+        pq2a.save()
+
+        pq2b = self.db.PlayedQuestion()
+        pq2b.play = p
+        pq2b.question = q2
+        pq2b.user = computer
+        pq2b.right = True
+        pq2b.answer = u'yes'
+        pq2b.time = 2.0
+        pq2b.save()
+
+        user, client, request = self._create_connected_client('peterbe')
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 2
+        client.on_message(dict(against_computer=1))
+
+        self.assertTrue(client._sent[-3]['your_name'])
+        self.assertTrue(client._sent[-2]['init_scoreboard'])
+        self.assertTrue(client._sent[-1]['wait'])
+
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+
+        self.assertTrue(client._sent[-3]['wait'])
+        self.assertTrue(client._sent[-2]['question'])
+
+        self.assertTrue(client._sent[-1]['bot_answers'])
+        client.on_message(dict(alternatives=1))
+        client.on_message(dict(answer='Yes'))
+
+
+        self.assertTrue(client._sent[-3]['answered']['right'])
+        self.assertTrue(client._sent[-2]['update_scoreboard'])
+        self.assertTrue(client._sent[-1]['wait'])
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-2]['question'])
+
+
 
         return
 

@@ -2,6 +2,8 @@ import random
 
 class ComputerClient(object):
 
+    is_bot = True
+
     def __init__(self, user_id, user_name='Computer'):
         self.user_id = user_id
         self.user_name = user_name
@@ -9,6 +11,7 @@ class ComputerClient(object):
     def send(self, msg):
         #print "-C->", msg
         pass
+
 
 
 def predict_bot_answer(max_time, knowledge):
