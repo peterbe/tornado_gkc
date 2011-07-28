@@ -1254,3 +1254,25 @@ class QuestionSearchHandler(QuestionsBaseHandler):
         options['limit'] = limit
         options['page_title'] = "Search results for '%s'" % q
         self.render("questions/search.html", **options)
+
+
+@route('/questions/image/(\w{24})/render/$', name="render_question_image")
+class RenderQuestionImageHandler(QuestionsBaseHandler):
+
+    def get(self, question_image_id):
+        options = {}
+        question_image = (self.db.QuestionImage
+                          .one({'_id': ObjectId(question_image_id)}))
+        if not question_image:
+            raise HTTPError(404, "Question image can't be found")
+        options['question_image'] = question_image
+        options['question'] = question_image.question
+
+        if self.get_argument('force-refresh', False):
+            question_image.render_attributes = {}
+            question_image.save()
+
+        self.render('questions/render_image.html', **options)
+        question_image = (self.db.QuestionImage
+                          .one({'_id': question_image._id}))
+        assert question_image.render_attributes
