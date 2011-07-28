@@ -275,6 +275,22 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
               .find({'question.$id': q['_id']}).count())
         options['played_questions_count'] = played_questions_count / 2
 
+        reviewed_questions = []
+        recent_reviews = []
+        reviews_count = 0
+        for question in options['accepted_questions']:
+            #_question_ids = [x._id for x in options['accepted_questions']]
+            search = {'question.$id': question._id}
+            reviews = []
+            if self.db.QuestionReview.find(search).count():
+                reviewed_questions.append((
+                  question,
+                  self.db.QuestionReview.find(search).sort('add_date', -1)
+                ))
+        options['accepted_questions'].rewind()
+        options['reviewed_questions'] = reviewed_questions
+        options['reviews_count'] = sum([y.count() for x, y in reviewed_questions])
+
         if self.is_admin_user(user):
             _user_search = {}
         options['submitted_questions'] = \
@@ -398,13 +414,18 @@ class ViewQuestionHandler(QuestionsBaseHandler):
         options['question'] = question
         options['page_title'] = "View question"
         options['your_question'] = question.author == options['user']
-        options['reviews'] = []
 
         # to avoid NameErrors
+        options['reviews'] = []
         options['rating_total'] = None
         options['difficulty_total'] = None
         options['skip'] = None
         options['can_edit'] = False
+
+        if question.state != DRAFT:
+            options['reviews'] = (self.db.QuestionReview
+                                  .find({'question.$id': question._id})
+                                  .sort('add_date', -1))
 
         if self.can_edit_question(question, options['user']):
             options['can_edit'] = True

@@ -4,6 +4,8 @@ from pprint import pprint
 import tornado.web
 from apps.main.models import connection
 from apps.questions.models import DIFFICULTIES
+from apps.questions.models import VERIFIED, UNSURE, WRONG
+
 from utils import dict_plus
 import settings
 
@@ -95,3 +97,30 @@ class ShowAgeDays(tornado.web.UIModule):
     def render(self, date):
         d = datetime.datetime.today() - date
         return d.days
+
+class ShowVerdict(tornado.web.UIModule):
+    def render(self, value):
+        if value == VERIFIED:
+            return "Verified"
+        if value == UNSURE:
+            return "Unsure"
+        if value == WRONG:
+            return "Wrong!"
+        return value
+
+class ShowRating(tornado.web.UIModule):
+    def render(self, value):
+        if value == 0:
+            return "About right"
+        if value == 1:
+            return "Easy"
+        if value == -1:
+            return "Hard"
+        return value
+
+class ShowDifficulty(tornado.web.UIModule):
+    def render(self, value):
+        rating_to_int = {-1: 'Bad',
+                         0: 'OK',
+                         1: 'Good'}
+        return rating_to_int.get(value, value)

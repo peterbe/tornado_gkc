@@ -37,6 +37,25 @@ p.question_thumbnail {
   margin-right:10px;
 }
 
+#reviewed_questions td.question_text {
+  padding-top:10px;
+}
+#reviewed_questions td.label {
+  color: #FFEA00;
+  padding-left:20px;
+}
+#reviewed_questions td.comment {
+  max-width: 500px;
+}
+#reviewed_questions td {
+  font-size:80%;
+}
+
+/* Used in view.html */
+#question_reviews td {
+  font-size:80%;
+}
+
 th { text-align: left; }
 
 a.about-breakdown { font-size:80%; }
