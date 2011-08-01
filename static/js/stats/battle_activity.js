@@ -73,20 +73,6 @@ head.js(JS_URLS.highcharts, function() {
          series: {
             cursor: 'pointer',
             point: {
-               events: {
-                  click: function() {
-                     hs.htmlExpand(null, {
-                        pageOrigin: {
-                           x: this.pageX,
-                           y: this.pageY
-                        },
-                        headingText: this.series.name,
-                        maincontentText: Highcharts.dateFormat('%A, %b %e, %Y', this.x) +':<br/> '+
-                           this.y +' visits',
-                        width: 200
-                     });
-                  }
-               }
             },
             marker: {
                lineWidth: 0
