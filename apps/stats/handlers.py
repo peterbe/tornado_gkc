@@ -8,6 +8,7 @@ import tornado.web
 from tornado.web import HTTPError
 from apps.main.handlers import BaseHandler
 from utils.routes import route, route_redirect
+from utils import parse_datetime
 import settings
 
 route_redirect('/stats$', '/stats/')
@@ -160,3 +161,113 @@ class BattleActivityHandler(BaseHandler):
         #solos = sorted(solos, lambda x,y: cmp(x['t'], y['t']))
         #multis = sorted(multis, lambda x,y: cmp(x['t'], y['t']))
         self.write_json(dict(solos=solos, multis=multis))
+
+
+@route('/stats/no-questions', name='stats_no_questions')
+class NoQuestionsHandler(BaseHandler):
+
+    def get(self):
+        options = self.get_base_options()
+        options['page_title'] = "Number of published questions"
+        self.render('stats/no_questions.html', **options)
+
+
+@route('/stats/no-questions\.json$', name='stats_no_questions_json')
+class NoQuestionsDataHandler(BaseHandler):
+
+    def get(self):
+        data = []
+        cumulative = self.get_argument('cumulative', False)
+        contributors = {}#defaultdict(set)
+        questions = {}#defaultdict(int)
+        computer = (self.db.User.collection
+          .one({'username': settings.COMPUTER_USERNAME}))
+
+        # the day the battle against computer was introduced
+        search = {'state': 'PUBLISHED'}
+        #may_24 = datetime.datetime(2011, 5, 24, 0, 0, 0)
+        #search['add_date'] = {'$gte': may_24}
+
+        for each in self.db.Question.collection.find(search).sort('publish_date').limit(1):
+            date = each['publish_date']
+        for each in self.db.Question.collection.find(search).sort('publish_date', -1).limit(1):
+            max_ = each['publish_date']
+
+        jump = datetime.timedelta(days=7)
+        _previous_questions = 0
+        _previous_contributors = set()
+        while date < max_:
+            timestamp = int(mktime((date + jump).timetuple()))
+            if cumulative:
+                contributors[timestamp] = set(list(_previous_contributors))
+                questions[timestamp] = _previous_questions
+            else:
+                contributors[timestamp] = set()
+                questions[timestamp] = 0
+            #print date.strftime('%d %b'), '--',
+            #print (date + jump).strftime('%d %b'),
+            for q in (self.db.Question.collection
+                         .find({'state': 'PUBLISHED',
+                                'publish_date': {'$gte': date,
+                                                 '$lt': date + jump}})):
+                questions[timestamp] += 1
+                contributors[timestamp].add(q['author'].id)
+
+                #if computer['_id'] in [x.id for x in play['users']]:
+                #    contributors[timestamp] += 1
+                #else:
+                #    questions[timestamp] += 1
+            #print questions[timestamp]
+            _previous_questions = questions[timestamp]
+            _previous_contributors = contributors[timestamp]
+            date += jump
+
+        contributors = [dict(t=k, c=len(v)) for (k, v) in contributors.items()]
+        questions = [dict(t=k, c=v) for (k, v) in questions.items()]
+        #contributors = sorted(contributors, lambda x,y: cmp(x['t'], y['t']))
+        #questions = sorted(questions, lambda x,y: cmp(x['t'], y['t']))
+        self.write_json(dict(contributors=contributors, questions=questions))
+
+@route('/stats/no-questions-point\.json$', name='stats_no_questions_point_json')
+class NoQuestionsDataHandler(BaseHandler):
+
+    def get(self):
+        what = self.get_argument('what')
+        timestamp = self.get_argument('timestamp')
+        items = []
+        if what == 'Questions':
+            when = parse_datetime(timestamp)
+            search = {'state': 'PUBLISHED',
+                      'publish_date': {'$gte': when - datetime.timedelta(days=7),
+                                       '$lt': when - datetime.timedelta(days=0)}}
+            questions = (self.db.Question.collection
+                         .find(search))
+            #print "SEARCH", search
+            for question in questions:
+                #print question['_id']
+                url = self.get_question_slug_url(question['_id'], question['text'])
+                items.append({'url': url,
+                              'text': question['text']})
+
+            #print "FOUND", len(items)
+        elif what == 'Contributors':
+            when = parse_datetime(timestamp)
+            search = {'state': 'PUBLISHED',
+                      'publish_date': {'$gte': when - datetime.timedelta(days=7),
+                                       '$lt': when - datetime.timedelta(days=0)}}
+            questions = (self.db.Question.collection
+                         .find(search))
+            #print "SEARCH", search
+            users = defaultdict(int)
+            for question in questions:
+                users[question['author'].id] += 1
+            as_list = [(c, i) for i, c in users.items()]
+            as_list.sort()
+            as_list.reverse()
+            for count, _id in as_list:
+                user = self.db.User.one({'_id': _id})
+                text = "%s (%s)" % (user.username, count)
+                items.append({'text': text})
+        else:
+            raise HTTPError(404, "Invalid argument %r" % what)
+        self.write_json(dict(items=items))

@@ -108,7 +108,7 @@ class ShowVerdict(tornado.web.UIModule):
             return "Wrong!"
         return value
 
-class ShowRating(tornado.web.UIModule):
+class ShowDifficulty(tornado.web.UIModule):
     def render(self, value):
         if value == 0:
             return "About right"
@@ -118,7 +118,7 @@ class ShowRating(tornado.web.UIModule):
             return "Hard"
         return value
 
-class ShowDifficulty(tornado.web.UIModule):
+class ShowRating(tornado.web.UIModule):
     def render(self, value):
         rating_to_int = {-1: 'Bad',
                          0: 'OK',

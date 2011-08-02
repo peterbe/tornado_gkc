@@ -306,6 +306,15 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         return self.db.PlayPoints.one({'user.$id': user._id})
 
 
+    def get_question_slug_url(self, question_id, question_text):
+        question_text = question_text.replace(';',' ')
+        question_text = question_text.replace('  ',' ')
+        question_text = question_text.replace(' ','-')
+        if question_text.endswith('?'):
+            question_text = question_text[:-1]
+        return '/q-%s/%s?' % (str(question_id)[:4], question_text)
+
+
 
 
 @route('/')
@@ -523,7 +532,13 @@ class FakeLoginHandler(LoginHandler): # pragma: no cover
             return self.redirect(self.get_next_url())
         else:
             users = self.db.User.find()
-            self.render("user/fake_login.html", users=users)
+            usernames = []
+            for user in self.db.User.find().sort('username'):
+                usernames.append(dict(username=user.username,
+                                      questions=(self.db.Question
+                                                 .find({'author.$id': user._id})
+                                                 .count())))
+            self.render("user/fake_login.html", users=usernames)
 
 
 class CredentialsError(Exception):

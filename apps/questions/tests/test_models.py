@@ -3,7 +3,7 @@ import os
 from mongokit import RequireFieldError, ValidationError
 import datetime
 import unittest
-from apps.questions.models import Question, STATES
+from apps.questions.models import Question, STATES, VERIFIED
 from base import BaseModelsTestCase
 
 class ModelsTestCase(BaseModelsTestCase):
@@ -153,3 +153,68 @@ class ModelsTestCase(BaseModelsTestCase):
         original = question_image.fs.get_last_version('original')
         self.assertEqual(original.length, len(image_data))
         self.assertEqual(original.content_type, 'image/png')
+
+    def test_delete_orphans_automatically(self):
+        user = self.db.User()
+        user.username = u"something"
+        user.save()
+
+        question = self.db.Question()
+        question.text = u"Who wrote what?"
+        question.answer = u"Dickens"
+        question.accept = [u"Charles Dickens"]
+        question.alternatives = [u"Dickens", u"One", u"Two", u"Three"]
+        question.spell_check = True
+        question.comment = u"Some Comment"
+        genre = self.db.Genre()
+        genre.name = u"Lit"
+        genre.save()
+        question.genre = genre
+        question.author = user
+        question.save()
+
+        question_image = self.db.QuestionImage()
+        question_image.question = question
+        question_image.save()
+        here = os.path.dirname(__file__)
+        image_data = open(os.path.join(here, 'image.png'), 'rb').read()
+        with question_image.fs.new_file('original') as f:
+            type_, __ = mimetypes.guess_type('image.png')
+            f.content_type = type_
+            f.write(image_data)
+        self.assertTrue(question.has_image())
+
+        user2 = self.db.User()
+        user2.username = u"else"
+        user2.save()
+
+        review = self.db.QuestionReview()
+        review.question = question
+        review.user = user2
+        review.verdict = VERIFIED
+        review.difficulty = 0
+        review.rating = 0
+        review.save()
+
+        knowledge = self.db.QuestionKnowledge()
+        knowledge.question = question
+        knowledge.right = 0.5
+        knowledge.wrong = 0.5
+        knowledge.alternatives_right = 0.0
+        knowledge.alternatives_wrong = 0.0
+        knowledge.too_slow = 0.0
+        knowledge.timed_out = 0.0
+        knowledge.users = 10
+        knowledge.save()
+
+        self.assertEqual(self.db.Question.find().count(), 1)
+        self.assertEqual(self.db.QuestionReview.find().count(), 1)
+        self.assertEqual(self.db.QuestionImage.find().count(), 1)
+        self.assertEqual(self.db.QuestionKnowledge.find().count(), 1)
+
+        question.delete()
+
+        self.assertEqual(self.db.Question.find().count(), 0)
+        self.assertEqual(self.db.QuestionReview.find().count(), 0)
+        self.assertEqual(self.db.QuestionImage.find().count(), 0)
+        self.assertEqual(self.db.QuestionKnowledge.find().count(), 0)

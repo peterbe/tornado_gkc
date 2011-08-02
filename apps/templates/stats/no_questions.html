@@ -1,0 +1,18 @@
+{% extends "../base.html" %}
+
+{% block content_inner %}
+<h2>Stats: {{ page_title }}</h2>
+
+<div id="graph-container"></div>
+
+<div id="more-info" style="display:none">
+<h3>More info </h3>
+<ul>
+</ul>
+<p>[<a href="#" class="closer" style="font-size:80%">close</a>]</p>
+</div>
+{% end %}
+
+{% block extra_js %}
+{% module Static('js/stats/no_questions.js') %}
+{% end %}

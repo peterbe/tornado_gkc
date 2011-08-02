@@ -87,6 +87,21 @@ class Question(BaseDocument):
 
         return False
 
+    def delete(self):
+        try:
+            for review in (self.db.QuestionReview
+                           .find({'question.$id': self['_id']})):
+                review.delete()
+            for image in (self.db.QuestionImage
+                           .find({'question.$id': self['_id']})):
+                image.delete()
+            for knowledge in (self.db.QuestionKnowledge
+                           .find({'question.$id': self['_id']})):
+                knowledge.delete()
+        finally:
+            super(Question, self).delete()
+
+
 
 @register
 class QuestionImage(BaseDocument):
