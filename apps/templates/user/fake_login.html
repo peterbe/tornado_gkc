@@ -1,8 +1,10 @@
 <html>
 <body>
 <ul>
-{% for user in users %}
-  <li><a href="{{ reverse_url('fake_login') }}?username={{ user.username }}">{{ user.username }}</a></li>
+{% for item in users %}
+  <li><a href="{{ reverse_url('fake_login') }}?username={{ item['username'] }}">{{ item['username'] }}</a>
+    {% if item['questions'] %}<span>({{ item['questions'] }} questions)</span>{% end %}
+  </li>
 {% end %}
 </ul>
 </body>
