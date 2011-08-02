@@ -105,6 +105,7 @@ class ReplayPlayHandler(BasePlayHandler):
         questions = []
         outcomes = defaultdict(dict)
         totals = defaultdict(int)
+        series = defaultdict(list)  # to use for the graph
         for played_question in played_questions:
             if played_question['question'].id not in questions:
                 questions.append(played_question['question'].id)
@@ -115,6 +116,13 @@ class ReplayPlayHandler(BasePlayHandler):
                     totals[player_name] += 1
                 else:
                     totals[player_name] += 3
+            series[player_name].append(
+              totals[player_name]
+            )
+        # now turn this series dict into a list
+        series = [dict(name=k, data=[0] + v) for (k, v) in series.items()]
+        options['series_json'] = tornado.escape.json_encode(series)
+
         questions = [dict_plus(self.db.Question.collection.one({'_id':x}))
                       for x in questions]
         genres = {}
@@ -134,7 +142,12 @@ class ReplayPlayHandler(BasePlayHandler):
         options['totals'] = totals
         options['page_title'] = ' vs. '.join(player_names)
         options['message_sent'] = None
+        options['can_send_message'] = not options['user'].anonymous
+        if settings.COMPUTER_USERNAME in player_names:
+            options['can_send_message'] = False
         self.render("play/replay.html", **options)
+
+
 
 @route('/play/replay/$', name='play_replays')
 @route('/play/replay/(all)/$', name='all_play_replays')

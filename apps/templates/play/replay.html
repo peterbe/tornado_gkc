@@ -90,7 +90,7 @@
 
 <p id="message_sent" style="display:none">Cool! Message sent</p>
 
-{% if not user.anonymous %}
+{% if can_send_message %}
 <div id="send_message" style="display:none">
 {% module SendPlayMessageForm(play) %}
 </div>
@@ -101,18 +101,15 @@
 <a href="{{ reverse_url('play') }}">Play another battle! &rarr;</a>
 </p>
 
+<h3 style="margin-top:60px">How it went</h3>
+
+<div id="scoreboard-graph"></div>
+
 {% end %}
 
 {% block extra_js %}
 <script>
-head.js(JS_URLS.maxlength_countdown, JS_URLS.fancybox, function() {
-  $("a.thumbnail").fancybox();
-  if (location.hash.search(/message_sent/) > -1) {
-    $('#message_sent').show();
-  } else {
-    $('input[maxlength]').maxlength_countdown();
-    $('#send_message').show(900);
-  }
-});
+var SERIES = {% raw series_json %};
 </script>
+{% module Static('js/play/replay.js') %}
 {% end %}
