@@ -4,6 +4,18 @@ import bcrypt
 import datetime
 import random
 
+
+def get_question_slug_url(question):
+    question_text = question['text']
+    question_text = question_text.replace(';',' ')
+    question_text = question_text.replace("'",'')
+    question_text = question_text.replace('  ',' ')
+    question_text = question_text.replace(' ','-')
+    if question_text.endswith('?'):
+        question_text = question_text[:-1]
+    return '/%s/%s?' % (question['_id'], question_text)
+
+
 class DatetimeParseError(Exception):
     pass
 

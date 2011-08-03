@@ -1,0 +1,65 @@
+{% extends "../base.html" %}
+
+{% block extra_head %}
+<style>
+.section { margin-top:40px; }
+.section h4 { margin:5px 10px;}
+.play-time h3 { margin-bottom:3px; margin-top:60px; }
+</style>
+{% end %}
+
+{% block title %}{{ page_title }}{% end %}
+
+
+{% block content_inner %}
+
+<div class="section">
+<p>Question:</p>
+<h1>{{ page_title }}</h1>
+</div>
+
+{% if 0 %}
+<p>Answer:</p>
+<h2>{{ question.answer }}</h2>
+
+{% if question.accept %}
+<p>Also accept:</p>
+<h2>{{ ', '.join(question.accept) }}</h2>
+{% end %}
+{% end %}
+
+<div class="section">
+<p>Info:</p>
+<h4>Published {% module TimeSince(question.publish_date) %} ago</h4>
+<h4>Category: {{ question.genre.name }}</h4>
+<h4>Played: {{ no_plays }} times</h4>
+</div>
+
+{% if knowledge and knowledge.users > 6 %}
+<div class="section">
+<p>In battles:</p>
+  {% if knowledge.right or knowledge.alternatives_right %}
+  <h4>{{ int(100 * knowledge.right) }}% get it right;
+  {{ int(100 * knowledge.alternatives_right) }}% of them needed alternatives</h4>
+  {% end %}
+  {% if knowledge.wrong or knowledge.alternatives_wrong %}
+  <h4>{{ int(100 * knowledge.wrong) }}% get it wrong;
+  {{ int(100 * knowledge.alternatives_wrong) }}% of them loaded alternatives</h4>
+  {% end %}
+
+
+{% if 0 %}<hr>
+{{ knowledge.right }}, {{knowledge.alternatives_right}},
+{{ knowledge.wrong }}, {{knowledge.alternatives_wrong}},
+{{ knowledge.timed_out }}, {{knowledge.too_slow}},
+{{ knowledge.users }}{% end %}
+
+</div>
+{% end %}
+
+<div class="play-time">
+<h3>Wanna play a real Kwissle battle?</h3>
+<p><a href="/">Go to the home page and click on <strong>Play!</strong> &rarr;</a></p>
+</div>
+
+{% end %}

@@ -5,7 +5,7 @@ import re
 from time import mktime
 import datetime
 from apps.main.tests.base import BaseHTTPTestCase, TestClient
-from utils import format_time_ampm
+from utils import format_time_ampm, get_question_slug_url
 import utils.send_mail as mail
 from utils.http_test_client import TestClient
 from apps.questions.models import *
@@ -974,6 +974,28 @@ class HandlersTestCase(BaseHTTPTestCase):
         second_render_attributes = question_image.render_attributes
         self.assertNotEqual(first_render_attributes, second_render_attributes)
 
+    def test_viewing_public_question(self):
+        user = self.db.User()
+        user.username = u'peterbe'
+        user.save()
+
+        maths = self.db.Genre()
+        maths.name = u'Celebs'
+        maths.approved = True
+        maths.save()
+
+        question = self.db.Question()
+        question.author = user
+        question.text = u"How many (number) 'apple' are there?"
+        question.answer = u'yes'
+        question.alternatives = [u'yes', u'no', u'maybe', u'ok']
+        question.genre = maths
+        question.save()
+
+        url = get_question_slug_url(question)
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        self.assertTrue(question.text in response.body)
 
     def _find_thumbnail_tag(self, content):
         return list(self._find_thumbnail_tags(content))[0]
