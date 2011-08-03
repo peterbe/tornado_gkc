@@ -306,16 +306,6 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         return self.db.PlayPoints.one({'user.$id': user._id})
 
 
-    def get_question_slug_url(self, question_id, question_text):
-        question_text = question_text.replace(';',' ')
-        question_text = question_text.replace('  ',' ')
-        question_text = question_text.replace(' ','-')
-        if question_text.endswith('?'):
-            question_text = question_text[:-1]
-        return '/q-%s/%s?' % (str(question_id)[:4], question_text)
-
-
-
 
 @route('/')
 class HomeHandler(BaseHandler):

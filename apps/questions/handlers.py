@@ -13,7 +13,7 @@ from apps.main.handlers import BaseHandler
 from utils.routes import route, route_redirect
 from utils.send_mail import send_email
 from utils.stopwords import strip_stopwords
-from utils import dict_plus
+from utils import dict_plus, get_question_slug_url
 import settings
 
 from models import STATES, DRAFT, SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
@@ -1297,3 +1297,24 @@ class RenderQuestionImageHandler(QuestionsBaseHandler):
         question_image = (self.db.QuestionImage
                           .one({'_id': question_image._id}))
         assert question_image.render_attributes
+
+@route('/(\w{24})/(.*)', name="view_public_question")
+class ViewPublicQuestionHandler(QuestionsBaseHandler):
+
+    def get(self, _id, question_slug):
+        options = self.get_base_options()
+        question = None
+        for question_ in self.db.Question.find({'_id': ObjectId(_id)}):
+            url = get_question_slug_url(question_)
+            if question_slug in url:
+                question = question_
+        if not question:
+            raise HTTPError(404, "Question not found")
+        options['page_title'] = question.text
+        options['question'] = question
+        options['no_plays'] = (self.db.PlayedQuestion
+                               .find({'question.$id': question._id})
+                               .count() / 2)
+        options['knowledge'] = (self.db.QuestionKnowledge
+                                .one({'question.$id': question._id}))
+        self.render('questions/view_public_question.html', **options)

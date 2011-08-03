@@ -8,7 +8,7 @@ import tornado.web
 from tornado.web import HTTPError
 from apps.main.handlers import BaseHandler
 from utils.routes import route, route_redirect
-from utils import parse_datetime
+from utils import parse_datetime, get_question_slug_url
 import settings
 
 route_redirect('/stats$', '/stats/')
@@ -228,7 +228,7 @@ class NoQuestionsDataHandler(BaseHandler):
         #questions = sorted(questions, lambda x,y: cmp(x['t'], y['t']))
         self.write_json(dict(contributors=contributors, questions=questions))
 
-@route('/stats/no-questions-point\.json$', name='stats_no_questions_point_json')
+@route('/stats/no-questions-point.json$', name='stats_no_questions_point_json')
 class NoQuestionsDataHandler(BaseHandler):
 
     def get(self):
@@ -245,7 +245,7 @@ class NoQuestionsDataHandler(BaseHandler):
             #print "SEARCH", search
             for question in questions:
                 #print question['_id']
-                url = self.get_question_slug_url(question['_id'], question['text'])
+                url = get_question_slug_url(question)
                 items.append({'url': url,
                               'text': question['text']})
 
