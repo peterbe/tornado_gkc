@@ -1303,6 +1303,7 @@ class ViewPublicQuestionHandler(QuestionsBaseHandler):
 
     def get(self, _id, question_slug):
         options = self.get_base_options()
+        question_slug = question_slug.replace(' ','+')
         question = None
         for question_ in self.db.Question.find({'_id': ObjectId(_id)}):
             url = get_question_slug_url(question_)

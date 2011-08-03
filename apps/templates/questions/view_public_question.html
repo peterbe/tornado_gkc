@@ -3,6 +3,7 @@
 {% block extra_head %}
 <style>
 .section { margin-top:40px; }
+.section img { float:right; }
 .section h4 { margin:5px 10px;}
 .play-time h3 { margin-bottom:3px; margin-top:60px; }
 </style>
@@ -15,6 +16,9 @@
 
 <div class="section">
 <p>Question:</p>
+{% if question.has_image() %}
+{% module ShowQuestionImageThumbnail(question.get_image(), (300, 300), alt=question.text) %}
+{% end %}
 <h1>{{ page_title }}</h1>
 </div>
 
@@ -32,7 +36,9 @@
 <p>Info:</p>
 <h4>Published {% module TimeSince(question.publish_date) %} ago</h4>
 <h4>Category: {{ question.genre.name }}</h4>
+{% if no_plays %}
 <h4>Played: {{ no_plays }} times</h4>
+{% end %}
 </div>
 
 {% if knowledge and knowledge.users > 6 %}
