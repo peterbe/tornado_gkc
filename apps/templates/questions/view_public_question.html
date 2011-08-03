@@ -63,6 +63,15 @@
 </div>
 {% end %}
 
+{% if next_random_question %}
+<div class="section">
+<p>Next random question:</p>
+<h4><a href="{{ next_random_question['url'] }}"
+      title="Click to preview another random question">{{ next_random_question['text'] }}</a>
+</h4>
+</div>
+{% end %}
+
 <div class="play-time">
 <h3>Wanna play a real Kwissle battle?</h3>
 <p><a href="/">Go to the home page and click on <strong>Play!</strong> &rarr;</a></p>
