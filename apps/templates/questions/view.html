@@ -146,7 +146,7 @@
 
 {% if question.has_image() %}
 <br><strong>Image:</strong><br>
-{% module ShowQuestionImageThumbnail(question.get_image(), (300, 300), alt=question.text, save_render_attributes=True) %}
+{% module ShowQuestionImageThumbnail(question.get_image(), (300, 300), alt=question.text) %}
 {% end %}
 </p>
 
