@@ -43,7 +43,11 @@
     <form action="{{ reverse_url('publish_question', question._id) }}" method="post" id="publish">
       {% module xsrf_form_html() %}
       {% if skip is not None %}<input type="hidden" name="skip" value="{{ skip }}">{% end %}
-      <div><input type="submit" value="Publish!"></div>
+      <div><input type="submit" value="Publish!">
+
+      <input type="checkbox" name="tweet" value="yes" checked>
+      <span style="font-size:80%">create tweet afterwards</span>
+      </div>
     </form>
 
   {% else %}
