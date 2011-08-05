@@ -1,0 +1,28 @@
+{% extends "../base.html" %}
+
+{% block content_inner %}
+
+<form action="" method="post">{% module xsrf_form_html() %}
+{% for field in form %}
+  <p class="field">
+    {% raw field.label %}<br>
+    {% module RenderField(field) %}
+    {% if field.errors %}
+       <ul class="errors">{% for error in field.errors %}<li>{% raw error %}</li>{% end %}</ul>
+    {% end %}
+  </p>
+{% end %}
+<div>
+  <input type="submit" value="POST">
+</div>
+</form>
+
+{% end %}
+
+{% block extra_js %}
+<script>
+head.js(JS_URLS.maxlength_countdown, function() {
+   $('[maxlength]').maxlength_countdown();
+});
+</script>
+{% end %}

@@ -100,6 +100,8 @@ class Application(tornado.web.Application):
             twitter_consumer_secret=settings.TWITTER_CONSUMER_SECRET,
             facebook_api_key=settings.FACEBOOK_API_KEY,
             facebook_secret=settings.FACEBOOK_SECRET,
+            twitter_postings_consumer_key=settings.TWITTER_POSTINGS_CONSUMER_KEY,
+            twitter_postings_consumer_secret=settings.TWITTER_POSTINGS_CONSUMER_SECRET,
         )
         tornado.web.Application.__init__(self, handlers, **app_settings)
 
