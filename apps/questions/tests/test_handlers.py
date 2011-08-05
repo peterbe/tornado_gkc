@@ -990,6 +990,8 @@ class HandlersTestCase(BaseHTTPTestCase):
         question.answer = u'yes'
         question.alternatives = [u'yes', u'no', u'maybe', u'ok']
         question.genre = maths
+        question.publish_date = (datetime.datetime.now() -
+                                 datetime.timedelta(days=1))
         question.save()
 
         url = get_question_slug_url(question)
