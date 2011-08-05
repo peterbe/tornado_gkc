@@ -145,8 +145,12 @@ class ReplayPlayHandler(BasePlayHandler):
         options['can_send_message'] = not options['user'].anonymous
         if settings.COMPUTER_USERNAME in player_names:
             options['can_send_message'] = False
-        self.render("play/replay.html", **options)
 
+        options['play_messages'] = (self.db.PlayMessage
+                               .find({'play.$id': play._id})
+                               .sort('add_date'))
+
+        self.render("play/replay.html", **options)
 
 
 @route('/play/replay/$', name='play_replays')
@@ -203,6 +207,7 @@ class SendPlayMessageHandler(BasePlayHandler):
             to_user = play.get_other_user(options['user'])
 
         play_message = self.db.PlayMessage()
+        play_message.play = play
         play_message.message = message
         play_message['from'] = options['user']
         play_message.to = to_user

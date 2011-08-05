@@ -1,6 +1,8 @@
 import mimetypes
 from pymongo.objectid import InvalidId, ObjectId
 import re
+import time
+import random
 import datetime
 import urllib
 import logging
@@ -1298,6 +1300,9 @@ class RenderQuestionImageHandler(QuestionsBaseHandler):
                           .one({'_id': question_image._id}))
         assert question_image.render_attributes
 
+
+_random_cache = {}
+
 @route('/(\w{24})/(.*)', name="view_public_question")
 class ViewPublicQuestionHandler(QuestionsBaseHandler):
 
@@ -1311,7 +1316,29 @@ class ViewPublicQuestionHandler(QuestionsBaseHandler):
                 question = question_
         if not question:
             raise HTTPError(404, "Question not found")
+
+        next_random_question = None
+        global _random_cache
+        if _random_cache and str(question._id) in _random_cache:
+            ts, data = _random_cache[str(question._id)]
+            if ts > time.time():
+                next_random_question = data
+        if not next_random_question:
+            search = {'state': 'PUBLISHED',
+                      '_id': {'$ne': question._id}}
+            rand = random.randint(0,
+              self.db.Question.find(search).count())
+            for q in self.db.Question.find(search).limit(1).skip(rand):
+                next_random_question = {
+                  'url': get_question_slug_url(q),
+                  'text': q.text,
+                }
+                cache_for = 60
+                _random_cache[str(question._id)] = \
+                  (time.time() + cache_for, next_random_question)
+
         options['page_title'] = question.text
+        options['next_random_question'] = next_random_question
         options['question'] = question
         options['no_plays'] = (self.db.PlayedQuestion
                                .find({'question.$id': question._id})

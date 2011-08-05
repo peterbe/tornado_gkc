@@ -222,10 +222,17 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(play_message['from'], user1)
         self.assertEqual(play_message['to'], user2)
         self.assertEqual(play_message.read, False)
+        self.assertEqual(play_message.play, play)
 
         flash_message = self.db.FlashMessage.one({'user.$id': user2._id})
         assert flash_message
         self.assertEqual(flash_message.text, u'hi!')
+
+        # how render the replay page
+        url = self.reverse_url('replay_play', play._id)
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        self.assertTrue(u'hi!' in response.body)
 
     def test_highscore(self):
         user1 = self.db.User()

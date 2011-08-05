@@ -146,10 +146,10 @@ class Client(tornadio.SocketConnection):
         elif message.get('next_question'):
             # this is going to be hit twice, within nanoseconds of each other.
             t = time.time()
-            if not hasattr(battle, 'min_wait_delay'):
-                # something is very wrong!
-                print "current_question", getattr(battle, 'current_question', '*no current question*')
-                print repr(battle)
+            #if not hasattr(battle, 'min_wait_delay'):
+            #    # something is very wrong!
+            #    print "current_question", getattr(battle, 'current_question', '*no current question*')
+            #    print repr(battle)
 
             if battle.min_wait_delay > t:
                 logging.debug('%r min_wait_delay=%r, t=%r'%(self, battle.min_wait_delay,t))

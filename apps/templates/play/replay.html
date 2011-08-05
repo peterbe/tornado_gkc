@@ -101,6 +101,20 @@
 <a href="{{ reverse_url('play') }}">Play another battle! &rarr;</a>
 </p>
 
+{% if play_messages.count() %}
+<h3 style="margin-top:60px">Messages</h3>
+
+<table>
+  {% for msg in play_messages %}
+  <tr>
+    <td><strong>{{ msg['from'].username }}</strong>:</td>
+    <td style="font-style:italic">{% raw linkify(msg.message) %}</td>
+  </tr>
+  {% end %}
+</table>
+
+{% end %}
+
 <h3 style="margin-top:60px">How it went</h3>
 
 <div id="scoreboard-graph"></div>
