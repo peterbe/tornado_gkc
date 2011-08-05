@@ -8,8 +8,8 @@ function _create_chart_theme() {
   var COLORS = ["#DDDF0D", "#7798BF", "#55BF3B", "#DF5353", "#aaeeee", "#ff0066", "#eeaaee",
                 "#55BF3B", "#DF5353", "#7798BF", "#aaeeee"];
   COLORS = shuffle(COLORS);
-  console.log(COLORS[0]);
-  console.log(COLORS[1]);
+  //console.log(COLORS[0]);
+  //console.log(COLORS[1]);
   Highcharts.theme = {
      colors: COLORS,
     title: {
