@@ -432,7 +432,12 @@ class Client(tornadio.SocketConnection):
 
             # did it ever even start?
             if battle.play_id:
-                battle.save_play(self.db, halted=True)
+                if battle.get_play(self.db):
+                    battle.save_play(self.db, halted=True)
+                else:
+                    # XXX I have no idea how this could happen!
+                    # but it appears to happen sometimes when one user is stuck
+                    logging.warning("There is a play_id %r but not Play" % battle.play_id)
 
 class BattlesDebugHandler(tornado.web.RequestHandler):
     def get(self):
