@@ -1255,8 +1255,14 @@ class QuestionSearchHandler(QuestionsBaseHandler):
             search_operator = searcher.OP_AND
         else:
             search_operator = searcher.OP_OR
-        query = searcher.query_field('question', q,
-                                     default_op=search_operator)
+        q_query = searcher.query_field('question', q,
+                                       default_op=search_operator)
+        a_query = searcher.query_field('answer', q,
+                                       default_op=search_operator)
+        aa_query = searcher.query_field('accept', q,
+                                       default_op=search_operator)
+        query = searcher.query_composite(searcher.OP_OR, [q_query, a_query, aa_query])
+
         if not self.is_admin_user(options['user']):
             u_query = searcher.query_field('author', options['user'].username,
                                      default_op=searcher.OP_AND)
