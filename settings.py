@@ -11,6 +11,7 @@ APPS = (
   'chat',
   'stats',
   'widget',
+  'twitter',
 )
 DATABASE_NAME = "gkc"
 
@@ -28,6 +29,16 @@ DEVELOPER_EMAILS = ['peterbe@gmail.com']
 
 TWITTER_CONSUMER_KEY = 'UcZ80RJk7x4FVWE0d93ig'
 TWITTER_CONSUMER_SECRET = open(path('twitter_consumer_secret')).read().strip()
+
+# used for the twitter app that has write access
+TWITTER_POSTINGS_CONSUMER_KEY = 'KTydZWQ6Ocl6Ov8BlMb9w'
+TWITTER_POSTINGS_CONSUMER_SECRET = open(path('twitter_postings_consumer_secret')).read().strip()
+TWITTER_KWISSLE_ACCESS_TOKENS = (
+  {'key': '310217734-Jo3Xh0SYerZccLz5s38o34jeWjBBwyga7l0tfwxg',
+   'screen_name': 'kwissle',
+   'secret': '02xXfro69vKoKGEeKUpmJnh50pn5Bc0ebVZskCOwmuQ',
+   'user_id': '310217734'},
+)
 
 FACEBOOK_API_KEY = '0bdf577fe3dc898fc740a3999a1f1ce0'
 FACEBOOK_SECRET = open(path('facebook_consumer_secret')).read().strip()

@@ -60,7 +60,8 @@ def main():
     if not db.Question.find(search).count():
         if options.verbose:
             print "0 questions"
-        return
+        if not options.test:
+            return
     youngest = since
 
     indexer = xappy.IndexerConnection(settings.XAPIAN_LOCATION)
@@ -133,6 +134,7 @@ def main():
 
     # test
     if options.test:
+        print settings.XAPIAN_LOCATION
         searcher = xappy.SearchConnection(settings.XAPIAN_LOCATION)
         text = 'FRAMCEs capitalls'
         text = "Capitol STATE"
@@ -145,6 +147,17 @@ def main():
             print result.rank, result.id
             print repr(result.summarise('question')), result.data['state'][0]
             #result.data['state']
+
+        text = 'london'
+        query = searcher.query_field('answer', text, default_op=searcher.OP_OR)
+        results = searcher.search(query, 0, 10)
+        print results.matches_estimated
+        #print results.estimate_is_exact
+        for result in results:
+            print result.rank, result.id
+            print repr(result.summarise('question')), result.data['state'][0]
+            #result.data['state']
+
 
 
 if __name__ == '__main__':

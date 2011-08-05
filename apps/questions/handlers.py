@@ -858,12 +858,19 @@ class PublishQuestionHandler(QuestionsBaseHandler):
         self.push_flash_message("Question published!",
             "Question is now ready for game play!")
 
-        if 1:
+        if self.get_argument('tweet', False):
+            url = self.reverse_url('twitter_manual_post')
+            url += '?published=%s' % question._id
+        elif 1:
             url = self.reverse_url('review_accepted')
         else:
             url = self.reverse_url('questions')
         if self.get_argument('skip', None):
-            url += '?skip=%s' % self.get_argument('skip')
+            if '?' in url:
+                url += '&'
+            else:
+                url += '?'
+            url += 'skip=%s' % self.get_argument('skip')
         self.redirect(url)
 
 @route('/questions/(\w{24})/retract/$', name="retract_question")
@@ -1255,8 +1262,14 @@ class QuestionSearchHandler(QuestionsBaseHandler):
             search_operator = searcher.OP_AND
         else:
             search_operator = searcher.OP_OR
-        query = searcher.query_field('question', q,
-                                     default_op=search_operator)
+        q_query = searcher.query_field('question', q,
+                                       default_op=search_operator)
+        a_query = searcher.query_field('answer', q,
+                                       default_op=search_operator)
+        aa_query = searcher.query_field('accept', q,
+                                       default_op=search_operator)
+        query = searcher.query_composite(searcher.OP_OR, [q_query, a_query, aa_query])
+
         if not self.is_admin_user(options['user']):
             u_query = searcher.query_field('author', options['user'].username,
                                      default_op=searcher.OP_AND)
