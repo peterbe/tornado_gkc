@@ -2,6 +2,7 @@ from pymongo.objectid import InvalidId, ObjectId
 import tornado.auth
 import tornado.web
 from tornado.web import HTTPError
+import logging
 
 from apps.main.handlers import BaseAuthHandler, BaseHandler
 from utils.routes import route, route_redirect
