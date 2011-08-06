@@ -39,3 +39,4 @@ utils/send_mail/pickled_messages/
 widget.js
 static/thumbnails__test/
 twitter_postings_consumer_secret
+git_release
