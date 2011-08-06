@@ -110,7 +110,9 @@ class TwitterManualPost(BaseHandler, TwitterPostingsMixin):
     def _on_post(self, new_entry):
         if not new_entry:
             # Call failed; perhaps missing permission?
-            self.authorize_redirect()
+            #self.authorize_redirect()
+            logging.info(self.request.arguments)
+            self.write("No new entry :(")
             return
         from pprint import pprint
         pprint(new_entry)
