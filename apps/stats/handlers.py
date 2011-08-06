@@ -242,14 +242,11 @@ class NoQuestionsDataHandler(BaseHandler):
                                        '$lt': when - datetime.timedelta(days=0)}}
             questions = (self.db.Question.collection
                          .find(search))
-            #print "SEARCH", search
             for question in questions:
-                #print question['_id']
                 url = get_question_slug_url(question)
                 items.append({'url': url,
                               'text': question['text']})
 
-            #print "FOUND", len(items)
         elif what == 'Contributors':
             when = parse_datetime(timestamp)
             search = {'state': 'PUBLISHED',
@@ -257,7 +254,6 @@ class NoQuestionsDataHandler(BaseHandler):
                                        '$lt': when - datetime.timedelta(days=0)}}
             questions = (self.db.Question.collection
                          .find(search))
-            #print "SEARCH", search
             users = defaultdict(int)
             for question in questions:
                 users[question['author'].id] += 1

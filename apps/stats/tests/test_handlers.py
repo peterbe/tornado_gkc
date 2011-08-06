@@ -55,6 +55,7 @@ class HandlersTestCase(BaseHTTPTestCase):
             f.write(image_data)
 
         assert question.has_image()
+        return question_image
 
     def test_no_questions_point_json(self):
         url = self.reverse_url('stats_no_questions_point_json')

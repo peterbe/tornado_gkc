@@ -1,4 +1,6 @@
 # python
+import xml.etree.cElementTree as etree
+#from xml.etree.cElementTree import Element, SubElement, tostring
 import traceback
 import httplib
 from hashlib import md5
@@ -26,11 +28,12 @@ from utils.send_mail import send_email
 from utils.decorators import login_required, login_redirect
 from utils import parse_datetime, niceboolean, \
   DatetimeParseError, valid_email, random_string, \
-  all_hash_tags, all_atsign_tags, generate_random_color
+  all_hash_tags, all_atsign_tags, generate_random_color, \
+  get_question_slug_url
 from forms import SettingsForm
 import settings
 
-from apps.questions.models import ACCEPTED
+from apps.questions.models import ACCEPTED, PUBLISHED
 #from config import *
 
 
@@ -830,3 +833,93 @@ class UserSettingsToggle(BaseHandler):
         else:
             raise HTTPError(400, "No valid settings toggled")
         self.write("OK")
+
+
+@route('/sitemap.xml$', name='sitemap_xml')
+class SitemapXMLHandler(BaseHandler):
+
+    def get(self):
+        self.set_header("Content-Type", "application/xml")
+        global _CACHED_SITEMAP_DATA
+        try:
+            output, timestamp = _CACHED_SITEMAP_DATA
+            if timestamp > time():
+                self.write(output)
+                return
+        except TypeError:
+            pass
+
+        # This limit is defined by Google. See the index documentation at
+        # http://sitemaps.org/protocol.php#index
+        limit = 50000
+        sites = self.get_sites(limit)
+        base_url = 'http://%s' % self.request.host
+
+        output = self._get_output(sites, base_url)
+        _CACHED_SITEMAP_DATA = (output, time() + 60 * 60)
+        self.write(output)
+
+    def _get_output(self, sites, base_url):
+        top = etree.Element('urlset')
+        top.set('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9')
+        top.set('xmlns:image', 'http://www.sitemaps.org/schemas/sitemap-image/1.1')
+        for site in sites:
+            url = etree.SubElement(top, 'url')
+            loc = etree.SubElement(url, 'loc')
+            loc.text = '%s%s' % (base_url, site.location)
+            if site.image:
+                image = etree.SubElement(url, 'image:image')
+                image_loc = etree.SubElement(image, 'image:loc')
+                if site.image.startswith('http'):
+                    image_loc.text = site.image
+                else:
+                    image_loc.text = '%s%s' % (base_url, site.image)
+
+        output = '<?xml version="1.0" encoding="UTF-8"?>\n' + etree.tostring(top)
+        return output
+
+    def get_sites(self, limit):
+        yield Site('/', datetime.date.today(), 'daily')
+        url = self.reverse_url
+        latest_date = datetime.date.today()
+        for play_point in (self.db.PlayPoints.collection
+                          .find().sort('modify_date', -1)
+                          .limit(1)):
+            latest_date = play_point['modify_date']
+        yield Site(url('play_highscore'), latest_date, 'hourly')
+        yield Site(url('stats_numbers'), changefreq='weekly')
+        yield Site(url('stats_times_played'), changefreq='weekly')
+        # help pages
+        for see_also in HelpHandler.SEE_ALSO:
+            try:
+                url, __ = see_also
+            except ValueError:
+                url = '/%s' % see_also
+            url = '/help' + url
+            yield Site(url, changefreq='monthly')
+
+        question_ids_with_images = [x['question'].id for x in
+                                    self.db.QuestionImage.collection.find()]
+        for question in self.db.Question.collection.find({'state': PUBLISHED}).sort('publish_date', -1).limit(limit - 10):
+            image = None
+            if question['_id'] in question_ids_with_images:
+                image = (self.db.QuestionImage.collection
+                       .one({'question.$id': question['_id']})
+                       ['render_attributes']['src'])
+            yield Site(get_question_slug_url(question),
+                       question['publish_date'],
+                       'monthly',
+                       image=image)
+
+
+_CACHED_SITEMAP_DATA = None
+
+class Site:
+    __slots__ = ('location', 'lastmod', 'changefreq', 'priority', 'image')
+    def __init__(self, location, lastmod=None, changefreq=None,
+                 priority=None, image=None):
+        self.location = location
+        self.lastmod = lastmod
+        self.changefreq = changefreq
+        self.priority = priority
+        self.image = image

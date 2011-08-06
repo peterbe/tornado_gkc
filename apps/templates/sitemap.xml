@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.sitemaps.org/schemas/sitemap-image/1.1">
+{% for site in sites %}
+<url>
+  <loc>{{ base_url }}{{ site.location }}</loc>
+  {% if site.image %}<image:image><image:loc>{% if 'http' in site.image %}{{ site.image }}{% else %}{{ base_url }}{{ site.image }}{% end %}</image:loc></image:image>{% end %}
+  {% if site.lastmod %}<lastmod>{{ site.lastmod.strftime('%Y-%m-%d') }}</lastmod>{% end %}
+  {% if site.changefreq %}<changefreq>{{ site.changefreq }}</changefreq>{% end %}
+  {% if site.priority %}<priority>{{ site.priority }}</priority>{% end %}
+</url>{% end %}
+</urlset>

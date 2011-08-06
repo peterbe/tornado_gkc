@@ -10,7 +10,11 @@ def get_question_slug_url(question):
     question_text = question_text.replace(';',' ')
     question_text = question_text.replace("'",'')
     question_text = question_text.replace('  ',' ')
-    question_text = question_text.replace(' ','-')
+    if '+' in question_text:
+        # probably an arithmatic question
+        question_text = question_text.replace(' ','_')
+    else:
+        question_text = question_text.replace(' ','-')
     if question_text.endswith('?'):
         question_text = question_text[:-1]
     return '/%s/%s?' % (question['_id'], question_text)
