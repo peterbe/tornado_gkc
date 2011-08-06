@@ -1,4 +1,5 @@
-import base64
+import os
+import mimetypes
 from pprint import pprint
 from urllib import quote as url_quote
 from time import mktime
@@ -9,7 +10,7 @@ import simplejson as json
 
 import settings
 from base import BaseHTTPTestCase
-from utils import encrypt_password
+from utils import encrypt_password, get_question_slug_url
 import utils.send_mail as mail
 
 class HandlersTestCase(BaseHTTPTestCase):
@@ -370,6 +371,26 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         return q
 
+    def _attach_image(self, question):
+        question_image = self.db.QuestionImage()
+        question_image.question = question
+        question_image.render_attributes = {
+          'src': '/static/image.jpg',
+          'width': 300,
+          'height': 260,
+          'alt': question.text
+        }
+        question_image.save()
+
+        here = os.path.dirname(__file__)
+        image_data = open(os.path.join(here, 'image.jpg'), 'rb').read()
+        with question_image.fs.new_file('original') as f:
+            type_, __ = mimetypes.guess_type('image.jpg')
+            f.content_type = type_
+            f.write(image_data)
+
+        assert question.has_image()
+        return question_image
 
     def test_anonymous_to_existing_logged_in_after_play(self):
         peterbe = self.db.User()
@@ -538,6 +559,24 @@ class HandlersTestCase(BaseHTTPTestCase):
         self._login()
         response = self.client.get(url)
         self.assertEqual(response.code, 200)
+
+    def test_sitemap_xml(self):
+        # create a question
+        q1 = self._create_question()
+        q2 = self._create_question()
+        image = self._attach_image(q2)
+        url = self.reverse_url('sitemap_xml')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        self.assertEqual(response.headers['content-type'], 'application/xml')
+        self.assertTrue(get_question_slug_url(q1) in response.body)
+        self.assertTrue(image.render_attributes['src'] in response.body)
+        url_regex = re.compile('<loc>(.*?)</loc>')
+        for full_url in url_regex.findall(response.body):
+            url = full_url.replace('http://', '')
+            url = '/' + url.split('/', 1)[1]
+            r = self.client.get(url)
+            self.assertEqual(r.code, 200)
 
 def google_get_authenticated_user(self, callback, **kw):
     callback({
