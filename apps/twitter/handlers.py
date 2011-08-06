@@ -96,8 +96,8 @@ class TwitterManualPost(BaseHandler, TwitterPostingsMixin):
         form = PostForm(data)
         if form.validate():
             message = form.message.data
-            self.finish(message)
-            return
+            #self.finish(message)
+            #return
             access_token = settings.TWITTER_KWISSLE_ACCESS_TOKENS[0]
             self.twitter_request(
                 "/statuses/update",

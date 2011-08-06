@@ -59,8 +59,8 @@ class RandomQuestionHandler(BaseHandler):
                     search['_id']['$nin'].append(question['_id'])
                     continue
                 question = dict_plus(question)
-                logging.info("New widget question: %r (%s)"%
-                             (question.text, question._id))
+                #logging.info("New widget question: %r (%s)"%
+                #             (question.text, question._id))
                 _last_question = (time.time() + cache_for, question._id)
                 return question
 
