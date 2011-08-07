@@ -7,11 +7,11 @@ from pymongo.objectid import InvalidId, ObjectId
 import tornado.web
 import tornadio.router
 
-
 from apps.main.models import connection
 import apps.main.models
 import apps.questions.models
 import apps.play.models
+import apps.rules.models
 
 from apps.play.battle import Battle
 from apps.play import errors

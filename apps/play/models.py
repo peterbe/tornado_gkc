@@ -93,6 +93,7 @@ class PlayPoints(BaseDocument):
     __collection__ = 'play_points'
     structure = {
       'user': User,
+      'rules': ObjectId,
       'points': int,
       'wins': int,
       'losses': int,
@@ -136,16 +137,20 @@ class PlayPoints(BaseDocument):
         self.update_highscore_position()
 
     @staticmethod
-    def calculate(user):
+    def calculate(user, rules_id):
         db = user.db
         search = {
           'users.$id': user._id,
           'finished': {'$ne': None},
+          'rules': rules_id,
           #'halted': None,
         }
-        play_points = db.PlayPoints.one({'user.$id': user._id})
+
+        play_points = db.PlayPoints.one({'user.$id': user._id,
+                                         'rules': rules_id})
         if not play_points:
             play_points = db.PlayPoints()
+            play_points.rules = rules_id
             play_points.user = user
         # reset all because we're recalculating
         play_points.points = 0

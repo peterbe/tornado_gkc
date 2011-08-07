@@ -125,7 +125,7 @@ class AddRulesHandler(BaseRulesHandler):
             rules.save()
 
             self.push_flash_message("Rules added",
-              "Your rules are not created and ready for play!")
+              "Your rules are now created and ready for play!")
             goto_url = self.reverse_url('rules')
 
             self.redirect(goto_url)

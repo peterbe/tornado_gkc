@@ -29,6 +29,8 @@
       <a href="{{ reverse_url('rules_edit', rule._id) }}">Edit</a><br>
       {% end %}
       <a href="{{ reverse_url('start_play') }}{% if not rule.default %}{{ rule._id }}{% end %}">Play with these rules now!</a>
+      <br>
+      <a href="{{ reverse_url('play_highscore') }}{% if not rule.default %}{{ rule._id }}{% end %}">See Highscore for these rules</a>
     </p>
     <h3>{{ rule.name }}</h3>
     <ul>

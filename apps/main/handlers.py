@@ -330,10 +330,19 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
             _search['read'] = False
         return self.db.FlashMessage.find(_search).sort('add_date', 1)
 
-    def get_play_points(self, user):
+    def get_play_points(self, user, rules_id=None):
         """return the total play points or None"""
-        return self.db.PlayPoints.one({'user.$id': user._id})
+        if rules_id is None:
+            rules_id = self.db.Rules.one({'default': True})._id
 
+        # Temporary "migration" hack
+        # XXX This can be deleted once migration is complete
+        while self.db.PlayPoints.find({'user.$id': user._id, 'rules': rules_id}).count()>1:
+            for p in self.db.PlayPoints.find({'user.$id': user._id, 'rules': rules_id}):
+                p.delete()
+                break
+
+        return self.db.PlayPoints.one({'user.$id': user._id, 'rules': rules_id})
 
 
 @route('/')

@@ -645,7 +645,6 @@ class ClientTestCase(BaseTestCase):
         self.assertEqual(play.winner, None)
         self.assertTrue(play.draw)
 
-
     def test_disconnect_twice(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
@@ -977,7 +976,6 @@ class ClientTestCase(BaseTestCase):
         battle.min_wait_delay -= client._sent[-1]['wait']
         client.on_message(dict(next_question=1))
 
-
         battle.min_wait_delay -= bot_answers_seconds
         client.on_message(dict(bot_answers=1))
         if battle.bot_answer['right']:
@@ -1042,7 +1040,6 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
 
-
     def test_answer_before_loaded_image(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
@@ -1057,13 +1054,11 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['question']['image'])
         self.assertTrue(client2._sent[-1]['question']['image'])
 
-
         # if you try to send an answer before both clients have
         # acknowledged loading the image you get an error
         client.on_message(dict(answer='Yes'))
         self.assertEqual(client._sent[-1]['error']['code'],
                          errors.ERROR_ANSWER_BEFORE_IMAGE_LOADED)
-
 
     def test_answer_before_loaded_image_second_question(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
@@ -1149,7 +1144,8 @@ class ClientTestCase(BaseTestCase):
         p.users = [user, user2]
         p.no_players = 2
         p.no_questions = 2
-        p.finished = datetime.datetime.now() - datetime.timedelta(seconds=60 * 60 - 1)
+        p.finished = (datetime.datetime.now() -
+                      datetime.timedelta(seconds=60 * 60 - 1))
         p.draw = True
         p.save()
 
@@ -1267,7 +1263,8 @@ class ClientTestCase(BaseTestCase):
         p.users = [user2, computer]
         p.no_players = 2
         p.no_questions = 2
-        p.finished = datetime.datetime.now() - datetime.timedelta(seconds=60 * 60 - 1)
+        p.finished = (datetime.datetime.now() -
+                      datetime.timedelta(seconds=60 * 60 - 1))
         p.draw = True
         p.save()
 
@@ -1326,14 +1323,12 @@ class ClientTestCase(BaseTestCase):
         client.on_message(dict(alternatives=1))
         client.on_message(dict(answer='Yes'))
 
-
         self.assertTrue(client._sent[-3]['answered']['right'])
         self.assertTrue(client._sent[-2]['update_scoreboard'])
         self.assertTrue(client._sent[-1]['wait'])
         battle.min_wait_delay -= 3
         client.on_message(dict(next_question=1))
         self.assertTrue(client._sent[-2]['question'])
-
 
     def test_play_custom_rules_and_highscore(self):
 
@@ -1415,8 +1410,6 @@ class ClientTestCase(BaseTestCase):
 
         play = self.db.Play.one({'_id': ObjectId(client._sent[-2]['play_id'])})
         self.assertEqual(play.rules, r)
-        #print client._sent[-1]
-        #print client2._sent[-1]
 
         return
 

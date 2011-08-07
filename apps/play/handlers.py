@@ -58,6 +58,21 @@ class StartPlayingHandler(BasePlayHandler):
 
         self.redirect(self.reverse_url('play'))
 
+@route('/play/start/(\w{24})$', name='start_play_rule')
+class StartPlayingByRulesHandler(StartPlayingHandler):
+
+    def get(self, _id):
+        try:
+            rules = self.db.Rules.one({'_id': ObjectId(_id)})
+        except InvalidId:
+            raise HTTPError(404, "ID invalid")
+        if not rules:
+            raise HTTPError(404, "Rules unknown")
+
+        self.set_secure_cookie('rules', str(rules._id))
+        super(StartPlayingByRulesHandler, self).get()
+
+
 
 @route('/play/battle$', name='play')
 class PlayHandler(BasePlayHandler):
@@ -232,13 +247,15 @@ route_redirect('/play/highscore$', '/play/highscore/',
 @route('/play/highscore/$', name='play_highscore')
 class PlayHighscoreHandler(BaseHandler):
 
-    def get(self):
+    def get(self, rules=None):
         options = self.get_base_options()
         search = {'points': {'$gt': 0}}
         computer = (self.db.User.collection
           .one({'username': settings.COMPUTER_USERNAME}))
         if computer:
             search['user.$id'] = {'$ne': computer['_id']}
+        if rules:
+            search['rules'] = rules._id
         play_points = (self.db.PlayPoints
                        .find(search)
                        .sort('points', -1)
@@ -247,6 +264,18 @@ class PlayHighscoreHandler(BaseHandler):
         options['page_title'] = "Highscore"
         self.render("play/highscore.html", **options)
 
+
+@route('/play/highscore/(\w{24})$', name='play_highscore_rules')
+class PlayHighscoreRulesHandler(PlayHighscoreHandler):
+
+    def get(self, _id):
+        try:
+            rules = self.db.Rules.one({'_id': ObjectId(_id)})
+        except InvalidId:
+            raise HTTPError(404, "ID invalid")
+        if not rules:
+            raise HTTPError(404, "Rules unknown")
+        super(PlayHighscoreRulesHandler, self).get(rules=rules)
 
 @route('/play/update_points.json$', name='play_update_points_json')
 class UpdatePointsJSONHandler(BasePlayHandler):
