@@ -119,6 +119,6 @@ class TwitterManualPost(BaseHandler, TwitterPostingsMixin):
         pprint(new_entry)
         self.set_header("Content-Type", "text/plain")
         logging.info("NEW_ENTRY=%r" % new_entry)
-        self.write("Posted a message!\n" % str(new_entry))
+        self.write("Posted a message!\n%s" % str(new_entry))
         #self.write(new_entry)
         self.finish()
