@@ -1,14 +1,14 @@
 from pymongo import ASCENDING, DESCENDING
+from apps.main.models import connection
 from models import Play, PlayedQuestion, PlayPoints
-from mongokit import Connection
 import settings
-con = Connection()
-con.register([Play, PlayedQuestion, PlayPoints])
-db = con[settings.DATABASE_NAME]
+db = connection[settings.DATABASE_NAME]
+
 
 def run(**options):
     def ensure(collection, arg):
-        collection.ensure_index(arg, background=options.get('background', False))
+        collection.ensure_index(arg,
+          background=options.get('background', False))
 
     collection = db.Play.collection
     if options.get('clear_all_first'):
@@ -39,7 +39,6 @@ def run(**options):
     ensure(collection, 'points')
     yield 'playpoints.points'
 
-
     test()
 
 
@@ -50,7 +49,7 @@ def test():
 
     import datetime
     then = datetime.datetime.now() - datetime.timedelta(days=99)
-    curs = (db.Play.find({'finished': {'$gte':then}})
+    curs = (db.Play.find({'finished': {'$gte': then}})
             .sort('finished', -1).explain()['cursor'])
     assert 'BtreeCursor' in curs
 

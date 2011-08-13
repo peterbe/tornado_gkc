@@ -12,8 +12,6 @@ label:after {
   width:300px;
 }
 
-.errors li { color:red; font-weight:bold;}
-
 .shuffler { font-size:90%; padding-left:4px; }
 
 p.field label.genre {

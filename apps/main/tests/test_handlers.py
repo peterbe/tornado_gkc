@@ -13,6 +13,7 @@ from base import BaseHTTPTestCase
 from utils import encrypt_password, get_question_slug_url
 import utils.send_mail as mail
 
+
 class HandlersTestCase(BaseHTTPTestCase):
 
     def test_homepage(self):

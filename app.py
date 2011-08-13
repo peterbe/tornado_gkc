@@ -30,13 +30,16 @@ define("database_name", default=settings.DATABASE_NAME, help="mongodb db name")
 define("prefork", default=False, help="pre-fork across all CPUs", type=bool)
 define("showurls", default=False, help="Show all routed URLs", type=bool)
 define("dont_combine", default=False, help="Don't combine static resources", type=bool)
+define("dont_embed_static_url", default=False,
+       help="Don't put embed the static URL in static_url()", type=bool)
 
 
 class Application(tornado.web.Application):
     def __init__(self,
                  database_name=None,
                  xsrf_cookies=True,
-                 optimize_static_content=None):
+                 optimize_static_content=None,
+                 embed_static_url=None):
         ui_modules_map = {}
         for app_name in settings.APPS:
             _ui_modules = __import__('apps.%s' % app_name, globals(), locals(),
@@ -72,11 +75,15 @@ class Application(tornado.web.Application):
         if optimize_static_content is None:
             optimize_static_content = not options.debug
 
+        if embed_static_url is None:
+            embed_static_url = not options.dont_embed_static_url
+
         handlers = route.get_routes()
         app_settings = dict(
             title=settings.PROJECT_TITLE,
             template_path=os.path.join(os.path.dirname(__file__), "apps", "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
+            embed_static_url_timestamp=embed_static_url,
             ui_modules=ui_modules_map,
             xsrf_cookies=xsrf_cookies,
             cookie_secret=settings.COOKIE_SECRET,
@@ -138,8 +145,12 @@ class Application(tornado.web.Application):
               )
         return self._search_connection
 
+
 for app_name in settings.APPS:
+    # import all handlers so their routes are registered
     __import__('apps.%s' % app_name, globals(), locals(), ['handlers'], -1)
+    # import all models so that their MongoKit classes are registered
+    __import__('apps.%s' % app_name, globals(), locals(), ['models'], -1)
 
 
 def main(): # pragma: no cover

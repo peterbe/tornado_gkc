@@ -1,5 +1,6 @@
 import random
 
+
 class ComputerClient(object):
 
     is_bot = True
@@ -11,7 +12,6 @@ class ComputerClient(object):
     def send(self, msg):
         #print "-C->", msg
         pass
-
 
 
 def predict_bot_answer(max_time, knowledge):
@@ -32,7 +32,7 @@ def predict_bot_answer(max_time, knowledge):
 
     """
     # a third of 6 seconds rounded is 1 which is too low
-    assert max_time > 6 #
+    assert max_time > 6
 
     def third(t):
         return int(t * 0.333)
@@ -60,7 +60,7 @@ def predict_bot_answer(max_time, knowledge):
     keys = ('right', 'wrong', 'alternatives_right', 'alternatives_wrong',)
         #    'too_slow', 'timed_out')
     for key in keys:
-        p = max(100 * knowledge[key], 1) # always add 1 percent chance
+        p = max(100 * knowledge[key], 1)  # always add 1 percent chance
         ranges[key] = (int(prev), int(prev + p))
         max_ = prev + p
         prev = max_

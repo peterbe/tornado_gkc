@@ -19,6 +19,10 @@ def get_question_slug_url(question):
         question_text = question_text[:-1]
     return '/%s/%s?' % (question['_id'], question_text)
 
+class djangolike_request_dict(dict):
+    def getlist(self, key):
+        value = self.get(key)
+        return self.get(key)
 
 class DatetimeParseError(Exception):
     pass

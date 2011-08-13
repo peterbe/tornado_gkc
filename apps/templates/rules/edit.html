@@ -1,0 +1,38 @@
+{% extends "../base.html" %}
+
+{% block extra_js %}
+{% module Static("js/rules_input.js") %}
+{% end %}
+
+{% block content_inner %}
+
+<a href="{{ reverse_url('rules') }}" class="btn">&larr; back to rules dashboard</a></p>
+
+{% if form.errors %}
+    <ul class="errors general-errors">
+        {% for field_name, field_errors in [(n,form.errors[n]) for n in form.errors if form.errors[n]] %}
+            {% for error in field_errors %}
+                <li>{% raw form[field_name].label %} {% raw error %}</li>
+            {% end %}
+        {% end %}
+    </ul>
+{% end %}
+
+
+<form action="" class="question" method="post">{% module xsrf_form_html() %}
+{% for field in form %}
+  {% if field.errors %}
+     <ul class="errors">{% for error in field.errors %}<li>{% raw error %}</li>{% end %}</ul>
+  {% end %}
+  <p class="field">
+    {% raw field.label %}
+    {% module RenderField(field) %}
+  </p>
+{% end %}
+<div>
+  <input type="submit" value="Save" title="You can return and work on it later">
+</div>
+</form>
+
+
+{% end %}

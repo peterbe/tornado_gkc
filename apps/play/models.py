@@ -1,4 +1,5 @@
 from pprint import pprint
+from pymongo.objectid import ObjectId
 from collections import defaultdict
 import datetime
 from apps.main.models import BaseDocument, User, register
@@ -6,11 +7,13 @@ from apps.questions.models import Question
 from utils import dict_plus
 import settings
 
+
 @register
 class Play(BaseDocument):
     __collection__ = 'plays'
     structure = {
       'users': [User],
+      'rules': ObjectId,
 
       # consider replacing all of these for just 'rules': dict
       'no_players': int,
@@ -28,6 +31,10 @@ class Play(BaseDocument):
       'no_players': 0,
       'draw': False,
     }
+
+    @property
+    def rules(self):
+        return self.db.Rules.find_one({'_id': self['rules']})
 
     def get_other_user(self, this_user):
         return [x for x in self.users if x != this_user][0]
@@ -86,6 +93,7 @@ class PlayPoints(BaseDocument):
     __collection__ = 'play_points'
     structure = {
       'user': User,
+      'rules': ObjectId,
       'points': int,
       'wins': int,
       'losses': int,
@@ -93,10 +101,10 @@ class PlayPoints(BaseDocument):
       'highscore_position': int,
     }
 
-    required_fields = ['user','points']
+    required_fields = ['user', 'points']
 
     def update_highscore_position(self):
-        search = {'points':{'$gt': 0}}
+        search = {'points': {'$gt': 0}}
         computer = (self.db.User.collection
           .one({'username': settings.COMPUTER_USERNAME}))
         if computer:
@@ -129,16 +137,20 @@ class PlayPoints(BaseDocument):
         self.update_highscore_position()
 
     @staticmethod
-    def calculate(user):
+    def calculate(user, rules_id):
         db = user.db
         search = {
           'users.$id': user._id,
           'finished': {'$ne': None},
+          'rules': rules_id,
           #'halted': None,
         }
-        play_points = db.PlayPoints.one({'user.$id': user._id})
+
+        play_points = db.PlayPoints.one({'user.$id': user._id,
+                                         'rules': rules_id})
         if not play_points:
             play_points = db.PlayPoints()
+            play_points.rules = rules_id
             play_points.user = user
         # reset all because we're recalculating
         play_points.points = 0
@@ -157,7 +169,7 @@ class PlayPoints(BaseDocument):
                 try:
                     assert play.winner
                     assert play.winner.id != user._id
-                except AssertionError: # pragma: no cover
+                except AssertionError:  # pragma: no cover
                     # This happens because of a bug in the game, where a draw
                     # isn't saved properly.
                     print "FIXING"
@@ -165,7 +177,8 @@ class PlayPoints(BaseDocument):
                     for u_ref in play.users:
                         u = db.User.one({'_id': u_ref.id})
                         for pq in (db.PlayedQuestion.collection
-                                   .find({'play.$id':play._id, 'user.$id':u._id})):
+                                   .find({'play.$id': play._id,
+                                          'user.$id': u._id})):
                             pq = dict_plus(pq)
                             if pq.right:
                                 if pq.alternatives:
@@ -175,8 +188,10 @@ class PlayPoints(BaseDocument):
                             else:
                                 p = 0
                             points[u.username] += p
+
                     if sum(points.values()) == 0:
-                        for pq in db.PlayedQuestion.find({'play.$id':play._id}):
+                        for pq in (db.PlayedQuestion
+                                   .find({'play.$id': play._id})):
                             pq.delete()
 
                         play = db.Play.one({'_id': play._id})
@@ -198,23 +213,20 @@ class PlayPoints(BaseDocument):
                     print "FINISHED", repr(play.finished)
                     print "HALTED", repr(play.halted)
                     print "\n"
-                    #pprint(dict(play))
                     continue
 
                 play_points.losses += 1
-            #print
             try:
                 for played in (user.db.PlayedQuestion.collection
                                  .find({'play.$id': play._id,
                                         'user.$id': user._id})):
-                    #pprint(played)
                     played = dict_plus(played)
                     if played.right:
                         if played.alternatives:
                             play_points.points += 1
                         else:
                             play_points.points += 3
-            except: # pragma: no cover
+            except:  # pragma: no cover
                 print "BROKEN!!!"
                 print user.username,
                 print "Against", play.get_other_user(user).username

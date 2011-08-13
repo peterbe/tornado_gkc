@@ -58,6 +58,21 @@ class StartPlayingHandler(BasePlayHandler):
 
         self.redirect(self.reverse_url('play'))
 
+@route('/play/start/(\w{24})$', name='start_play_rule')
+class StartPlayingByRulesHandler(StartPlayingHandler):
+
+    def get(self, _id):
+        try:
+            rules = self.db.Rules.one({'_id': ObjectId(_id)})
+        except InvalidId:
+            raise HTTPError(404, "ID invalid")
+        if not rules:
+            raise HTTPError(404, "Rules unknown")
+
+        self.set_secure_cookie('rules', str(rules._id))
+        super(StartPlayingByRulesHandler, self).get()
+
+
 
 @route('/play/battle$', name='play')
 class PlayHandler(BasePlayHandler):
@@ -92,6 +107,7 @@ class ReplayPlayHandler(BasePlayHandler):
         for user in play.users:
             player_names_lookup[user._id] = unicode(user)
         player_names = player_names_lookup.values()
+
         def sort_me_first(x, y):
             if x == unicode(options['user']):
                 return -1
@@ -110,7 +126,8 @@ class ReplayPlayHandler(BasePlayHandler):
             if played_question['question'].id not in questions:
                 questions.append(played_question['question'].id)
             player_name = player_names_lookup[played_question['user'].id]
-            outcomes[played_question['question'].id][player_name] = dict_plus(played_question)
+            outcomes[played_question['question'].id][player_name] = \
+              dict_plus(played_question)
             if played_question['right']:
                 if played_question['alternatives']:
                     totals[player_name] += 1
@@ -134,7 +151,7 @@ class ReplayPlayHandler(BasePlayHandler):
                 genres[q._id] = u'xxx'
             q.genre = dict_plus(dict(name=genres[q._id]))
         for question_image in (self.db.QuestionImage
-          .find({'question.$id': {'$in':[x._id for x in questions]}})):
+          .find({'question.$id': {'$in': [x._id for x in questions]}})):
             images[question_image.question._id] = question_image
         options['images'] = images
         options['questions'] = questions
@@ -167,7 +184,7 @@ class ReplaysHandler(BasePlayHandler):
         stats = dict(wins=0,
                      draws=0,
                      losses=0)
-        long_ago = datetime.datetime(2011,1,1,0,0,0)
+        long_ago = datetime.datetime(2011, 1, 1, 0, 0, 0)
         for play in (self.db.Play
           .find(dict(search_base, finished={'$gte': long_ago}))):
             if play.winner == options['user']:
@@ -224,18 +241,21 @@ class SendPlayMessageHandler(BasePlayHandler):
         url += '#message_sent'
         self.redirect(url)
 
+
 route_redirect('/play/highscore$', '/play/highscore/',
                name='play_highscore_shortcut')
 @route('/play/highscore/$', name='play_highscore')
 class PlayHighscoreHandler(BaseHandler):
 
-    def get(self):
+    def get(self, rules=None):
         options = self.get_base_options()
-        search = {'points':{'$gt':0}}
+        search = {'points': {'$gt': 0}}
         computer = (self.db.User.collection
           .one({'username': settings.COMPUTER_USERNAME}))
         if computer:
             search['user.$id'] = {'$ne': computer['_id']}
+        if rules:
+            search['rules'] = rules._id
         play_points = (self.db.PlayPoints
                        .find(search)
                        .sort('points', -1)
@@ -244,6 +264,18 @@ class PlayHighscoreHandler(BaseHandler):
         options['page_title'] = "Highscore"
         self.render("play/highscore.html", **options)
 
+
+@route('/play/highscore/(\w{24})$', name='play_highscore_rules')
+class PlayHighscoreRulesHandler(PlayHighscoreHandler):
+
+    def get(self, _id):
+        try:
+            rules = self.db.Rules.one({'_id': ObjectId(_id)})
+        except InvalidId:
+            raise HTTPError(404, "ID invalid")
+        if not rules:
+            raise HTTPError(404, "Rules unknown")
+        super(PlayHighscoreRulesHandler, self).get(rules=rules)
 
 @route('/play/update_points.json$', name='play_update_points_json')
 class UpdatePointsJSONHandler(BasePlayHandler):
@@ -266,12 +298,14 @@ class UpdatePointsJSONHandler(BasePlayHandler):
             return
 
         increment = play_points.points - points_before
-        self.write_json(dict(increment=increment,
-                             points_before=points_before,
-                             points=play_points.points,
-                             highscore_position_before=highscore_position_before,
-                             highscore_position=play_points.highscore_position,
-                             ))
+        self.write_json(dict(
+          increment=increment,
+          points_before=points_before,
+          points=play_points.points,
+          highscore_position_before=highscore_position_before,
+          highscore_position=play_points.highscore_position,
+        ))
+
 
 @route('/play/render_image_attributes/', name="render_image_attributes")
 class RenderImageAttributesHandler(BaseHandler):
@@ -288,10 +322,13 @@ class RenderImageAttributesHandler(BaseHandler):
         for question_image in (self.db.QuestionImage.collection
                                 .find(search)
                                 .limit(limit)):
-            if not self.db.Question.collection.one({'_id': question_image['question'].id}):
-                self.db.QuestionImage.collection.remove({'_id': question_image['_id']})
+            if not (self.db.Question.collection
+                    .one({'_id': question_image['question'].id})):
+                (self.db.QuestionImage.collection
+                 .remove({'_id': question_image['_id']}))
                 continue
-            question_image = self.db.QuestionImage.one({'_id': question_image['_id']})
+            question_image = (self.db.QuestionImage
+                              .one({'_id': question_image['_id']}))
             outs.append((repr(question_image.question.text),
                          module.render(question_image, (300, 300),
                                 alt=question_image.question.text,

@@ -17,6 +17,7 @@ def main(*args):
     tornado.options.parse_command_line()
     from apps.main.models import User, connection
     from apps.play.models import Play, PlayPoints, PlayedQuestion
+    import apps.rules.models
     #con.register([Play, User, PlayPoints, PlayedQuestion])
     db = connection.gkc
     if options.all:
@@ -53,12 +54,32 @@ def main(*args):
     computer = (db.User.collection
           .one({'username': settings.COMPUTER_USERNAME}))
 
+    default_rules_id = db.Rules.one({'default': True})._id
+
+    _rule_names = {}
+    def get_rule_name(rule_id):
+        if rule_id not in _rule_names:
+            r = db.Rules.collection.one({'_id': rule_id})
+            _rule_names[rule_id] = r['name']
+        return _rule_names[rule_id]
+
     for user in recent_users:
         if computer and user._id == computer['_id']:
             continue
-        play_points = PlayPoints.calculate(user)
-        if options.verbose and not options.all:
-            print user.username.ljust(20), play_points.points
+        played_rules_ids = [default_rules_id]
+        for p in db.Play.collection.find({'users.$id': user['_id'],
+                                               'rules': {'$ne': default_rules_id}}):
+            p_rules_id = p['rules']  # nb. not using the 'rules' proper in Play
+            if p_rules_id not in played_rules_ids:
+                played_rules_ids.append(p_rules_id)
+
+        assert len(played_rules_ids) == len(set(played_rules_ids))
+        for rule_id in played_rules_ids:
+            play_points = PlayPoints.calculate(user, rule_id)
+            if options.verbose and not options.all:
+                print user.username.ljust(20),
+                print get_rule_name(rule_id).ljust(50),
+                print play_points.points
 
     if options.verbose:
         print "Recalculated the points of", len(recent_users), "players"

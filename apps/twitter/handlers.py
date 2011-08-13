@@ -72,19 +72,31 @@ class TwitterManualPost(BaseHandler, TwitterPostingsMixin):
             message = ''
             if self.get_argument('published', None):
                 _id = self.get_argument('published')
-                question = self.db.Question.one({'_id': ObjectId(_id)})
-                url = get_question_slug_url(question)
-                url = 'http://%s%s' % (self.request.host, url)
-                message = "New question: %s\n%s" % (question.text, url)
-                if question.genre and question.genre.approved:
-                    message += '\n#%s' % question.genre.name
-                user_settings = self.get_user_settings(question.author)
-                if user_settings and user_settings['twitter']:
-                    message += '\nThanks @%s' % user_settings['twitter']['screen_name']
+                message = self._create_message(_id)
+                if len(message) > 140:
+                    message = self._create_message(_id, use_url_shortener=True)
             form = PostForm(message=message)
         options['form'] = form
         options['page_title'] = "Manual Twitter Post"
         self.render('twitter/post.html', **options)
+
+    def _create_message(self, _id, use_url_shortener=False):
+        question = self.db.Question.one({'_id': ObjectId(_id)})
+        url = get_question_slug_url(question)
+        url = 'http://%s%s' % (self.request.host, url)
+        if use_url_shortener:
+            from utils.goo_gl import shorten
+            url = shorten(url)
+        message = "New question: %s\n%s" % (question.text, url)
+        if question.genre and question.genre.approved:
+            message += '\n#%s' % question.genre.name
+        user_settings = self.get_user_settings(question.author)
+        if user_settings and user_settings['twitter']:
+            message += '\nThanks @%s' % user_settings['twitter']['screen_name']
+
+        return message
+
+
 
     @tornado.web.asynchronous
     @login_redirect
