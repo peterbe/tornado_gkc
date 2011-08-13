@@ -897,7 +897,8 @@ class SitemapXMLHandler(BaseHandler):
     def _get_output(self, sites, base_url):
         top = etree.Element('urlset')
         top.set('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9')
-        top.set('xmlns:image', 'http://www.sitemaps.org/schemas/sitemap-image/1.1')
+        #top.set('xmlns:image', 'http://www.sitemaps.org/schemas/sitemap-image/1.1')
+        top.set('xmlns:image', 'http://www.google.com/schemas/sitemap-image/1.1')
         for site in sites:
             url = etree.SubElement(top, 'url')
             loc = etree.SubElement(url, 'loc')
