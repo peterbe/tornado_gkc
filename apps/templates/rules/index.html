@@ -1,0 +1,63 @@
+{% extends "../base.html" %}
+
+{% block extra_head %}
+<style>
+.rule-group h2 { border-bottom:1px solid white; }
+.rule-group .rule { margin-left:30px; }
+</style>
+{% end %}
+
+
+{% block content_inner %}
+<!--<h1>{{ page_title }}</h1>-->
+
+{% if user and not user.anonymous %}
+<p>
+<span style="float:right">
+ <a href="{{ reverse_url('rules_add') }}">Make up your own rules &rarr;</a>
+</span>
+</p>
+{% end %}
+
+{% for name, cursor in all_rules %}
+  <div class="rule-group">
+  <h2>{{ name }} rules</h2>
+  {% for rule in cursor %}
+  <div class="{{ name }}-rule rule">
+    <p style="float:right">
+      {% if rule._id in editable %}
+      <a href="{{ reverse_url('rules_edit', rule._id) }}">Edit</a><br>
+      {% end %}
+      <a href="{{ reverse_url('start_play') }}{% if not rule.default %}{{ rule._id }}{% end %}">Play with these rules now!</a>
+      <br>
+      <a href="{{ reverse_url('play_highscore') }}{% if not rule.default %}{{ rule._id }}{% end %}">See Highscore for these rules</a>
+    </p>
+    <h3>{{ rule.name }}</h3>
+    <ul>
+      <li>Number of questions: {{ rule.no_questions }}</li>
+      <li>Thinking time: {{ rule.thinking_time }} seconds</li>
+      {% if rule.min_no_people != 2 %}
+      <li>Min. number of people: {{ rule.min_no_people }}</li>
+      {% end %}
+      {% if rule.max_no_people != 2 %}
+      <li>Max. number of people: {{ rule.max_no_people }}</li>
+      {% end %}
+      {% if rule.genres.count() %}
+      <li>Categories: {{ ', '.join(x.name for x in rule.genres.sort('name')) }}</li>
+      {% else %}
+      <li>Categories: All published</li>
+      {% end %}
+      {% if rule.pictures_only %}
+      <li>Questions with pictures only</li>
+      {% end %}
+      {% if rule.alternatives_only %}
+      <li>Alternatives available all the time</li>
+      {% end %}
+    </ul>
+  </div>
+  {% end %}
+</div>
+{% end %}
+
+
+{% end %}

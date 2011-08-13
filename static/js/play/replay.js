@@ -55,7 +55,7 @@ function _create_chart(categories, series) {
         renderTo: 'scoreboard-graph',
          defaultSeriesType: 'line',
          backgroundColor: null,
-         height: 370, width: 800
+         height: 370, width: 700
 
       },
      credits: { enabled:false },

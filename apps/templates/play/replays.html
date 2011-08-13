@@ -30,6 +30,7 @@
   <thead>
     <tr>
       <th>When</th>
+      <th>Rules</th>
       <th>Against</th>
       <th>Result</th>
     </tr>
@@ -38,6 +39,13 @@
     {% for play in plays %}
     <tr>
       <td>{% module TimeSince(play.add_date) %} ago</td>
+      <td>{% set rules=play.rules %}
+        {% if rules.default %}
+        default rules
+        {% else %}
+        '{{ rules.name }}'
+        {% end %}
+      </td>
       <td>{% for user_ in play.users %}
       {% if user_._id != user._id %}{{ user_.username }}{% end %}
       {% end %}

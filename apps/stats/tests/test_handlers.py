@@ -1,10 +1,9 @@
-from urlparse import urlparse
 import mimetypes
 import time
 import os
 import json
 import datetime
-from apps.main.tests.base import BaseHTTPTestCase, TestClient
+from apps.main.tests.base import BaseHTTPTestCase
 from utils import get_question_slug_url
 
 

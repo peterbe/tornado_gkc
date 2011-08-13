@@ -1,15 +1,13 @@
 from time import mktime
-from pprint import pprint
 import datetime
 from collections import defaultdict
-from pymongo import ASCENDING, DESCENDING
-from pymongo.objectid import InvalidId, ObjectId
 import tornado.web
 from tornado.web import HTTPError
 from apps.main.handlers import BaseHandler
 from utils.routes import route, route_redirect
 from utils import parse_datetime, get_question_slug_url
 import settings
+
 
 route_redirect('/stats$', '/stats/')
 @route('/stats/$', name='stats')
@@ -18,6 +16,7 @@ class StatsHandler(BaseHandler):
         options = self.get_base_options()
         options['page_title'] = 'Statistics'
         self.render('stats/index.html', **options)
+
 
 @route('/stats/login-method', name='stats_login_method')
 class LoginMethodHandler(BaseHandler):
@@ -43,9 +42,10 @@ class LoginMethodHandler(BaseHandler):
         options['page_title'] = "Preferred login method"
         self.render('stats/login-method.html', **options)
 
+
 class Getter(dict):
     def __getattr__(self, key):
-        return self.get(key, None)#self.__getitem__(key)
+        return self.get(key, None)
 
 
 @route('/stats/numbers', name='stats_numbers')
@@ -60,16 +60,16 @@ class NumbersHandler(BaseHandler):
 
         facts.append(dict(label='Published questions',
                           number=self.db.Question
-                            .find({'state':'PUBLISHED'}).count()))
+                            .find({'state': 'PUBLISHED'}).count()))
 
         facts.append(dict(label='Questions pending review',
                           number=self.db.Question
-                            .find({'state':'ACCEPTED'}).count(),
+                            .find({'state': 'ACCEPTED'}).count(),
                           url=self.reverse_url('review_random')))
 
         facts.append(dict(label='Finished played games',
                           number=self.db.Play
-                            .find({'finished':{'$ne':None}}).count()))
+                            .find({'finished': {'$ne': None}}).count()))
 
         facts.append(dict(label='Played questions',
                           number=self.db.PlayedQuestion
@@ -93,7 +93,7 @@ class TimesPlayedHandler(BaseHandler):
         played_times = defaultdict(int)
         for user in self.db.User.collection.find({'anonymous': False}):
             plays = (self.db.Play
-              .find({'finished': {'$ne':None},
+              .find({'finished': {'$ne': None},
                      'users.$id': user['_id']})
               .count())
             if plays < 3:
@@ -126,9 +126,8 @@ class BattleActivityHandler(BaseHandler):
 class BattleActivityHandler(BaseHandler):
 
     def get(self):
-        data = []
-        solos = {}#defaultdict(int)
-        multis = {}#defaultdict(int)
+        solos = {}
+        multis = {}
         computer = (self.db.User.collection
           .one({'username': settings.COMPUTER_USERNAME}))
 
@@ -137,9 +136,11 @@ class BattleActivityHandler(BaseHandler):
         search = {'finished': {'$ne': None,
                                '$gte': june_21}}
 
-        for each in self.db.Play.collection.find(search).sort('finished').limit(1):
+        for each in (self.db.Play.collection
+                     .find(search).sort('finished').limit(1)):
             date = each['finished']
-        for each in self.db.Play.collection.find(search).sort('finished', -1).limit(1):
+        for each in (self.db.Play.collection
+                     .find(search).sort('finished', -1).limit(1)):
             max_ = each['finished']
 
         jump = datetime.timedelta(days=1)
@@ -176,21 +177,22 @@ class NoQuestionsHandler(BaseHandler):
 class NoQuestionsDataHandler(BaseHandler):
 
     def get(self):
-        data = []
         cumulative = self.get_argument('cumulative', False)
-        contributors = {}#defaultdict(set)
-        questions = {}#defaultdict(int)
-        computer = (self.db.User.collection
-          .one({'username': settings.COMPUTER_USERNAME}))
+        contributors = {}
+        questions = {}
+        #computer = (self.db.User.collection
+        #  .one({'username': settings.COMPUTER_USERNAME}))
 
         # the day the battle against computer was introduced
         search = {'state': 'PUBLISHED'}
         #may_24 = datetime.datetime(2011, 5, 24, 0, 0, 0)
         #search['add_date'] = {'$gte': may_24}
 
-        for each in self.db.Question.collection.find(search).sort('publish_date').limit(1):
+        for each in (self.db.Question.collection
+                     .find(search).sort('publish_date').limit(1)):
             date = each['publish_date']
-        for each in self.db.Question.collection.find(search).sort('publish_date', -1).limit(1):
+        for each in (self.db.Question.collection
+                     .find(search).sort('publish_date', -1).limit(1)):
             max_ = each['publish_date']
 
         jump = datetime.timedelta(days=7)
@@ -204,8 +206,6 @@ class NoQuestionsDataHandler(BaseHandler):
             else:
                 contributors[timestamp] = set()
                 questions[timestamp] = 0
-            #print date.strftime('%d %b'), '--',
-            #print (date + jump).strftime('%d %b'),
             for q in (self.db.Question.collection
                          .find({'state': 'PUBLISHED',
                                 'publish_date': {'$gte': date,
@@ -213,11 +213,6 @@ class NoQuestionsDataHandler(BaseHandler):
                 questions[timestamp] += 1
                 contributors[timestamp].add(q['author'].id)
 
-                #if computer['_id'] in [x.id for x in play['users']]:
-                #    contributors[timestamp] += 1
-                #else:
-                #    questions[timestamp] += 1
-            #print questions[timestamp]
             _previous_questions = questions[timestamp]
             _previous_contributors = contributors[timestamp]
             date += jump
@@ -228,6 +223,7 @@ class NoQuestionsDataHandler(BaseHandler):
         #questions = sorted(questions, lambda x,y: cmp(x['t'], y['t']))
         self.write_json(dict(contributors=contributors, questions=questions))
 
+
 @route('/stats/no-questions-point.json$', name='stats_no_questions_point_json')
 class NoQuestionsDataHandler(BaseHandler):
 
@@ -235,11 +231,12 @@ class NoQuestionsDataHandler(BaseHandler):
         what = self.get_argument('what')
         timestamp = self.get_argument('timestamp')
         items = []
+        _days = lambda x: datetime.timedelta(days=x)
         if what == 'Questions':
             when = parse_datetime(timestamp)
             search = {'state': 'PUBLISHED',
-                      'publish_date': {'$gte': when - datetime.timedelta(days=7),
-                                       '$lt': when - datetime.timedelta(days=0)}}
+                      'publish_date': {'$gte': when - _days(7),
+                                       '$lt': when - _days(0)}}
             questions = (self.db.Question.collection
                          .find(search))
             for question in questions:
@@ -250,8 +247,8 @@ class NoQuestionsDataHandler(BaseHandler):
         elif what == 'Contributors':
             when = parse_datetime(timestamp)
             search = {'state': 'PUBLISHED',
-                      'publish_date': {'$gte': when - datetime.timedelta(days=7),
-                                       '$lt': when - datetime.timedelta(days=0)}}
+                      'publish_date': {'$gte': when - _days(7),
+                                       '$lt': when - _days(0)}}
             questions = (self.db.Question.collection
                          .find(search))
             users = defaultdict(int)

@@ -12,16 +12,25 @@ class BattleError(Exception):
 
 class Battle(object):
 
-    def __init__(self, thinking_time,
-                 min_no_people=2, max_no_people=2,
-                 no_questions=10,
-                 genres_only=None,
+    def __init__(self, rules,
                  language=None):
         # how long time between the questions
-        self.thinking_time = thinking_time
-        self.min_no_people = min_no_people
-        self.max_no_people = max_no_people
-        self.no_questions = no_questions
+        #self.thinking_time = thinking_time
+        #self.min_no_people = min_no_people
+        #self.max_no_people = max_no_people
+        #self.no_questions = no_questions
+        #self.genres = genres
+        #self.pictures_only = pictures_only
+        #self.alternatives_only = alternatives_only
+        assert 'thinking_time' in rules
+        assert 'no_questions' in rules
+        assert 'min_no_people' in rules
+        assert 'max_no_people' in rules
+        assert 'genres' in rules
+        assert 'pictures_only' in rules
+        assert 'alternatives_only' in rules
+        self.rules = rules
+
         self.participants = set()
         self.sent_questions = set()
         self.stopped = False
@@ -32,7 +41,6 @@ class Battle(object):
         self.current_question = None
         self.loaded_image = set()
         self.current_question_sent = None
-        self.genres_only = genres_only
         self.language = language
         self.play_id = None
         self.updated = time.time()
@@ -42,22 +50,26 @@ class Battle(object):
         vs = ' vs. '.join(['%s:%r' % (x.user_id, x.user_name) for x in self.participants])
         return '<Battle: %s>' % vs
 
-    def add_participant(self, client):
-        if not self.is_open():
+    def add_participant(self, client, rules=None):
+        if not self.is_open(rules=rules):
             raise BattleError("can't add more participants. it's full")
         assert client.user_id and client.user_name
         self.participants.add(client)
 
     def ready_to_play(self):
-        return len(self.participants) >= self.min_no_people
+        return len(self.participants) >= self.rules['min_no_people']
 
     def remove_participant(self, client):
         self.participants.remove(client)
-        if len(self.participants) < self.min_no_people:
+        if len(self.participants) < self.rules['min_no_people']:
             self.stopped = True
 
-    def is_open(self):
-        return (len(self.participants) < self.min_no_people
+    def is_open(self, rules=None):
+        if rules is not None:
+            if rules['_id'] != self.rules['_id']:
+                return False
+
+        return (len(self.participants) < self.rules['min_no_people']
                 and not self.stopped)
 
     def __contains__(self, client):
@@ -92,7 +104,7 @@ class Battle(object):
             p.send(msg)
 
     def has_more_questions(self):
-        return len(self.sent_questions) < self.no_questions
+        return len(self.sent_questions) < self.rules['no_questions']
 
     def send_question(self, question, knowledge=None, image=None):
         self.sent_questions.add(question)
@@ -107,11 +119,11 @@ class Battle(object):
             packaged_question['image'] = image
 
         self.send_to_all(dict(question=packaged_question,
-                              thinking_time=self.thinking_time))
+                              thinking_time=self.rules['thinking_time']))
         if knowledge:
             # depend on how easy the question is the bot will send
             # and answer in X seconds
-            bot_answer = predict_bot_answer(self.thinking_time, knowledge)
+            bot_answer = predict_bot_answer(self.rules['thinking_time'], knowledge)
             self.bot_answer = bot_answer
             self.send_to_all(dict(bot_answers=bot_answer['seconds']))
         else:
@@ -143,7 +155,7 @@ class Battle(object):
     def commence(self, db):
         self.send_to_all({
           'init_scoreboard': [x.user_name for x in self.participants],
-          'thinking_time': self.thinking_time,
+          'thinking_time': self.rules['thinking_time'],
         })
         self.send_wait(3, dict(next_question=True))
         self.save_play(db, started=True)
@@ -163,7 +175,7 @@ class Battle(object):
 
     def timed_out_too_soon(self):
         assert self.current_question_sent
-        return time.time() < (self.current_question_sent + self.thinking_time)
+        return time.time() < (self.current_question_sent + self.rules['thinking_time'])
 
     def has_everyone_answered_or_timed_out(self):
         return (len(self.attempted) + len(self.timed_out)
@@ -289,7 +301,8 @@ class Battle(object):
             play = db.Play.one({'_id': self.play_id})
         else:
             play = db.Play()
-            play.no_questions = self.no_questions
+            play.rules = self.rules['_id']
+            play.no_questions = self.rules['no_questions']
             play.no_players = 0
             for participant in self.participants:
                 user = db.User.one({'_id': ObjectId(participant.user_id)})

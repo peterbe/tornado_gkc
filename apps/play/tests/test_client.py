@@ -15,21 +15,14 @@ from apps.play.client_app import Client
 from apps.play import errors
 import settings
 
-class BaseTestCase(unittest.TestCase):
-    _once = False
-    def setUp(self):
-        if not self._once:
-            self._once = True
-            self.db = connection.test
-            self._emptyCollections()
 
-    def _emptyCollections(self):
-        [self.db.drop_collection(x) for x
-         in self.db.collection_names()
-         if x not in ('system.indexes',)]
+from apps.main.tests.base import BaseModelsTestCase
+
+class BaseTestCase(BaseModelsTestCase):
 
     def tearDown(self):
         self._emptyCollections()
+        super(BaseTestCase, self).tearDown()
         try:
             del self.battles
             del self.current_client_battles
@@ -98,55 +91,7 @@ class ClientTestCase(BaseTestCase):
         BaseTestCase.setUp(self)
         # create some questions
 
-    def _create_question(self,
-                         text=None,
-                         answer=u'yes',
-                         alternatives=None,
-                         accept=None,
-                         spell_correct=False):
-        cq = getattr(self, 'created_questions', 0)
-        genre = self.db.Genre()
-        genre.name = u"Genre %s" % (cq + 1)
-        genre.approved = True
-        genre.save()
-
-        q = self.db.Question()
-        q.text = text and unicode(text) or u'Question %s?' % (cq + 1)
-        q.answer = unicode(answer)
-        q.alternatives = (alternatives and alternatives
-                          or [u'yes', u'no', u'maybe', u'perhaps'])
-        q.genre = genre
-        q.accept = accept and accept or []
-        q.spell_correct = spell_correct
-        q.state = u'PUBLISHED'
-        q.publish_date = datetime.datetime.now()
-        q.save()
-
-        self.created_questions = cq + 1
-
-        return q
-
-    def _attach_image(self, question):
-        question_image = self.db.QuestionImage()
-        question_image.question = question
-        question_image.render_attributes = {
-          'src': '/static/image.jpg',
-          'width': 300,
-          'height': 260,
-          'alt': question.text
-        }
-        question_image.save()
-
-        here = os.path.dirname(__file__)
-        image_data = open(os.path.join(here, 'image.jpg'), 'rb').read()
-        with question_image.fs.new_file('original') as f:
-            type_, __ = mimetypes.guess_type('image.jpg')
-            f.content_type = type_
-            f.write(image_data)
-
-        assert question.has_image()
-
-    def _create_connected_client(self, username, request=None):
+    def _create_connected_client(self, username, request=None, **extra_cookies):
         client = MockClient(self)
         if not request:
             request = MockRequest()
@@ -156,17 +101,22 @@ class ClientTestCase(BaseTestCase):
         user = self.db.User()
         user.username = unicode(username)
         user.save()
-        cookie['user'] = cookie_maker.create_signed_value('user', str(user._id))
+
+        cookies = dict(extra_cookies, user=str(user._id))
+        for key, value in cookies.items():
+            cookie[key] = cookie_maker.create_signed_value(key, value)
+
         request.headers['Cookie'] = cookie.output()
         client.on_open(request)
 
         return user, client, request
 
-    def _create_two_connected_clients(self):
+    def _create_two_connected_clients(self, **extra_cookies):
         user, client, request = self._create_connected_client(
-                                 u'peterbe')
+                                 u'peterbe', **extra_cookies)
         user2, client2, __ = self._create_connected_client(
-                                 u'chris', request=request)
+                                 u'chris', request=request,
+                                 **extra_cookies)
         return (user, client), (user2, client2)
 
     def _create_question_knowledge(self, question, knowledge):
@@ -409,7 +359,7 @@ class ClientTestCase(BaseTestCase):
         client2.on_message(dict(timed_out=1))
         # you can't send this until there's been a delay
         self.assertTrue(client2._sent[-1]['error'])
-        battle.current_question_sent -= battle.thinking_time # fake time
+        battle.current_question_sent -= battle.rules['thinking_time'] # fake time
         # both will send this within nanoseconds of each other
 
         assert battle.current_question
@@ -447,7 +397,7 @@ class ClientTestCase(BaseTestCase):
     def test_both_too_slow_on_last_question(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 2
+        battle.rules['no_questions'] = 2
         assert battle.current_question is None
         self._create_question()
         self._create_question()
@@ -470,7 +420,7 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client2._sent[-1]['question'])
 
         # now pretend that both people are too slow
-        battle.current_question_sent -= battle.thinking_time # fake time
+        battle.current_question_sent -= battle.rules['thinking_time'] # fake time
         last_question_id = battle.current_question._id
         client.on_message(dict(timed_out=1))
         from time import sleep
@@ -513,7 +463,7 @@ class ClientTestCase(BaseTestCase):
         then be ignored in favor of the new question"""
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 2
+        battle.rules['no_questions'] = 2
         self._create_question()
         self._create_question()
 
@@ -538,7 +488,7 @@ class ClientTestCase(BaseTestCase):
         then be ignored in favor of the new question"""
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 3
+        battle.rules['no_questions'] = 3
         self._create_question()
         self._create_question()
         self._create_question()
@@ -549,7 +499,7 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client2._sent[-1]['question'])
 
         client.on_message(dict(answer='WRONG'))
-        battle.current_question_sent -= battle.thinking_time # fake time
+        battle.current_question_sent -= battle.rules['thinking_time'] # fake time
         client2.on_message(dict(timed_out=1))
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
@@ -557,7 +507,7 @@ class ClientTestCase(BaseTestCase):
     def test_first_wrong_second_right(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 3
+        battle.rules['no_questions'] = 3
         self._create_question()
         self._create_question()
         self._create_question()
@@ -608,7 +558,7 @@ class ClientTestCase(BaseTestCase):
     def test_loading_alternatives_too_late(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 3
+        battle.rules['no_questions'] = 3
         self._create_question()
         self._create_question()
         self._create_question()
@@ -630,7 +580,7 @@ class ClientTestCase(BaseTestCase):
         # 3 questions, 1 written by client1 and 1 written by client2
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 3
+        battle.rules['no_questions'] = 3
         q1 = self._create_question()
         q2 = self._create_question()
         q3 = self._create_question()
@@ -660,7 +610,7 @@ class ClientTestCase(BaseTestCase):
     def test_battle_draw(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 4
+        battle.rules['no_questions'] = 4
         self._create_question()
         self._create_question()
         self._create_question()
@@ -695,11 +645,10 @@ class ClientTestCase(BaseTestCase):
         self.assertEqual(play.winner, None)
         self.assertTrue(play.draw)
 
-
     def test_disconnect_twice(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 3
+        battle.rules['no_questions'] = 3
         q1 = self._create_question()
         q2 = self._create_question()
         q3 = self._create_question()
@@ -724,7 +673,7 @@ class ClientTestCase(BaseTestCase):
     def test_getting_alternatives_too_late(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 1
+        battle.rules['no_questions'] = 1
         q1 = self._create_question()
 
         battle.min_wait_delay -= 3
@@ -743,7 +692,7 @@ class ClientTestCase(BaseTestCase):
     def test_sending_right_answer_too_late(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 1
+        battle.rules['no_questions'] = 1
         q1 = self._create_question()
 
         battle.min_wait_delay -= 3
@@ -762,7 +711,7 @@ class ClientTestCase(BaseTestCase):
     def test_sending_wrong_answer_too_late(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 1
+        battle.rules['no_questions'] = 1
         q1 = self._create_question()
 
         battle.min_wait_delay -= 3
@@ -781,7 +730,7 @@ class ClientTestCase(BaseTestCase):
     def test_sending_timed_out_too_late(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 1
+        battle.rules['no_questions'] = 1
         q1 = self._create_question()
 
         battle.min_wait_delay -= 3
@@ -801,7 +750,7 @@ class ClientTestCase(BaseTestCase):
     def test_bot_sending_answer_too_late(self):
         user, client, request = self._create_connected_client('peterbe')
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 1
+        battle.rules['no_questions'] = 1
         client.on_message(dict(against_computer=1))
 
         q1 = self._create_question()
@@ -868,7 +817,7 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['bot_answers'])
         bot_answers_seconds = client._sent[-1]['bot_answers']
         self.assertTrue(bot_answers_seconds > 0)
-        self.assertTrue(bot_answers_seconds <= battle.thinking_time)
+        self.assertTrue(bot_answers_seconds <= battle.rules['thinking_time'])
         # pretend the user does nothing
         battle.min_wait_delay -= bot_answers_seconds
         client.on_message(dict(bot_answers=1))
@@ -935,7 +884,7 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(settings.COMPUTER_USERNAME in user_names)
 
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 2
+        battle.rules['no_questions'] = 2
 
         battle.min_wait_delay -= client._sent[-1]['wait']
         client.on_message(dict(next_question=1))
@@ -1009,7 +958,7 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(settings.COMPUTER_USERNAME in user_names)
 
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 2
+        battle.rules['no_questions'] = 2
 
         battle.min_wait_delay -= client._sent[-1]['wait']
         client.on_message(dict(next_question=1))
@@ -1026,7 +975,6 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['wait'])
         battle.min_wait_delay -= client._sent[-1]['wait']
         client.on_message(dict(next_question=1))
-
 
         battle.min_wait_delay -= bot_answers_seconds
         client.on_message(dict(bot_answers=1))
@@ -1055,7 +1003,7 @@ class ClientTestCase(BaseTestCase):
     def test_play_questions_with_image(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 2
+        battle.rules['no_questions'] = 2
         q1 = self._create_question()
         self._attach_image(q1)
         q2 = self._create_question()
@@ -1092,11 +1040,10 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['wait'])
         self.assertTrue(client2._sent[-1]['wait'])
 
-
     def test_answer_before_loaded_image(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 1
+        battle.rules['no_questions'] = 1
         q1 = self._create_question()
         self._attach_image(q1)
 
@@ -1107,18 +1054,16 @@ class ClientTestCase(BaseTestCase):
         self.assertTrue(client._sent[-1]['question']['image'])
         self.assertTrue(client2._sent[-1]['question']['image'])
 
-
         # if you try to send an answer before both clients have
         # acknowledged loading the image you get an error
         client.on_message(dict(answer='Yes'))
         self.assertEqual(client._sent[-1]['error']['code'],
                          errors.ERROR_ANSWER_BEFORE_IMAGE_LOADED)
 
-
     def test_answer_before_loaded_image_second_question(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 2
+        battle.rules['no_questions'] = 2
         q1 = self._create_question()
         self._attach_image(q1)
         q2 = self._create_question()
@@ -1171,7 +1116,7 @@ class ClientTestCase(BaseTestCase):
     def test_next_question_timing(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
-        battle.no_questions = 2
+        battle.rules['no_questions'] = 2
         q1 = self._create_question()
         q2 = self._create_question()
 
@@ -1192,14 +1137,15 @@ class ClientTestCase(BaseTestCase):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
         battle.no_questions = 3
-        print self.db.Play.find().count()
+
         q1 = self._create_question()
         q2 = self._create_question()
         p = self.db.Play()
         p.users = [user, user2]
         p.no_players = 2
         p.no_questions = 2
-        p.finished = datetime.datetime.now() - datetime.timedelta(seconds=60 * 60 - 1)
+        p.finished = (datetime.datetime.now() -
+                      datetime.timedelta(seconds=60 * 60 - 1))
         p.draw = True
         p.save()
 
@@ -1317,7 +1263,8 @@ class ClientTestCase(BaseTestCase):
         p.users = [user2, computer]
         p.no_players = 2
         p.no_questions = 2
-        p.finished = datetime.datetime.now() - datetime.timedelta(seconds=60 * 60 - 1)
+        p.finished = (datetime.datetime.now() -
+                      datetime.timedelta(seconds=60 * 60 - 1))
         p.draw = True
         p.save()
 
@@ -1376,7 +1323,6 @@ class ClientTestCase(BaseTestCase):
         client.on_message(dict(alternatives=1))
         client.on_message(dict(answer='Yes'))
 
-
         self.assertTrue(client._sent[-3]['answered']['right'])
         self.assertTrue(client._sent[-2]['update_scoreboard'])
         self.assertTrue(client._sent[-1]['wait'])
@@ -1384,14 +1330,92 @@ class ClientTestCase(BaseTestCase):
         client.on_message(dict(next_question=1))
         self.assertTrue(client._sent[-2]['question'])
 
+    def test_play_custom_rules_and_highscore(self):
 
+        q1 = self._create_question()
+        q2 = self._create_question()
+        q3 = self._create_question()
+        q4 = self._create_question()
+
+        r = self.db.Rules()
+        r.no_questions = 2
+        r.thinking_time = 3
+        r.genres = [q2.genre._id, q3.genre._id]
+        r.validate()
+        r.save()
+
+        # log in
+        client = MockClient(self)
+        #if not request:
+        request = MockRequest()
+        cookie = Cookie.BaseCookie()
+        cookie_maker = CookieMaker(request)
+
+        (user, client), (user2, client2) = self._create_two_connected_clients(
+          rules=str(r._id),
+        )
+        self.assertEqual(client._sent[-2]['thinking_time'], 3)
+        self.assertEqual(client2._sent[-2]['thinking_time'], 3)
+
+        battle = client.current_client_battles[str(user._id)]
+        self.assertEqual(battle.rules['genres'],
+                         [q2.genre._id, q3.genre._id])
+        self.assertEqual(battle.rules['no_questions'], 2)
+        self.assertEqual(battle.rules['thinking_time'], 3)
+        assert battle.current_question is None
+        self._create_question()
+        self._create_question()
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+
+        q = client._sent[-1]['question']
+
+        self.assertTrue(q['genre'] in
+                        [q2.genre.name, q3.genre.name])
+        self.assertTrue(q['genre'] not in
+                        [q1.genre.name, q4.genre.name])
+
+        # pretend user1 gets it right
+        client2.on_message(dict(alternatives='please'))
+        client.on_message(dict(answer='Yes'))
+        self.assertEqual(client._sent[-2]['update_scoreboard'],
+                         [u'peterbe', 3])
+        self.assertTrue(client._sent[-2]['update_scoreboard'])
+        self.assertTrue(client2._sent[-2]['update_scoreboard'])
+        self.assertTrue(client._sent[-1]['wait'])
+        self.assertTrue(client2._sent[-1]['wait'])
+        battle.min_wait_delay -= 3
+        client.on_message(dict(next_question=1))
+        self.assertTrue(client._sent[-1]['question'])
+        self.assertTrue(client2._sent[-1]['question'])
+
+        first_q = q
+        q = client._sent[-1]['question']
+        self.assertNotEqual(first_q, q)
+        self.assertTrue(q['genre'] in
+                        [q2.genre.name, q3.genre.name])
+        self.assertTrue(q['genre'] not in
+                        [q1.genre.name, q4.genre.name])
+
+        client2.on_message(dict(alternatives='please'))
+        client2.on_message(dict(answer='Yes'))
+
+        self.assertTrue(client._sent[-1]['winner']['you_won'])
+        self.assertTrue(not client2._sent[-1]['winner']['you_won'])
+
+        self.assertTrue(client._sent[-2]['play_id'])
+        self.assertTrue(client2._sent[-2]['play_id'])
+
+        play = self.db.Play.one({'_id': ObjectId(client._sent[-2]['play_id'])})
+        self.assertEqual(play.rules, r)
 
         return
 
 
         print client._sent[-1]
         print client2._sent[-1]
-
 
         return
 

@@ -16,6 +16,8 @@ COVERAGE_MODULES = [
     'apps.play.models',
     'apps.play.bot',
     'apps.widget.handlers',
+    'apps.rules.handlers',
+    'apps.rules.models',
 ]
 
 def all():

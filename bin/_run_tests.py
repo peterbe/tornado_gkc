@@ -15,7 +15,12 @@ TEST_MODULES = [
     'apps.play.tests.test_client',
     'apps.play.tests.test_battle',
     'apps.widget.tests.test_handlers',
+    'apps.rules.tests.test_models',
 ]
+
+import settings
+for app_name in settings.APPS:
+    __import__('apps.%s' % app_name, globals(), locals(), ['models'], -1)
 
 def all():
     try:

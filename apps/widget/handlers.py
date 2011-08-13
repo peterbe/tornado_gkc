@@ -22,6 +22,7 @@ class PreviewHandler(BaseHandler):
 
 _last_question = None
 
+
 @route('/widget/random/jsonp$', name='widget_random_question_jsonp')
 class RandomQuestionHandler(BaseHandler):
 
@@ -53,7 +54,8 @@ class RandomQuestionHandler(BaseHandler):
                              .find(search)
                              .skip(skip)
                              .limit(1)):
-                if self.db.QuestionImage.one({'question.$id': question['_id']}):
+                if (self.db.QuestionImage
+                    .one({'question.$id': question['_id']})):
                     if '_id' not in search:
                         search['_id'] = {'$nin': []}
                     search['_id']['$nin'].append(question['_id'])

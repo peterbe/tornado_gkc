@@ -773,6 +773,7 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         here = os.path.dirname(__file__)
         image_data = open(os.path.join(here, 'image.png'), 'rb').read()
+        assert image_data
         content_type, data = encode_multipart_formdata([('image', 'image.png')],
                                          [('image', 'image.png', image_data)])
         response = self.client.post(new_image_url, data,
@@ -995,6 +996,14 @@ class HandlersTestCase(BaseHTTPTestCase):
         question.save()
 
         url = get_question_slug_url(question)
+        response = self.client.get(url)
+        self.assertEqual(response.code, 404)  # not published
+
+        question.publish_date = (datetime.datetime.now() -
+                                 datetime.timedelta(days=1))
+        question.state = PUBLISHED
+        question.save()
+
         response = self.client.get(url)
         self.assertEqual(response.code, 200)
         self.assertTrue(question.text in response.body)

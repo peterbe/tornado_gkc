@@ -15,7 +15,7 @@ from apps.main.handlers import BaseHandler
 from utils.routes import route, route_redirect
 from utils.send_mail import send_email
 from utils.stopwords import strip_stopwords
-from utils import dict_plus, get_question_slug_url
+from utils import dict_plus, get_question_slug_url, djangolike_request_dict
 import settings
 
 from models import STATES, DRAFT, SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
@@ -37,13 +37,13 @@ class QuestionsBaseHandler(BaseHandler):
         options['q'] = self.get_argument('q', u'').strip()
         return options
 
-    def find_question(self, question_id):
-        if isinstance(question_id, basestring):
+    def find_question(self, _id):
+        if isinstance(_id, basestring):
             try:
-                question_id = ObjectId(question_id)
+                _id = ObjectId(_id)
             except InvalidId:
                 return None
-        return self.db.Question.one({'_id': question_id})
+        return self.db.Question.one({'_id': _id})
 
     def must_find_question(self, question_id, user):
         question = self.find_question(question_id)
@@ -400,10 +400,6 @@ class AddQuestionHandler(QuestionsBaseHandler):
         else:
             self.get(form=form)
 
-class djangolike_request_dict(dict):
-    def getlist(self, key):
-        value = self.get(key)
-        return self.get(key)
 
 
 @route('/questions/(\w{24})/$', name="view_question")
@@ -1323,7 +1319,9 @@ class ViewPublicQuestionHandler(QuestionsBaseHandler):
         options = self.get_base_options()
         question_slug = question_slug.replace(' ','+')
         question = None
-        for question_ in self.db.Question.find({'_id': ObjectId(_id)}):
+        for question_ in (self.db.Question
+                         .find({'_id': ObjectId(_id),
+                                'state': PUBLISHED})):
             url = get_question_slug_url(question_)
             if question_slug in url:
                 question = question_

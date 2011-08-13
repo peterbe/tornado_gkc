@@ -43,7 +43,6 @@ class MultilinesWidget(object):
         return '\n'.join(htmls)
 
 
-################################################################################
 class QuestionForm(BaseForm):
     text = TextField("Question",
                      [validators.Required(), validators.Length(min=5, max=60)],

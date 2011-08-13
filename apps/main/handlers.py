@@ -1,6 +1,7 @@
 # python
 import xml.etree.cElementTree as etree
 #from xml.etree.cElementTree import Element, SubElement, tostring
+import stat
 import traceback
 import httplib
 from hashlib import md5
@@ -54,6 +55,31 @@ class HTTPSMixin(object):
 
 
 class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
+
+    def static_url(self, path):
+        self.require_setting("static_path", "static_url")
+        if not hasattr(BaseHandler, "_static_timestamps"):
+            BaseHandler._static_timestamps = {}
+        timestamps = BaseHandler._static_timestamps
+        abs_path = os.path.join(self.application.settings["static_path"],
+                                        path)
+        if abs_path not in timestamps:
+            try:
+                timestamps[abs_path] = os.stat(abs_path)[stat.ST_MTIME]
+            except OSError:
+                logging.error("Could not open static file %r", path)
+                timestamps[abs_path] = None
+        base = self.request.protocol + "://" + self.request.host \
+            if getattr(self, "include_host", False) else ""
+        static_url_prefix = self.settings.get('static_url_prefix', '/static/')
+        if timestamps.get(abs_path):
+            if self.settings.get('embed_static_url_timestamp', False):
+                return base + static_url_prefix + 'v-%d/' % timestamps[abs_path] + path
+            else:
+                return base + static_url_prefix + path + "?v=%d" % timestamps[abs_path]
+        else:
+            return base + static_url_prefix + path
+
     def _handle_request_exception(self, exception):
         if not isinstance(exception, HTTPError) and \
           not self.application.settings['debug']:
@@ -304,10 +330,19 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
             _search['read'] = False
         return self.db.FlashMessage.find(_search).sort('add_date', 1)
 
-    def get_play_points(self, user):
+    def get_play_points(self, user, rules_id=None):
         """return the total play points or None"""
-        return self.db.PlayPoints.one({'user.$id': user._id})
+        if rules_id is None:
+            rules_id = self.db.Rules.one({'default': True})._id
 
+        # Temporary "migration" hack
+        # XXX This can be deleted once migration is complete
+        while self.db.PlayPoints.find({'user.$id': user._id, 'rules': rules_id}).count()>1:
+            for p in self.db.PlayPoints.find({'user.$id': user._id, 'rules': rules_id}):
+                p.delete()
+                break
+
+        return self.db.PlayPoints.one({'user.$id': user._id, 'rules': rules_id})
 
 
 @route('/')

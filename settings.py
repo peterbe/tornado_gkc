@@ -12,6 +12,7 @@ APPS = (
   'stats',
   'widget',
   'twitter',
+  'rules',
 )
 DATABASE_NAME = "gkc"
 
