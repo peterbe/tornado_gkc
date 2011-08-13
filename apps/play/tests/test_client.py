@@ -1,15 +1,8 @@
-import mimetypes
-import os
 from pymongo.objectid import ObjectId
 import datetime
 import time
 import base64
 import Cookie
-import unittest
-from pprint import pprint
-from apps.main.models import User, connection
-import apps.questions.models
-import apps.play.models
 from apps.play.cookies import CookieParser
 from apps.play.client_app import Client
 from apps.play import errors
@@ -148,8 +141,6 @@ class ClientTestCase(BaseTestCase):
     def test_connecting_without_headers_error(self):
         client = MockClient(self)
         request = MockHeaderlessRequest()
-        cookie = Cookie.BaseCookie()
-        cookie_maker = CookieMaker(request)
 
         client.on_open(request)
         self.assertTrue(client._sent[-1]['error'])
@@ -649,9 +640,9 @@ class ClientTestCase(BaseTestCase):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
         battle.rules['no_questions'] = 3
-        q1 = self._create_question()
-        q2 = self._create_question()
-        q3 = self._create_question()
+        self._create_question()
+        self._create_question()
+        self._create_question()
 
         battle.min_wait_delay -= 3
         client.on_message(dict(next_question=1))
@@ -674,7 +665,7 @@ class ClientTestCase(BaseTestCase):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
         battle.rules['no_questions'] = 1
-        q1 = self._create_question()
+        self._create_question()
 
         battle.min_wait_delay -= 3
         client.on_message(dict(next_question=1))
@@ -693,7 +684,7 @@ class ClientTestCase(BaseTestCase):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
         battle.rules['no_questions'] = 1
-        q1 = self._create_question()
+        self._create_question()
 
         battle.min_wait_delay -= 3
         client.on_message(dict(next_question=1))
@@ -712,7 +703,7 @@ class ClientTestCase(BaseTestCase):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
         battle.rules['no_questions'] = 1
-        q1 = self._create_question()
+        self._create_question()
 
         battle.min_wait_delay -= 3
         client.on_message(dict(next_question=1))
@@ -731,7 +722,7 @@ class ClientTestCase(BaseTestCase):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
         battle.rules['no_questions'] = 1
-        q1 = self._create_question()
+        self._create_question()
 
         battle.min_wait_delay -= 3
         client.on_message(dict(next_question=1))
@@ -754,7 +745,7 @@ class ClientTestCase(BaseTestCase):
         client.on_message(dict(against_computer=1))
 
         q1 = self._create_question()
-        qk1 = self._create_question_knowledge(q1, {
+        self._create_question_knowledge(q1, {
           'right': 1.0,
           'wrong': 0.,
           'alternatives_right': 0.,
@@ -786,10 +777,10 @@ class ClientTestCase(BaseTestCase):
         user_names = client._sent[-2]['init_scoreboard']
 
         q1 = self._create_question()
-        q2 = self._create_question()
+        self._create_question()
         q3 = self._create_question()
 
-        qk1 = self._create_question_knowledge(q1, {
+        self._create_question_knowledge(q1, {
           'right': 0.3,
           'wrong': 0.1,
           'alternatives_right': 0.1,
@@ -798,7 +789,7 @@ class ClientTestCase(BaseTestCase):
           'timed_out': 0.1,
           'users': 10,
         })
-        qk2 = self._create_question_knowledge(q3, {
+        self._create_question_knowledge(q3, {
           'right': 0.3,
           'wrong': 0.1,
           'alternatives_right': 0.1,
@@ -861,7 +852,7 @@ class ClientTestCase(BaseTestCase):
         q1 = self._create_question()
         q2 = self._create_question()
 
-        qk1 = self._create_question_knowledge(q1, {
+        self._create_question_knowledge(q1, {
           'right': 0.3,
           'wrong': 0.1,
           'alternatives_right': 0.1,
@@ -870,7 +861,7 @@ class ClientTestCase(BaseTestCase):
           'timed_out': 0.1,
           'users': 10,
         })
-        qk2 = self._create_question_knowledge(q2, {
+        self._create_question_knowledge(q2, {
           'right': 0.3,
           'wrong': 0.1,
           'alternatives_right': 0.1,
@@ -935,7 +926,7 @@ class ClientTestCase(BaseTestCase):
         q1 = self._create_question()
         q2 = self._create_question()
 
-        qk1 = self._create_question_knowledge(q1, {
+        self._create_question_knowledge(q1, {
           'right': 1.,
           'wrong': 0.,
           'alternatives_right': 0.,
@@ -944,7 +935,7 @@ class ClientTestCase(BaseTestCase):
           'timed_out': 0.,
           'users': 10,
         })
-        qk2 = self._create_question_knowledge(q2, {
+        self._create_question_knowledge(q2, {
           'right': 1.,
           'wrong': 0.,
           'alternatives_right': 0.,
@@ -1117,8 +1108,8 @@ class ClientTestCase(BaseTestCase):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         battle = client.current_client_battles[str(user._id)]
         battle.rules['no_questions'] = 2
-        q1 = self._create_question()
-        q2 = self._create_question()
+        self._create_question()
+        self._create_question()
 
         battle.min_wait_delay -= 3
         client.on_message(dict(next_question=1))
@@ -1185,8 +1176,8 @@ class ClientTestCase(BaseTestCase):
         pq2b.time = 2.0
         pq2b.save()
 
-        q3 = self._create_question()
-        q4 = self._create_question()
+        self._create_question()
+        self._create_question()
 
         battle.min_wait_delay -= 3
         client.on_message(dict(next_question=1))
@@ -1345,12 +1336,6 @@ class ClientTestCase(BaseTestCase):
         r.save()
 
         # log in
-        client = MockClient(self)
-        #if not request:
-        request = MockRequest()
-        cookie = Cookie.BaseCookie()
-        cookie_maker = CookieMaker(request)
-
         (user, client), (user2, client2) = self._create_two_connected_clients(
           rules=str(r._id),
         )

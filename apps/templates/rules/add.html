@@ -1,7 +1,11 @@
 {% extends "../base.html" %}
 
+{% block extra_head %}
+{% module Static("css/rules/input.css") %}
+{% end %}
+
 {% block extra_js %}
-{% module Static("js/rules_input.js") %}
+{% module Static("js/rules/input.js") %}
 {% end %}
 
 {% block content_inner %}

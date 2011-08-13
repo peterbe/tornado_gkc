@@ -3,8 +3,10 @@ import time
 import hmac
 import hashlib
 import base64
+import logging
 from tornado import escape
 import settings
+
 
 class CookieParser(object):
     """hackishly naive"""

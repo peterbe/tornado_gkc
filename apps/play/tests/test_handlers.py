@@ -1,6 +1,8 @@
+import random
 import datetime
-from apps.main.tests.base import BaseHTTPTestCase, TestClient
-from utils.http_test_client import TestClient
+import json
+from collections import defaultdict
+from apps.main.tests.base import BaseHTTPTestCase
 import settings
 
 
@@ -58,6 +60,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         user2.save()
 
         play = self.db.Play()
+        play.rules = self.default_rules_id
         play.users.extend([user1, user2])
         play.no_questions = 1
         play.no_players = 2
@@ -126,11 +129,12 @@ class HandlersTestCase(BaseHTTPTestCase):
         user2.username = u'chris'
         user2.save()
 
-        q1 = self._create_question()
-        q2 = self._create_question()
-        q3 = self._create_question()
+        self._create_question()
+        self._create_question()
+        self._create_question()
 
         play1 = self.db.Play()
+        play1.rules = self.default_rules_id
         play1.users = [user, user1]
         play1.no_players = 2
         play1.no_questions = 2
@@ -146,6 +150,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertTrue(replay_url in response.body)
 
         play2 = self.db.Play()
+        play2.rules = self.default_rules_id
         play2.users = [user2, user]
         play2.no_players = 2
         play2.no_questions = 2
@@ -173,6 +178,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         user2.save()
 
         play = self.db.Play()
+        play.rules = self.default_rules_id
         play.users.extend([user1, user2])
         play.no_questions = 1
         play.no_players = 2
@@ -287,3 +293,209 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertTrue(-1 < response.body.find(user2.username)
                            < response.body.find(user1.username))
         self.assertTrue(computer.username not in response.body)
+
+
+    def test_update_points_basic(self):
+        url = self.reverse_url('play_update_points_json')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 403)
+
+        self._login()
+        response = self.client.get(url)
+        self.assertEqual(response.code, 400)
+
+        response = self.client.get(url, {'play_id': 'xxx'})
+        self.assertEqual(response.code, 404)
+
+        user = self.db.User.one({'username': 'peterbe'})
+        chris = self.db.User()
+        chris.username = u'chris'
+        chris.save()
+#        bob = self.db.User()
+#        bob.username = u'bob'
+#        bob.save()
+#        anon = self.db.User()
+#        anon.username = u'anonymous123'
+#        anon.anonymous = True
+#        anon.save()
+#        other_play = self._create_play([chris, bob])
+#        response = self.client.get(url, {'play_id': str(other_play._id)})
+#        self.assertEqual(response.code, 403)
+
+        outcome = [
+          (3, 0),
+          (0, 1)
+        ]
+        play = self._create_play([user, chris], outcome=outcome)
+        assert play.winner == user
+        assert not play.draw
+        response = self.client.get(url, {'play_id': play._id})
+        self.assertEqual(response.code, 200)
+        result = json.loads(response.body)
+
+        pp = self.db.PlayPoints.one({'user.$id': user._id,
+                                     'rules': self.default_rules_id})
+        self.assertEqual(pp.points, 3)
+        self.assertEqual(pp.wins, 1)
+        self.assertEqual(pp.losses, 0)
+        self.assertEqual(pp.draws, 0)
+
+        self.assertEqual(result['highscore_position'], 1)
+        self.assertEqual(result['highscore_position_before'], None)
+        self.assertEqual(result['points_before'], 0)
+        self.assertEqual(result['increment'], 3)
+        self.assertEqual(result['increment'], 3)
+
+        # run it once for the loser too
+        self._login(username=u'chris')
+
+        response = self.client.get(url, {'play_id': play._id})
+        self.assertEqual(response.code, 200)
+        result = json.loads(response.body)
+
+        pp = self.db.PlayPoints.one({'user.$id': chris._id,
+                                     'rules': self.default_rules_id})
+        self.assertEqual(pp.points, 1)
+        self.assertEqual(pp.wins, 0)
+        self.assertEqual(pp.losses, 1)
+        self.assertEqual(pp.draws, 0)
+
+        self.assertEqual(result['highscore_position'], 2)
+        self.assertEqual(result['highscore_position_before'], None)
+        self.assertEqual(result['points_before'], 0)
+        self.assertEqual(result['increment'], 1)
+        self.assertEqual(result['increment'], 1)
+
+    def test_update_points_one_anonymous(self):
+        url = self.reverse_url('play_update_points_json')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 403)
+
+        self._login()
+        response = self.client.get(url)
+        self.assertEqual(response.code, 400)
+
+        response = self.client.get(url, {'play_id': 'xxx'})
+        self.assertEqual(response.code, 404)
+
+        user = self.db.User.one({'username': 'peterbe'})
+        anon = self.db.User()
+        anon.username = u'anon'
+        anon.anonymous = True
+        anon.save()
+
+        outcome = [
+          (3, 0),
+          (0, 1)
+        ]
+        play = self._create_play([user, anon], outcome=outcome)
+        assert play.winner == user
+        assert not play.draw
+        response = self.client.get(url, {'play_id': play._id})
+        self.assertEqual(response.code, 200)
+        result = json.loads(response.body)
+
+        pp = self.db.PlayPoints.one({'user.$id': user._id,
+                                     'rules': self.default_rules_id})
+        self.assertEqual(pp.points, 3)
+        self.assertEqual(pp.wins, 1)
+        self.assertEqual(pp.losses, 0)
+        self.assertEqual(pp.draws, 0)
+
+        self.assertEqual(result['highscore_position'], 1)
+        self.assertEqual(result['highscore_position_before'], None)
+        self.assertEqual(result['points_before'], 0)
+        self.assertEqual(result['increment'], 3)
+        self.assertEqual(result['increment'], 3)
+
+        # run it once for the loser too
+        self._login(username=u'anon')
+
+        response = self.client.get(url, {'play_id': play._id})
+        self.assertEqual(response.code, 200)
+        result = json.loads(response.body)
+
+        pp = self.db.PlayPoints.one({'user.$id': anon._id,
+                                     'rules': self.default_rules_id})
+        self.assertEqual(pp.points, 1)
+        self.assertEqual(pp.wins, 0)
+        self.assertEqual(pp.losses, 1)
+        self.assertEqual(pp.draws, 0)
+
+        self.assertEqual(result['highscore_position'], 2)
+        self.assertEqual(result['highscore_position_before'], None)
+        self.assertEqual(result['points_before'], 0)
+        self.assertEqual(result['increment'], 1)
+        self.assertEqual(result['increment'], 1)
+        self.assertEqual(result['login_url'], self.reverse_url('login'))
+
+    def _create_play(self, users, rules=None, outcome=None):
+        if rules is None:
+            rules = self.db.Rules.one({'default': True})
+
+        if outcome:
+            no_questions = len(outcome)
+        else:
+            no_questions = rules.no_questions
+
+        play = self.db.Play()
+        play.rules = rules._id
+        play.users = users
+        play.no_questions = no_questions
+        play.no_players = len(users)
+        play.started = datetime.datetime.now() - datetime.timedelta(seconds=60)
+        play.finished = datetime.datetime.now()
+        play.save()
+
+        if not outcome:
+            # randomize the outcome
+            outcome = []
+            for i in range(no_questions):
+                range_ = [3, 1, 1, 0, -1]
+                row = []
+                _prev = None
+                for user in users:
+                    random.shuffle(range_)
+                    a = range_[0]
+                    while a == _prev:
+                        random.shuffle(range_)
+                        a = range_[0]
+                    row.append(a)
+                    _prev = a
+                outcome.append(row)
+
+        counts = defaultdict(int)
+        for points in outcome:
+            q = self._create_question()
+            for i, user in enumerate(users):
+                counts[user] += points[i]
+                pq = self.db.PlayedQuestion()
+                pq.play = play
+                pq.question = q
+                pq.user = user
+                if points[i] > 0:
+                    pq.right = True
+                    pq.answer = u'Yes'
+                    if points[i] > 1:
+                        pq.alternatives = False
+                    else:
+                        pq.alternatives = True
+                else:
+                    pq.right = False
+                    if points[i] < 0:
+                        pq.answer = u'wrong'
+                    pq.alternatives = False
+                pq.save()
+
+        highest_count = max(counts.values())
+        for user in counts:
+            if counts[user] == highest_count:
+                if play.winner:
+                    # one already set
+                    play.winner = None
+                    play.draw = True
+                else:
+                    play.winner = user
+
+        play.save()
+        return play

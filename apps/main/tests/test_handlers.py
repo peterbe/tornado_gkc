@@ -235,6 +235,7 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         play = self.db.Play()
         play.users = [user, bob]
+        play.rules = self.default_rules_id
         play.no_players = 2
         play.no_questions = 2
         play.started = datetime.datetime.now()
@@ -287,13 +288,13 @@ class HandlersTestCase(BaseHTTPTestCase):
         play.save()
 
         from apps.play.models import PlayPoints
-        play_points_user = PlayPoints.calculate(user)
+        play_points_user = PlayPoints.calculate(user, self.default_rules_id)
         self.assertEqual(play_points_user.draws, 0)
         self.assertEqual(play_points_user.wins, 1)
         self.assertEqual(play_points_user.losses, 0)
         self.assertEqual(play_points_user.points, 3)
 
-        play_points_bob = PlayPoints.calculate(bob)
+        play_points_bob = PlayPoints.calculate(bob, self.default_rules_id)
         self.assertEqual(play_points_bob.draws, 0)
         self.assertEqual(play_points_bob.wins, 0)
         self.assertEqual(play_points_bob.losses, 1)
@@ -400,6 +401,7 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         play_points = self.db.PlayPoints()
         play_points.user = peterbe
+        play_points.rules = self.default_rules_id
         play_points.points = 10
         play_points.wins = 1
         play_points.draws = 1
@@ -419,6 +421,7 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         play = self.db.Play()
         play.users = [user, bob]
+        play.rules = self.default_rules_id
         play.no_players = 2
         play.no_questions = 2
         play.started = datetime.datetime.now()
@@ -470,13 +473,14 @@ class HandlersTestCase(BaseHTTPTestCase):
         play.save()
 
         from apps.play.models import PlayPoints
-        play_points_user = PlayPoints.calculate(user)
+
+        play_points_user = PlayPoints.calculate(user, self.default_rules_id)
         self.assertEqual(play_points_user.draws, 0)
         self.assertEqual(play_points_user.wins, 0)
         self.assertEqual(play_points_user.losses, 1)
         self.assertEqual(play_points_user.points, 1)
 
-        play_points_bob = PlayPoints.calculate(bob)
+        play_points_bob = PlayPoints.calculate(bob, self.default_rules_id)
         self.assertEqual(play_points_bob.draws, 0)
         self.assertEqual(play_points_bob.wins, 1)
         self.assertEqual(play_points_bob.losses, 0)
@@ -578,6 +582,41 @@ class HandlersTestCase(BaseHTTPTestCase):
             url = '/' + url.split('/', 1)[1]
             r = self.client.get(url)
             self.assertEqual(r.code, 200)
+
+    def test_page_not_found(self):
+        from apps.main.handlers import BaseHandler
+        url = '/some/junk/'
+        response = self.client.get(url)
+        self.assertEqual(response.code, 404)
+        self.assertTrue(BaseHandler.page_not_found_page_title
+                        in response.body)
+
+        url = '/some/junk'
+        response = self.client.get(url)
+        self.assertEqual(response.code, 302)
+        self.assertEqual(response.headers['location'], '/some/junk/')
+
+        url = '/some/junk?foo=bar'
+        response = self.client.get(url)
+        self.assertEqual(response.code, 302)
+        self.assertEqual(response.headers['location'], '/some/junk/?foo=bar')
+
+        url = '/questions'
+        response = self.client.get(url)
+        self.assertEqual(response.code, 302)
+        self.assertEqual(response.headers['location'], '/questions/')
+
+    def test_page_not_found_raised_in_handler(self):
+        # if a handler raises an 404 it should show the 404.html template
+        q = self._create_question(text="Peter's name?")
+        url = get_question_slug_url(q)
+        url = url.replace('Peter', 'Chris')
+
+        from apps.main.handlers import BaseHandler
+        response = self.client.get(url)
+        self.assertEqual(response.code, 404)
+        self.assertTrue(BaseHandler.page_not_found_page_title
+                        in response.body)
 
 def google_get_authenticated_user(self, callback, **kw):
     callback({

@@ -3,19 +3,19 @@ import time
 import os.path as op
 import logging
 import random
-from pymongo.objectid import InvalidId, ObjectId
+from pymongo.objectid import ObjectId
 import tornado.web
 import tornadio.router
 
 from apps.main.models import connection
-import apps.main.models
-import apps.questions.models
-import apps.play.models
-import apps.rules.models
+#import apps.main.models
+#import apps.questions.models
+#import apps.play.models
+#import apps.rules.models
 
 from apps.play.battle import Battle
 from apps.play import errors
-from mongokit import Connection, MultipleResultsFound
+from mongokit import MultipleResultsFound
 from cookies import CookieParser
 
 import settings
@@ -260,10 +260,10 @@ class Client(tornadio.SocketConnection):
         if not battle.current_question:
             # happens if the timed_out is sent even though someone has
             # already answered correctly
-            print "current_question", getattr(battle, 'current_question', '*no current question*')
-            print repr(battle)
-            print getattr(battle, 'min_wait_delay', '*no min_wait_delay*')
-            print repr(client)
+            #print "current_question", getattr(battle, 'current_question', '*no current question*')
+            #print repr(battle)
+            #print getattr(battle, 'min_wait_delay', '*no min_wait_delay*')
+            #print repr(client)
             assert battle.is_waiting() or battle.is_stopped()
             return
         if battle.timed_out_too_soon():
@@ -372,7 +372,7 @@ class Client(tornadio.SocketConnection):
             try:
                 qk = (self.db.QuestionKnowledge.collection
                   .one({'question.$id': question._id}))
-            except mongokit.MultipleResultsFound:
+            except MultipleResultsFound:
                 logging.warning("For question id %s there are multiple question_knowledge" %
                                  question._id)
                 for each in (self.db.QuestionKnowledge.collection

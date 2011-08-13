@@ -14,6 +14,10 @@ define("port", default=8888, help="run on the given port (default 8888)", type=i
 define("flashpolicy", default=None,
            help="location of flashpolicy.xml on port 843 (will require sudo)")
 def main():
+    for app_name in settings.APPS:
+        # import all models so that their MongoKit classes are registered
+        __import__('apps.%s' % app_name, globals(), locals(), ['models'], -1)
+
     tornado.options.parse_command_line()
     from apps.play.client_app import Client, application
     if options.debug:

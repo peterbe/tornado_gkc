@@ -78,6 +78,7 @@ class Application(tornado.web.Application):
         if embed_static_url is None:
             embed_static_url = not options.dont_embed_static_url
 
+        print "embed_static_url", embed_static_url
         handlers = route.get_routes()
         app_settings = dict(
             title=settings.PROJECT_TITLE,
@@ -101,7 +102,6 @@ class Application(tornado.web.Application):
                                       "static", "compiler.jar"),
             YUI_LOCATION=os.path.join(os.path.dirname(__file__),
                                       "static", "yuicompressor-2.4.2.jar"),
-            UNDOER_GUID=u'UNDOER', # must be a unicode string
             cdn_prefix=cdn_prefix,
             twitter_consumer_key=settings.TWITTER_CONSUMER_KEY,
             twitter_consumer_secret=settings.TWITTER_CONSUMER_SECRET,
@@ -110,6 +110,10 @@ class Application(tornado.web.Application):
             twitter_postings_consumer_key=settings.TWITTER_POSTINGS_CONSUMER_KEY,
             twitter_postings_consumer_secret=settings.TWITTER_POSTINGS_CONSUMER_SECRET,
         )
+        if 1 or not options.debug:
+            from apps.main.handlers import PageNotFoundHandler
+            handlers.append(tornado.web.url('/.*?', PageNotFoundHandler,
+                            name='page_not_found'))
         tornado.web.Application.__init__(self, handlers, **app_settings)
 
         # Have one global connection to the blog DB across all handlers

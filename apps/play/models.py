@@ -1,4 +1,3 @@
-from pprint import pprint
 from pymongo.objectid import ObjectId
 from collections import defaultdict
 import datetime
@@ -114,7 +113,6 @@ class PlayPoints(BaseDocument):
           .find(search)
           .sort('points', -1)
           )
-        return_position = None
         position = 0
         _prev_points = -1
         for pp in pps:
@@ -146,8 +144,16 @@ class PlayPoints(BaseDocument):
           #'halted': None,
         }
 
-        play_points = db.PlayPoints.one({'user.$id': user._id,
+        from mongokit import MultipleResultsFound
+        try:
+            play_points = db.PlayPoints.one({'user.$id': user._id,
                                          'rules': rules_id})
+        except MultipleResultsFound:
+            # Temporary hack!
+            for pp in db.PlayPoints.find({'user.$id': user._id,'rules': rules_id}).sort('add_date').limit(1):
+                pp.delete()
+                raise Exception("Try again")
+
         if not play_points:
             play_points = db.PlayPoints()
             play_points.rules = rules_id
@@ -170,9 +176,8 @@ class PlayPoints(BaseDocument):
                     assert play.winner
                     assert play.winner.id != user._id
                 except AssertionError:  # pragma: no cover
-                    # This happens because of a bug in the game, where a draw
-                    # isn't saved properly.
-                    print "FIXING"
+                    # This happens because of a past bug in the game, where a
+                    # draw wassn't saved properly.
                     points = defaultdict(int)
                     for u_ref in play.users:
                         u = db.User.one({'_id': u_ref.id})

@@ -23,7 +23,7 @@ import tornado.web
 from tornado.web import HTTPError
 
 # app
-from utils.routes import route, route_redirect
+from utils.routes import route
 from models import *
 from utils.send_mail import send_email
 from utils.decorators import login_required, login_redirect
@@ -80,6 +80,15 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         else:
             return base + static_url_prefix + path
 
+    page_not_found_page_title = "Page not found :("
+
+    def send_page_not_found(self, message=None):
+        options = self.get_base_options()
+        options['page_title'] = self.page_not_found_page_title
+        options['message'] = message
+        self.set_status(404)
+        self.render('404.html', **options)
+
     def _handle_request_exception(self, exception):
         if not isinstance(exception, HTTPError) and \
           not self.application.settings['debug']:
@@ -89,11 +98,16 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
             except:
                 print "** Failing even to email exception **"
 
+        if isinstance(exception, HTTPError) and exception.status_code == 404:
+            self.send_page_not_found(message=exception.log_message)
+            return
+
         if self.application.settings['debug']:
             # Because of
             # https://groups.google.com/d/msg/python-tornado/Zjv6_3OYaLs/CxkC7eLznv8J
             print "Exception!"
             print exception
+
         super(BaseHandler, self)._handle_request_exception(exception)
 
     def _log(self):
@@ -334,6 +348,14 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         """return the total play points or None"""
         if rules_id is None:
             rules_id = self.db.Rules.one({'default': True})._id
+            #default_rules = self.db.Rules.one({'default': True})
+            #if default_rules is None:
+            #    # first time!
+            #    default_rules = self.db.Rules()
+            #    default_rules.name = u"Default rules"
+            #    default_rules.default = True
+            #    default_rules.save()
+            #rules_id = default_rules._id
 
         # Temporary "migration" hack
         # XXX This can be deleted once migration is complete
@@ -381,7 +403,6 @@ class HomeHandler(BaseHandler):
         self.render("home.html", **options)
 
 
-route_redirect('/settings$', '/settings/', name='settings_shortcut')
 @route('/settings/$', name='settings')
 class SettingsHandler(BaseHandler):
     """Currently all this does is changing your name and email but it might
@@ -532,7 +553,6 @@ class BaseAuthHandler(BaseHandler):
             previous_user.delete()
 
 
-route_redirect('/login', '/login/', name='login_shortcut')
 @route('/login/', name='login')
 class LoginHandler(BaseAuthHandler):
 
@@ -959,3 +979,17 @@ class Site:
         self.changefreq = changefreq
         self.priority = priority
         self.image = image
+
+
+# this handler gets automatically appended last to all handlers inside app.py
+class PageNotFoundHandler(BaseHandler):
+
+    def get(self):
+        path = self.request.path
+        if not path.endswith('/'):
+            new_url = '%s/' % path
+            if self.request.query:
+                new_url += '?%s' % self.request.query
+            self.redirect(new_url)
+            return
+        self.send_page_not_found()

@@ -12,7 +12,7 @@ import tornado.web
 from tornado.web import HTTPError
 from utils.decorators import login_redirect, authenticated_plus
 from apps.main.handlers import BaseHandler
-from utils.routes import route, route_redirect
+from utils.routes import route
 from utils.send_mail import send_email
 from utils.stopwords import strip_stopwords
 from utils import dict_plus, get_question_slug_url, djangolike_request_dict
@@ -230,7 +230,6 @@ class QuestionsGenreNamesHandler(QuestionsBaseHandler):
             names = [x.name for x in qs]
             self.write_json(dict(names=names))
 
-route_redirect('/questions$', '/questions/', name="questions_shortcut")
 @route('/questions/$', name="questions")
 class QuestionsHomeHandler(QuestionsBaseHandler):
     DEFAULT_BATCH_SIZE = 20
@@ -301,7 +300,6 @@ class QuestionsHomeHandler(QuestionsBaseHandler):
 
         self.render("questions/index.html", **options)
 
-route_redirect('/questions/published$', '/questions/published/')
 @route('/questions/published/$', name="questions_published")
 class PublishedQuestionsHomeHandler(QuestionsBaseHandler):
     DEFAULT_BATCH_SIZE = 200
@@ -1068,7 +1066,6 @@ class ReviewAcceptedQuestionHandler(QuestionsBaseHandler):
         self.redirect(url)
 
 
-route_redirect('/questions/categories$', '/questions/categories/', name="all_categories_shortcut")
 @route('/questions/categories/$', name="all_categories")
 class CategoriesHandler(QuestionsBaseHandler): # pragma: no cover
 
@@ -1113,7 +1110,6 @@ class CategoriesHandler(QuestionsBaseHandler): # pragma: no cover
         self.render("questions/categories.html", **options)
 
 
-route_redirect('/questions/all$', '/questions/all/', name="all_questions_shortcut")
 @route('/questions/all/$', name="all_questions")
 class AllQuestionsHomeHandler(QuestionsBaseHandler): # pragma: no cover
 
@@ -1190,8 +1186,6 @@ class AllQuestionsHomeHandler(QuestionsBaseHandler): # pragma: no cover
         self.render("questions/all.html", **options)
 
 
-route_redirect('/questions/all/knowledge$', '/questions/all/knowledge/',
-               name="all_knowledge_shortcut")
 @route('/questions/all/knowledge/$', name="all_knowledge")
 class AllQuestionKnowledgeHandler(QuestionsBaseHandler): # pragma: no cover
 

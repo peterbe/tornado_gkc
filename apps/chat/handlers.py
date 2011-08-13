@@ -1,10 +1,9 @@
 import tornado.web
 from tornado.web import HTTPError
 from apps.main.handlers import BaseHandler
-from utils.routes import route, route_redirect
+from utils.routes import route
 import settings
 
-route_redirect('/chat$', '/chat/', name='chat_redirect')
 @route('/chat/$', name='chat')
 class ChatHandler(BaseHandler):
 

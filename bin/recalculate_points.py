@@ -16,9 +16,8 @@ define("random", default=False, help="pick random users", type=bool)
 def main(*args):
     tornado.options.parse_command_line()
     from apps.main.models import User, connection
-    from apps.play.models import Play, PlayPoints, PlayedQuestion
+    from apps.play.models import PlayPoints
     import apps.rules.models
-    #con.register([Play, User, PlayPoints, PlayedQuestion])
     db = connection.gkc
     if options.all:
         max_users = 999999

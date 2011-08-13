@@ -33,6 +33,13 @@ class _DatabaseTestCaseMixin(object):
         # do this every time
         self._emptyCollections()
 
+    def set_default_rules_id(self):
+        default_rules = self.db.Rules()
+        default_rules.name = u"Default rules"
+        default_rules.default = True
+        default_rules.save()
+        self.default_rules_id = default_rules._id
+
     def _emptyCollections(self):
         [self.db.drop_collection(x) for x
          in self.db.collection_names()
@@ -93,6 +100,7 @@ class BaseModelsTestCase(unittest.TestCase, _DatabaseTestCaseMixin):
     def setUp(self):
         super(BaseModelsTestCase, self).setUp()
         self.setup_connection()
+        self.set_default_rules_id()
 
     def tearDown(self):
         super(BaseModelsTestCase, self).tearDown()
@@ -104,6 +112,7 @@ class BaseAsyncTestCase(AsyncHTTPTestCase, _DatabaseTestCaseMixin):
     def setUp(self):
         super(BaseAsyncTestCase, self).setUp()
         self.setup_connection()
+        self.set_default_rules_id()
 
     def tearDown(self):
         super(BaseAsyncTestCase, self).tearDown()
@@ -120,16 +129,6 @@ class BaseHTTPTestCase(BaseAsyncTestCase, HTTPClientMixin):
           'utils.send_mail.backends.locmem.EmailBackend'
         self._app.settings['email_exceptions'] = False
         self.client = TestClient(self)
-        #print dir(self)
-        #print self._create_question
-
-#    @property
-#    def db(self):
-#        return self._app.con[self._app.database_name]
-
-#    def get_db(self):
-#        print "Deprecated. Use self.db instead"
-#        return self.db
 
     def get_app(self):
         return app.Application(database_name='test',

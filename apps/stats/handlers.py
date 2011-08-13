@@ -4,12 +4,11 @@ from collections import defaultdict
 import tornado.web
 from tornado.web import HTTPError
 from apps.main.handlers import BaseHandler
-from utils.routes import route, route_redirect
+from utils.routes import route
 from utils import parse_datetime, get_question_slug_url
 import settings
 
 
-route_redirect('/stats$', '/stats/')
 @route('/stats/$', name='stats')
 class StatsHandler(BaseHandler):
     def get(self):
