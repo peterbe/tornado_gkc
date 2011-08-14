@@ -1,6 +1,7 @@
-from pymongo.objectid import ObjectId
+from pymongo.objectid import ObjectId, InvalidId
 from apps.main.handlers import BaseHandler
-from utils.routes import route, route_redirect
+from utils.routes import route
+from tornado.web import HTTPError
 from utils.decorators import login_redirect, authenticated_plus
 from utils import djangolike_request_dict
 from forms import RulesForm
@@ -43,7 +44,6 @@ class BaseRulesHandler(BaseHandler):
         return rules
 
 
-route_redirect('/rules$', '/rules/')
 @route('/rules/$', name='rules')
 class RulesHomeHandler(BaseRulesHandler):
 
@@ -80,7 +80,6 @@ class RulesHomeHandler(BaseRulesHandler):
         self.render("rules/index.html", **options)
 
 
-route_redirect('/rules/add$', '/rules/add/')
 @route('/rules/add/$', name='rules_add')
 class AddRulesHandler(BaseRulesHandler):
 
@@ -207,3 +206,38 @@ class EditRulesHandler(BaseRulesHandler):
 
         else:
             self.get(_id, form=form)
+
+@route('/rules/playable_questions.json$', name='playable_questions_json')
+class PlayableQuestionsHandler(BaseRulesHandler):
+
+    def get(self):
+        user = self.get_current_user()
+        if not user or (user and user.anonymous):
+            raise HTTPError(403, "Forbidden")
+        result = {}
+        if 'genres[]' in self.request.arguments:
+            genres = self.get_arguments('genres[]')
+        else:
+            genres = self.get_arguments('genres')
+        pictures_only = self.get_argument('pictures_only', False)
+        search = {'state': 'PUBLISHED'}
+        if genres:
+            genre_ids = []
+            for _id in genres:
+                try:
+                    genre = self.db.Genre.collection.one({'_id': ObjectId(_id)})
+                except InvalidId:
+                    genre = None
+                if not genre:
+                    raise HTTPError(400, "Invalid genre %r" % _id)
+                genre_ids.append(genre['_id'])
+            search['genre.$id'] = {'$in': genre_ids}
+        if pictures_only:
+            questions_with_pictures = []
+            for question_image in self.db.QuestionImage.collection.find():
+                questions_with_pictures.append(question_image['question'].id)
+            search['_id'] = {'$in': questions_with_pictures}
+        questions = self.db.Question.collection.find(search)
+
+        result['questions'] = questions.count()
+        self.write_json(result)

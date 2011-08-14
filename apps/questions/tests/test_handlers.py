@@ -38,16 +38,6 @@ class HandlersTestCase(BaseHTTPTestCase):
         if rmdir and not os.listdir(dir):
             os.rmdir(dir)
 
-    def test_questions_shortcut(self):
-        cookie = self._login() # using fixtures
-
-        url = self.reverse_url('questions_shortcut')
-        response = self.client.get(url)
-        self.assertEqual(response.code, 301)
-        redirected_to = response.headers['Location']
-        url = self.reverse_url('questions')
-        self.assertTrue(redirected_to.endswith(url))
-
     def test_adding_question(self):
         url = self.reverse_url('add_question')
         response = self.client.get(url)

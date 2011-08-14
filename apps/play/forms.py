@@ -1,11 +1,10 @@
-from wtforms import Form, BooleanField, TextField, TextAreaField, validators
-from wtforms.widgets import html_params, escape, TextInput
-from cgi import escape
+from wtforms import fields, validators
 
 from apps.main.forms import BaseForm, TextInputWithMaxlength
 
+
 class PlayMessageForm(BaseForm):
-    message = TextField("Message",
+    message = fields.TextField("Message",
                         [validators.Required(),
                          validators.Length(min=2, max=100)],
                         description="",

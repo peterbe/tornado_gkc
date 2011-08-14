@@ -5,7 +5,7 @@ from tornado.web import HTTPError
 import logging
 
 from apps.main.handlers import BaseAuthHandler, BaseHandler
-from utils.routes import route, route_redirect
+from utils.routes import route
 from utils import get_question_slug_url
 from utils.decorators import login_required, login_redirect
 from .forms import PostForm

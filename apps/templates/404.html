@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content_inner %}
+
+<h1>{{ page_title }}</h1>
+
+{% if message %}
+<p>Message: {{ message }}</p>
+{% else %}
+<p>I'm sorry, that page doesn't appear to exist.</p>
+{% end %}
+
+<p><a href="/">Return to the Home page</a></p>
+
+{% end %}

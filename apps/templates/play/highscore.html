@@ -14,6 +14,10 @@ tr.band-1000 td { font-size:70%; }
 {% end %}
 
 {% block content_inner %}
+{% if rules and not rules.default %}
+<h2>Rules: {{ rules.name }}</h2>
+{% end %}
+
 <h1>{{ page_title }}</h1>
 
 <table>

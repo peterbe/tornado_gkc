@@ -2,7 +2,7 @@ import random
 import logging
 import time
 from pymongo.objectid import InvalidId, ObjectId
-from utils.routes import route, route_redirect
+from utils.routes import route
 from apps.main.handlers import BaseHandler
 from apps.questions.models import PUBLISHED
 from tornado.web import HTTPError
@@ -10,7 +10,6 @@ import settings
 from utils import dict_plus
 
 
-route_redirect('/widget/preview$', '/widget/preview/')
 @route('/widget/preview/$', name='widget_preview')
 class PreviewHandler(BaseHandler):
 

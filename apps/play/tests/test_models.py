@@ -146,6 +146,7 @@ class ModelsTestCase(BaseModelsTestCase):
 
         # play1 unfinished
         play1 = self.db.Play()
+        play1.rules = self.default_rules_id
         play1.users = [user1, user2]
         play1.no_players = 2
         play1.no_questions = 3
@@ -155,6 +156,7 @@ class ModelsTestCase(BaseModelsTestCase):
 
         # play2 user1 one right and user2 two right on alternatives
         play2 = self.db.Play()
+        play2.rules = self.default_rules_id
         play2.users = [user1, user2]
         play2.no_players = 2
         play2.no_questions = 3
@@ -194,13 +196,13 @@ class ModelsTestCase(BaseModelsTestCase):
         play2.winner = user1
         play2.save()
 
-        user1_play_points = PlayPoints.calculate(user1)
+        user1_play_points = PlayPoints.calculate(user1, self.default_rules_id)
         self.assertEqual(user1_play_points.wins, 1)
         self.assertEqual(user1_play_points.losses, 0)
         self.assertEqual(user1_play_points.draws, 0)
         self.assertEqual(user1_play_points.points, 3)
 
-        user2_play_points = PlayPoints.calculate(user2)
+        user2_play_points = PlayPoints.calculate(user2, self.default_rules_id)
         self.assertEqual(user2_play_points.wins, 0)
         self.assertEqual(user2_play_points.losses, 1)
         self.assertEqual(user2_play_points.draws, 0)
@@ -209,6 +211,7 @@ class ModelsTestCase(BaseModelsTestCase):
 
         # play3 user1 one right and user2 one right
         play3 = self.db.Play()
+        play3.rules = self.default_rules_id
         play3.users = [user1, user2]
         play3.no_players = 2
         play3.no_questions = 2
@@ -251,6 +254,7 @@ class ModelsTestCase(BaseModelsTestCase):
 
         # play1
         play1 = self.db.Play()
+        play1.rules = self.default_rules_id
         play1.users = [user1, user2]
         play1.no_players = 2
         play1.no_questions = 3
@@ -260,6 +264,7 @@ class ModelsTestCase(BaseModelsTestCase):
 
         # play1
         play2 = self.db.Play()
+        play2.rules = self.default_rules_id
         play2.users = [user2, user1]
         play2.no_players = 2
         play2.no_questions = 3

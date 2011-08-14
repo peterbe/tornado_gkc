@@ -211,7 +211,7 @@ WEB_SOCKET_DEBUG = false;
 WEB_SOCKET_SWF_LOCATION = '{{ static_url("js/ext/WebSocketMain.swf") }}';
 </script>
 {% module Static("js/ext/jquery-1.6.1.min.js") %}
-{% module Static("js/scoreboard.js", "js/rumbler.js", "js/ext/shortcut.js", "js/play.js") %}
+{% module Static("js/play/scoreboard.js", "js/play/rumbler.js", "js/ext/shortcut.js", "js/play/play.js") %}
 <script>
 $(function () {
    if (CONFIG.DEBUG) {
@@ -232,6 +232,6 @@ var SOUND_CONFIG = {
   settings_toggle_url: '{{ reverse_url('user_settings_toggle') }}'
 };
 </script>
-{% module Static("js/ext/soundmanager/soundmanager2-nodebug.min.js", "js/playsound.js", defer=True) %}
+{% module Static("js/ext/soundmanager/soundmanager2-nodebug.min.js", "js/play/sound.js", defer=True) %}
 </body>
 </html>

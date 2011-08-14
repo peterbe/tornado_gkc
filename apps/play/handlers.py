@@ -1,7 +1,6 @@
 import datetime
 from string import zfill
 from random import randint
-from pprint import pprint
 from collections import defaultdict
 from pymongo import ASCENDING, DESCENDING
 from pymongo.objectid import InvalidId, ObjectId
@@ -9,7 +8,7 @@ import tornado.web
 from tornado.web import HTTPError
 from apps.main.handlers import BaseHandler
 from apps.play.models import PlayPoints
-from utils.routes import route, route_redirect
+from utils.routes import route
 from utils import dict_plus
 import settings
 
@@ -34,7 +33,6 @@ class BasePlayHandler(BaseHandler):
         return play
 
 
-route_redirect('/play/start$', '/play/start/', name='start_play_redirect')
 @route('/play/start/$', name='start_play')
 class StartPlayingHandler(BasePlayHandler):
 
@@ -178,9 +176,6 @@ class ReplaysHandler(BasePlayHandler):
     def get(self, all=None):
         options = self.get_base_options()
         search_base = {'users.$id': options['user']._id}
-        plays_base = (self.db.Play
-                  .find(search_base)
-                  )
         stats = dict(wins=0,
                      draws=0,
                      losses=0)
@@ -242,8 +237,6 @@ class SendPlayMessageHandler(BasePlayHandler):
         self.redirect(url)
 
 
-route_redirect('/play/highscore$', '/play/highscore/',
-               name='play_highscore_shortcut')
 @route('/play/highscore/$', name='play_highscore')
 class PlayHighscoreHandler(BaseHandler):
 
@@ -262,6 +255,7 @@ class PlayHighscoreHandler(BaseHandler):
                        )
         options['play_points'] = play_points
         options['page_title'] = "Highscore"
+        options['rules'] = rules
         self.render("play/highscore.html", **options)
 
 
@@ -277,34 +271,49 @@ class PlayHighscoreRulesHandler(PlayHighscoreHandler):
             raise HTTPError(404, "Rules unknown")
         super(PlayHighscoreRulesHandler, self).get(rules=rules)
 
+
 @route('/play/update_points.json$', name='play_update_points_json')
 class UpdatePointsJSONHandler(BasePlayHandler):
 
     def get(self):
         user = self.get_current_user()
+        if not user:
+            raise HTTPError(403, "Forbidden")
         play_id = self.get_argument('play_id')
         play = self.must_find_play(play_id, user)
-        play_points_before = self.get_play_points(user)
+        play_points_before = self.get_play_points(user, rules_id=play.rules._id)
         points_before = getattr(play_points_before, 'points', 0)
         highscore_position_before = getattr(play_points_before,
                                             'highscore_position', None)
-        play_points = PlayPoints.calculate(user)
-
-        if user.anonymous:
-            login_url = self.reverse_url('login')
-            self.write_json(dict(anonymous=True,
-                                 login_url=login_url,
-                                 points=play_points.points))
-            return
+        play_points = PlayPoints.calculate(user, play.rules._id)
+        play_points.update_highscore_position()
+#        if user.anonymous:
+#            login_url = self.reverse_url('login')
+#            self.write_json(dict(anonymous=True,
+#                                 login_url=login_url,
+#                                 points=play_points.points))
+#            return
 
         increment = play_points.points - points_before
-        self.write_json(dict(
+        result = dict(
           increment=increment,
           points_before=points_before,
           points=play_points.points,
           highscore_position_before=highscore_position_before,
           highscore_position=play_points.highscore_position,
-        ))
+        )
+        if user.anonymous:
+            result['login_url'] = self.reverse_url('login')
+        if not play.rules.default:
+            result['highscore_url'] = self.reverse_url('play_highscore_rules',
+                                                       play.rules._id)
+        else:
+            result['highscore_url'] = self.reverse_url('play_highscore')
+
+#        from pprint import pprint
+#        print "USER", user['username']
+#        pprint(result)
+        self.write_json(result)
 
 
 @route('/play/render_image_attributes/', name="render_image_attributes")
@@ -313,7 +322,6 @@ class RenderImageAttributesHandler(BaseHandler):
     def get(self):
         search = {'render_attributes': None}
         search = {}
-        all_attrs = []
         limit = int(self.get_argument('limit', 99))
 
         _module = self.application.ui_modules['ShowQuestionImageThumbnail']
