@@ -423,6 +423,8 @@ class Client(tornadio.SocketConnection):
                     search['_id']['$nin'].append(question._id)
                 elif battle.has_computer_participant() and not has_question_knowledge(question):
                     search['_id']['$nin'].append(question._id)
+                elif battle.rules['pictures_only'] and not question.has_image():
+                    search['_id']['$nin'].append(question._id)
 #                elif not question.has_image():
 #                    search['_id']['$nin'].append(question._id)
                 else:

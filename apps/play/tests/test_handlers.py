@@ -429,6 +429,150 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(result['increment'], 1)
         self.assertEqual(result['login_url'], self.reverse_url('login'))
 
+    def test_update_points_one_anonymous_custom_rules(self):
+        url = self.reverse_url('play_update_points_json')
+        self._login()
+
+        user = self.db.User.one({'username': 'peterbe'})
+        anon = self.db.User()
+        anon.username = u'anon'
+        anon.anonymous = True
+        anon.save()
+
+        outcome = [
+          (3, 0),
+          (0, 1)
+        ]
+        own_rules = self.db.Rules()
+        own_rules.no_questions = 2
+        own_rules.author = user._id
+        own_rules.save()
+
+        play = self._create_play([user, anon], outcome=outcome,
+                                 rules=own_rules)
+        assert play.winner == user
+        assert not play.draw
+        response = self.client.get(url, {'play_id': play._id})
+        self.assertEqual(response.code, 200)
+        result = json.loads(response.body)
+
+        pp = self.db.PlayPoints.one({'user.$id': user._id,
+                                     'rules': own_rules._id})
+        self.assertEqual(pp.points, 3)
+        self.assertEqual(pp.wins, 1)
+        self.assertEqual(pp.losses, 0)
+        self.assertEqual(pp.draws, 0)
+
+        self.assertEqual(result['highscore_position'], 1)
+        self.assertEqual(result['highscore_position_before'], None)
+        self.assertEqual(result['points_before'], 0)
+        self.assertEqual(result['increment'], 3)
+        self.assertEqual(result['increment'], 3)
+
+        # run it once for the loser too
+        self._login(username=u'anon')
+
+        response = self.client.get(url, {'play_id': play._id})
+        self.assertEqual(response.code, 200)
+        result = json.loads(response.body)
+
+        pp = self.db.PlayPoints.one({'user.$id': anon._id,
+                                     'rules': own_rules._id})
+        self.assertEqual(pp.points, 1)
+        self.assertEqual(pp.wins, 0)
+        self.assertEqual(pp.losses, 1)
+        self.assertEqual(pp.draws, 0)
+
+        self.assertEqual(result['highscore_position'], 2)
+        self.assertEqual(result['highscore_position_before'], None)
+        self.assertEqual(result['points_before'], 0)
+        self.assertEqual(result['increment'], 1)
+        self.assertEqual(result['increment'], 1)
+        self.assertEqual(result['login_url'], self.reverse_url('login'))
+
+    def test_update_points_one_anonymous_custom_rules_played_before(self):
+        url = self.reverse_url('play_update_points_json')
+        self._login()
+
+        user = self.db.User.one({'username': 'peterbe'})
+        anon = self.db.User()
+        anon.username = u'anon'
+        anon.anonymous = True
+        anon.save()
+
+        user_pp = self.db.PlayPoints()
+        user_pp.user = user
+        user_pp.rules = self.default_rules_id
+        user_pp.points = 10
+        user_pp.wins = 1
+        user_pp.losses = 1
+        user_pp.draws = 1
+        user_pp.highscore_position = 1
+        user_pp.save()
+
+        outcome = [
+          (3, 0),
+          (0, 1)
+        ]
+        own_rules = self.db.Rules()
+        own_rules.no_questions = 2
+        own_rules.author = user._id
+        own_rules.save()
+
+        play = self._create_play([user, anon], outcome=outcome,
+                                 rules=own_rules)
+        assert play.winner == user
+        assert not play.draw
+        response = self.client.get(url, {'play_id': play._id})
+        self.assertEqual(response.code, 200)
+        result = json.loads(response.body)
+
+        pp = self.db.PlayPoints.one({'user.$id': user._id,
+                                     'rules': own_rules._id})
+        self.assertEqual(pp.points, 3)
+        self.assertEqual(pp.wins, 1)
+        self.assertEqual(pp.losses, 0)
+        self.assertEqual(pp.draws, 0)
+
+        self.assertEqual(result['highscore_position'], 1)
+        self.assertEqual(result['highscore_position_before'], None)
+        self.assertEqual(result['points_before'], 0)
+        self.assertEqual(result['increment'], 3)
+        self.assertEqual(result['increment'], 3)
+        self.assertEqual(result['highscore_url'],
+                         self.reverse_url('play_highscore_rules',
+                                          own_rules._id))
+
+        # run it once for the loser too
+        self._login(username=u'anon')
+
+        response = self.client.get(url, {'play_id': play._id})
+        self.assertEqual(response.code, 200)
+        result = json.loads(response.body)
+
+        pp = self.db.PlayPoints.one({'user.$id': anon._id,
+                                     'rules': own_rules._id})
+        self.assertEqual(pp.points, 1)
+        self.assertEqual(pp.wins, 0)
+        self.assertEqual(pp.losses, 1)
+        self.assertEqual(pp.draws, 0)
+
+        self.assertEqual(result['highscore_position'], 2)
+        self.assertEqual(result['highscore_position_before'], None)
+        self.assertEqual(result['points_before'], 0)
+        self.assertEqual(result['increment'], 1)
+        self.assertEqual(result['increment'], 1)
+        self.assertEqual(result['login_url'], self.reverse_url('login'))
+
+        # check the highscore page
+        url = self.reverse_url('play_highscore_rules', own_rules._id)
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        content = response.body.split('id="content_inner"')[1]
+        self.assertTrue(-1 < content.find(user.username)
+                           < content.find(anon.username))
+
+
     def _create_play(self, users, rules=None, outcome=None):
         if rules is None:
             rules = self.db.Rules.one({'default': True})

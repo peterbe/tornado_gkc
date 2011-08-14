@@ -78,7 +78,6 @@ class Application(tornado.web.Application):
         if embed_static_url is None:
             embed_static_url = not options.dont_embed_static_url
 
-        print "embed_static_url", embed_static_url
         handlers = route.get_routes()
         app_settings = dict(
             title=settings.PROJECT_TITLE,

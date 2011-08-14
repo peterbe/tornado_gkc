@@ -592,7 +592,7 @@ $(function() {
                   .appendTo($('.points'));
         } else if (response.increment) {
           $('<a>')
-            .attr('href', '/play/highscore/')
+            .attr('href', response.highscore_url)
               .attr('title', 'Click to see where you are in the Highscore list')
                 .text("You just earned yourself " + response.increment + " more Kwissle points!")
                   .appendTo($('.points'));

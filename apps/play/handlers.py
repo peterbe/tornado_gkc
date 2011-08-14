@@ -281,7 +281,7 @@ class UpdatePointsJSONHandler(BasePlayHandler):
             raise HTTPError(403, "Forbidden")
         play_id = self.get_argument('play_id')
         play = self.must_find_play(play_id, user)
-        play_points_before = self.get_play_points(user)
+        play_points_before = self.get_play_points(user, rules_id=play.rules._id)
         points_before = getattr(play_points_before, 'points', 0)
         highscore_position_before = getattr(play_points_before,
                                             'highscore_position', None)
@@ -304,6 +304,15 @@ class UpdatePointsJSONHandler(BasePlayHandler):
         )
         if user.anonymous:
             result['login_url'] = self.reverse_url('login')
+        if not play.rules.default:
+            result['highscore_url'] = self.reverse_url('play_highscore_rules',
+                                                       play.rules._id)
+        else:
+            result['highscore_url'] = self.reverse_url('play_highscore')
+
+#        from pprint import pprint
+#        print "USER", user['username']
+#        pprint(result)
         self.write_json(result)
 
 

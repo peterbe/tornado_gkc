@@ -103,7 +103,8 @@ class PlayPoints(BaseDocument):
     required_fields = ['user', 'points']
 
     def update_highscore_position(self):
-        search = {'points': {'$gt': 0}}
+        search = {'points': {'$gt': 0},
+                  'rules': self.rules}
         computer = (self.db.User.collection
           .one({'username': settings.COMPUTER_USERNAME}))
         if computer:
@@ -141,7 +142,6 @@ class PlayPoints(BaseDocument):
           'users.$id': user._id,
           'finished': {'$ne': None},
           'rules': rules_id,
-          #'halted': None,
         }
 
         from mongokit import MultipleResultsFound
