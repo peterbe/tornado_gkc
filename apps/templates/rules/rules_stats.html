@@ -1,0 +1,14 @@
+<ul>
+  {% if played_count %}
+  <li>Played <strong>{{ played_count }}</strong> times</li>
+  <li>by <strong>{{ unique_players }}</strong> different players</li>
+    {% if times %}
+    <li>Average time for players to get it right: <strong>{{ '%.2f' % times['right'] }} seconds</strong></li>
+      {% if times.get('wrong') %}
+      <li>and average time to get it wrong: <strong>{{ '%.2f' % times['wrong'] }} seconds</strong></li>
+      {% end %}
+    {% end %}
+  {% else %}
+  <li>Not been played yet</li>
+  {% end %}
+</ul>

@@ -1,0 +1,40 @@
+{% extends "../base.html" %}
+
+{% block extra_head %}
+<style>
+.rule-group h2 { border-bottom:1px solid white; }
+.rule-group .rule { margin-left:30px; }
+</style>
+{% end %}
+
+
+{% block content_inner %}
+<!--<h1>{{ page_title }}</h1>-->
+
+{% if user and not user.anonymous %}
+<p>
+<span style="float:right">
+ <a href="{{ reverse_url('rules_add') }}">Make up your own rules &rarr;</a>
+</span>
+</p>
+{% end %}
+
+<p>
+<a href="{{ reverse_url('rules') }}" class="btn">&larr; back to rules dashboard</a></p>
+</p>
+
+  <h1>{{ rule.name }}</h1>
+
+  {% if is_editable %}
+  <p><a href="{{ reverse_url('rules_edit', rule._id) }}">Edit</a></p>
+  {% end %}
+  <h3><a href="{{ reverse_url('start_play') }}{% if not rule.default %}{{ rule._id }}{% end %}">Play with these rules now!</a></h3>
+  <h3><a href="{{ reverse_url('play_highscore') }}{% if not rule.default %}{{ rule._id }}{% end %}">See Highscore for these rules</a></h3>
+
+  <h3>Facts</h3>
+  {% module RulesFacts(rule, playable_questions) %}
+
+  <h3>Stats</h3>
+  {% module RulesStats(rule) %}
+
+{% end %}

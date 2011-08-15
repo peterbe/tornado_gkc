@@ -1,0 +1,29 @@
+    <ul>
+      <li>Number of questions: {{ rule.no_questions }}</li>
+      <li>Thinking time: {{ rule.thinking_time }} seconds</li>
+      {% if rule.min_no_people != 2 %}
+      <li>Min. number of players: {{ rule.min_no_people }}</li>
+      {% end %}
+      {% if rule.max_no_people != 2 %}
+      <li>Max. number of players: {{ rule.max_no_people }}</li>
+      {% end %}
+      {% if rule.genres.count() %}
+      <li>Categories: {{ ', '.join(x.name for x in rule.genres.sort('name')) }}</li>
+      {% else %}
+      <li>Categories: All published</li>
+      {% end %}
+      {% if rule.pictures_only %}
+      <li>Questions with pictures only</li>
+      {% end %}
+      {% if rule.alternatives_only %}
+      <li>Alternatives available all the time</li>
+      {% end %}
+      <li>Playable questions: {{ counts[rule._id]['questions'] }}
+        (if playing against the computer: {{ counts[rule._id]['with_knowledge'] }})
+      </li>
+      {% if rule.author %}
+      <li>Created by {{ rule.author.username }}
+        {% module TimeSince(rule.add_date) %} ago
+      </li>
+      {% end %}
+    </ul>
