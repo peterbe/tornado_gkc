@@ -53,6 +53,9 @@
       {% if rule.alternatives_only %}
       <li>Alternatives available all the time</li>
       {% end %}
+      <li>Playable questions: {{ playable_questions[rule._id]['questions'] }}
+        (if playing against the computer: {{ playable_questions[rule._id]['with_knowledge'] }})
+      </li>
     </ul>
   </div>
   {% end %}

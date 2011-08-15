@@ -10,10 +10,14 @@ var PlayableQuestions = (function() {
     $.getJSON('/rules/playable_questions.json', data, function(response) {
       if (!$('#playables_hint').size()) {
         $('<div>', {id: 'playables_hint'})
-          .append($('<h3>', {html: 'Number of playable questions: <span></span>'}))
-            .insertBefore($('#id_genres'));
+          .append($('<h3>', {html:
+              'Number of playable questions: <span class="questions"></span><br>' +
+              '(If playing against the computer: <span class="with_knowledge"></span>)'
+          }))
+              .insertBefore($('#id_genres'));
       }
-      $('#playables_hint span').text(response.questions);
+      $('#playables_hint span.questions').text(response.questions);
+      $('#playables_hint span.with_knowledge').text(response.with_knowledge);
     });
   }
   return {

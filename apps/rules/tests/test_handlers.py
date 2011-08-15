@@ -50,13 +50,15 @@ class HandlersTestCase(BaseHTTPTestCase):
         response = self.client.get(url)
         self.assertEqual(response.code, 200)
         struct = json.loads(response.body)
-        self.assertEqual(struct, {'questions': 0})
+        self.assertEqual(struct, {'questions': 0,
+                                  'with_knowledge': 0})
 
         q1 = self._create_question()
         response = self.client.get(url)
         self.assertEqual(response.code, 200)
         struct = json.loads(response.body)
-        self.assertEqual(struct, {'questions': 1})
+        self.assertEqual(struct, {'questions': 1,
+                                  'with_knowledge': 0})
 
         q2 = self._create_question()
         q2.state = u'DRAFT'
@@ -64,46 +66,74 @@ class HandlersTestCase(BaseHTTPTestCase):
         response = self.client.get(url)
         self.assertEqual(response.code, 200)
         struct = json.loads(response.body)
-        self.assertEqual(struct, {'questions': 1})
+        self.assertEqual(struct['questions'], 1)
 
         q3 = self._create_question()
         response = self.client.get(url, {'genres': q3.genre._id})
         self.assertEqual(response.code, 200)
         struct = json.loads(response.body)
-        self.assertEqual(struct, {'questions': 1})
+        self.assertEqual(struct['questions'], 1)
 
         response = self.client.get(url, {'genres': [q3.genre._id, q2.genre._id]})
         self.assertEqual(response.code, 200)
         struct = json.loads(response.body)
-        self.assertEqual(struct, {'questions': 1})
+        self.assertEqual(struct['questions'], 1)
 
         response = self.client.get(url, {'pictures_only': 'true'})
         self.assertEqual(response.code, 200)
         struct = json.loads(response.body)
-        self.assertEqual(struct, {'questions': 0})
+        self.assertEqual(struct['questions'], 0)
 
         self._attach_image(q2)
         response = self.client.get(url, {'pictures_only': 'true'})
         self.assertEqual(response.code, 200)
         struct = json.loads(response.body)
-        self.assertEqual(struct, {'questions': 0})
+        self.assertEqual(struct['questions'], 0)
 
         self._attach_image(q1)
         response = self.client.get(url, {'pictures_only': 'true'})
         self.assertEqual(response.code, 200)
         struct = json.loads(response.body)
-        self.assertEqual(struct, {'questions': 1})
+        self.assertEqual(struct['questions'], 1)
 
         self._attach_image(q1)
         response = self.client.get(url,
           {'pictures_only': 'true', 'genres': q3.genre._id})
         self.assertEqual(response.code, 200)
         struct = json.loads(response.body)
-        self.assertEqual(struct, {'questions': 0})
+        self.assertEqual(struct['questions'], 0)
 
         self._attach_image(q1)
         response = self.client.get(url,
           {'pictures_only': 'true', 'genres': q1.genre._id})
         self.assertEqual(response.code, 200)
         struct = json.loads(response.body)
-        self.assertEqual(struct, {'questions': 1})
+        self.assertEqual(struct['questions'], 1)
+
+    def test_playable_questions_json_with_knowledge(self):
+        url = self.reverse_url('playable_questions_json')
+        self._login()
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        struct = json.loads(response.body)
+        self.assertEqual(struct['questions'], 0)
+
+        q1 = self._create_question()
+        q2 = self._create_question()
+
+        qk = self.db.QuestionKnowledge()
+        qk.question = q1
+        qk.right = 0.5
+        qk.wrong = 0.1
+        qk.alternatives_right = 0.1
+        qk.alternatives_wrong = 0.1
+        qk.too_slow = 0.1
+        qk.timed_out = 0.1
+        qk.users = 10
+        qk.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        struct = json.loads(response.body)
+        self.assertEqual(struct['questions'], 2)
+        self.assertEqual(struct['with_knowledge'], 1)
