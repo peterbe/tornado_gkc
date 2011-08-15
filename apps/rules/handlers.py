@@ -43,6 +43,45 @@ class BaseRulesHandler(BaseHandler):
                 raise HTTPError(403, "Forbidden")
         return rules
 
+    def count_playable_questions(self, rules, genres=None, pictures_only=None):
+        if genres is None:
+            genres = rules['genres']
+        if pictures_only is None:
+            pictures_only = rules['pictures_only']
+        search = {'state': 'PUBLISHED'}
+        if genres:
+            if isinstance(genres[0], basestring):
+                genre_ids = []
+                for _id in genres:
+                    try:
+                        genre = self.db.Genre.collection.one({'_id': ObjectId(_id)})
+                    except InvalidId:
+                        genre = None
+                    if not genre:
+                        raise HTTPError(400, "Invalid genre %r" % _id)
+                    genre_ids.append(genre['_id'])
+            else:
+                genre_ids = genres
+            search['genre.$id'] = {'$in': genre_ids}
+        if pictures_only:
+            questions_with_pictures = []
+            for question_image in self.db.QuestionImage.collection.find():
+                questions_with_pictures.append(question_image['question'].id)
+            search['_id'] = {'$in': questions_with_pictures}
+        questions = self.db.Question.collection.find(search)
+
+        result = {
+          'questions': questions.count(),
+          'with_knowledge': 0,
+        }
+        if result['questions']:
+            question_ids = [x['_id'] for x in questions]
+            search = {'question.$id': {'$in': question_ids}}
+            knowledges = self.db.QuestionKnowledge.find(search)
+            result['with_knowledge'] = knowledges.count()
+
+        return result
+
 
 @route('/rules/$', name='rules')
 class RulesHomeHandler(BaseRulesHandler):
@@ -55,9 +94,14 @@ class RulesHomeHandler(BaseRulesHandler):
             default.name = u"Default rules"
             default.default = True
             default.save()
+        search = {'author': None}
         core_rules = (self.db.Rules
-                      .find({'author': None})
+                      .find(search)
                       .sort('name'))
+
+        counts = {}
+        for rule in self.db.Rules.collection.find(search):
+            counts[rule['_id']] = self.count_playable_questions(rule)
 
         options['all_rules'] = [
           ('Core', core_rules),
@@ -66,17 +110,21 @@ class RulesHomeHandler(BaseRulesHandler):
         if options['user'] and (self.db.Rules
                                 .find({'author': options['user']._id})
                                 .count()):
+            search = {'author': options['user']._id}
             your_rules = (self.db.Rules
-                          .find({'author': options['user']._id})
+                          .find(search)
                           .sort('name'))
             options['all_rules'].append(
                ('Your', your_rules),
             )
+            for rule in self.db.Rules.collection.find(search):
+                counts[rule['_id']] = self.count_playable_questions(rule)
 
             for rules in self.db.Rules.find({'author': options['user']._id}):
                 if self.can_edit_rules(rules, options['user']):
                     options['editable'].append(rules._id)
 
+        options['playable_questions'] = counts
         self.render("rules/index.html", **options)
 
 
@@ -220,24 +268,5 @@ class PlayableQuestionsHandler(BaseRulesHandler):
         else:
             genres = self.get_arguments('genres')
         pictures_only = self.get_argument('pictures_only', False)
-        search = {'state': 'PUBLISHED'}
-        if genres:
-            genre_ids = []
-            for _id in genres:
-                try:
-                    genre = self.db.Genre.collection.one({'_id': ObjectId(_id)})
-                except InvalidId:
-                    genre = None
-                if not genre:
-                    raise HTTPError(400, "Invalid genre %r" % _id)
-                genre_ids.append(genre['_id'])
-            search['genre.$id'] = {'$in': genre_ids}
-        if pictures_only:
-            questions_with_pictures = []
-            for question_image in self.db.QuestionImage.collection.find():
-                questions_with_pictures.append(question_image['question'].id)
-            search['_id'] = {'$in': questions_with_pictures}
-        questions = self.db.Question.collection.find(search)
-
-        result['questions'] = questions.count()
+        result = self.count_playable_questions(None, genres=genres, pictures_only=pictures_only)
         self.write_json(result)

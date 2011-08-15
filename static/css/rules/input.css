@@ -3,6 +3,7 @@
   width:400px;
 }
 
+#playables_hint { float:right; margin-right:200px;}
 #playables_hint span {
   font-size:120%;
 }
