@@ -24,6 +24,7 @@ There are current <strong>{{ count_published_questions }}</strong> published
 <br><a href="/help/rules">Rules are simple</a>
 {% if past_plays %}
 <br>You have played <a href="{{ reverse_url('play_replays') }}">{{ past_plays }} times before</a>
+<br>You can play by <a href="{{ reverse_url('rules') }}">other rules too</a>
 {% end %}
 </p>
 

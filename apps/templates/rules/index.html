@@ -32,31 +32,8 @@
       <br>
       <a href="{{ reverse_url('play_highscore') }}{% if not rule.default %}{{ rule._id }}{% end %}">See Highscore for these rules</a>
     </p>
-    <h3>{{ rule.name }}</h3>
-    <ul>
-      <li>Number of questions: {{ rule.no_questions }}</li>
-      <li>Thinking time: {{ rule.thinking_time }} seconds</li>
-      {% if rule.min_no_people != 2 %}
-      <li>Min. number of people: {{ rule.min_no_people }}</li>
-      {% end %}
-      {% if rule.max_no_people != 2 %}
-      <li>Max. number of people: {{ rule.max_no_people }}</li>
-      {% end %}
-      {% if rule.genres.count() %}
-      <li>Categories: {{ ', '.join(x.name for x in rule.genres.sort('name')) }}</li>
-      {% else %}
-      <li>Categories: All published</li>
-      {% end %}
-      {% if rule.pictures_only %}
-      <li>Questions with pictures only</li>
-      {% end %}
-      {% if rule.alternatives_only %}
-      <li>Alternatives available all the time</li>
-      {% end %}
-      <li>Playable questions: {{ playable_questions[rule._id]['questions'] }}
-        (if playing against the computer: {{ playable_questions[rule._id]['with_knowledge'] }})
-      </li>
-    </ul>
+    <h3><a href="{{ reverse_url('rules_page', rule._id) }}" class="yellow">{{ rule.name }}</a></h3>
+    {% module RulesFacts(rule, playable_questions) %}
   </div>
   {% end %}
 </div>

@@ -73,6 +73,38 @@ class _DatabaseTestCaseMixin(object):
 
         return q
 
+    def _attach_knowledge(self, question):
+        knowledge = {
+          'right': .5,
+          'wrong': .5,
+          'alternatives_right': 0.,
+          'alternatives_wrong': 0.,
+          'too_slow': 0.,
+          'timed_out': 0.,
+          'users': 10,
+        }
+        self._create_question_knowledge(question, knowledge)
+
+    def _create_question_knowledge(self, question, knowledge):
+        sum_ = knowledge['right'] + \
+               knowledge['wrong'] + \
+               knowledge['alternatives_right'] + \
+               knowledge['alternatives_wrong'] + \
+               knowledge['too_slow'] + \
+               knowledge['timed_out']
+        assert round(sum_, 1) == 1.0, "%r <> 1" % round(sum_, 1)
+        qk = self.db.QuestionKnowledge()
+        qk.question = question
+        qk.right = knowledge['right']
+        qk.wrong = knowledge['wrong']
+        qk.alternatives_right = knowledge['alternatives_right']
+        qk.alternatives_wrong = knowledge['alternatives_wrong']
+        qk.too_slow = knowledge['too_slow']
+        qk.timed_out = knowledge['timed_out']
+        qk.users = knowledge['users']
+        qk.save()
+        return qk
+
     def _attach_image(self, question):
         question_image = self.db.QuestionImage()
         question_image.question = question

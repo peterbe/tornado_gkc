@@ -6,7 +6,6 @@ from utils.decorators import login_redirect, authenticated_plus
 from utils import djangolike_request_dict
 from forms import RulesForm
 
-
 class BaseRulesHandler(BaseHandler):
 
     def get_all_published_genre_choices(self):
@@ -106,7 +105,9 @@ class RulesHomeHandler(BaseRulesHandler):
         options['all_rules'] = [
           ('Core', core_rules),
         ]
+
         options['editable'] = []
+        your_rule_ids = []
         if options['user'] and (self.db.Rules
                                 .find({'author': options['user']._id})
                                 .count()):
@@ -119,14 +120,51 @@ class RulesHomeHandler(BaseRulesHandler):
             )
             for rule in self.db.Rules.collection.find(search):
                 counts[rule['_id']] = self.count_playable_questions(rule)
+                your_rule_ids.append(rule['_id'])
 
-            for rules in self.db.Rules.find({'author': options['user']._id}):
+            for rules in self.db.Rules.find(search):
                 if self.can_edit_rules(rules, options['user']):
                     options['editable'].append(rules._id)
+
+        if options['user']:
+            default_rules_id = self.db.Rules.one({'default': True})._id
+            played_rule_ids = []
+            not_rule_ids = [default_rules_id] + your_rule_ids
+            for p in (self.db.Play.collection
+                      .find({'users.$id': options['user']._id,
+                             'rules': {'$nin': not_rule_ids}})):
+                played_rule_ids.append(p['rules'])
+            search = {'_id': {'$in': played_rule_ids}}
+
+            for rule in self.db.Rules.collection.find(search):
+                counts[rule['_id']] = self.count_playable_questions(rule)
+
+            played_rules = (self.db.Rules
+                            .find(search)
+                            .sort('name'))
+            if played_rules.count():
+                options['all_rules'].append(
+                  ('Played', played_rules)
+                )
 
         options['playable_questions'] = counts
         self.render("rules/index.html", **options)
 
+
+@route('/rules/(\w{24})$', name='rules_page')
+class RulesPageHandler(BaseRulesHandler):
+    def get(self, _id):
+        options = self.get_base_options()
+        rules = self.find_rules(_id)
+        #self.write(rules.name)
+
+        options['page_title'] = rules.name
+        options['is_editable'] = False #XXX
+        options['rule'] = rules
+        options['playable_questions'] = {
+          rules._id: self.count_playable_questions(rules)
+        }
+        self.render("rules/rule.html", **options)
 
 @route('/rules/add/$', name='rules_add')
 class AddRulesHandler(BaseRulesHandler):

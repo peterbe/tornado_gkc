@@ -112,26 +112,6 @@ class ClientTestCase(BaseTestCase):
                                  **extra_cookies)
         return (user, client), (user2, client2)
 
-    def _create_question_knowledge(self, question, knowledge):
-        sum_ = knowledge['right'] + \
-               knowledge['wrong'] + \
-               knowledge['alternatives_right'] + \
-               knowledge['alternatives_wrong'] + \
-               knowledge['too_slow'] + \
-               knowledge['timed_out']
-        assert round(sum_, 1) == 1.0, "%r <> 1" % round(sum_, 1)
-        qk = self.db.QuestionKnowledge()
-        qk.question = question
-        qk.right = knowledge['right']
-        qk.wrong = knowledge['wrong']
-        qk.alternatives_right = knowledge['alternatives_right']
-        qk.alternatives_wrong = knowledge['alternatives_wrong']
-        qk.too_slow = knowledge['too_slow']
-        qk.timed_out = knowledge['timed_out']
-        qk.users = knowledge['users']
-        qk.save()
-        return qk
-
     def test_client_repr(self):
         (user, client), (user2, client2) = self._create_two_connected_clients()
         r = repr(client)
