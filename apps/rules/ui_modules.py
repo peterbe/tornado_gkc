@@ -21,8 +21,8 @@ class RulesStats(tornado.web.UIModule):
         unique_players = set()
         play_ids = []
         for p in self.handler.db.Play.collection.find(search):
-            for id in p['users']:
-                unique_players.add(id)
+            for user in p['users']:
+                unique_players.add(str(user.id))
             play_ids.append(p['_id'])
 
         times = self._get_average_times(rule._id)
