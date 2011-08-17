@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content_inner %}
+
+<h1>{{ page_title }}</h1>
+
+<script src="http://widgets.twimg.com/j/2/widget.js"></script>
+<script>
+new TWTR.Widget({
+  version: 2,
+  type: 'profile',
+  rpp: 8,
+  interval: 6000,
+  width: 800,
+  height: 400,
+  theme: {
+    shell: {
+      background: '#333333',
+      color: '#ffffff'
+    },
+    tweets: {
+      background: '#000000',
+      color: '#ffffff',
+      links: '#ffea00'
+    }
+  },
+  features: {
+    scrollbar: false,
+    loop: false,
+    live: false,
+    hashtags: true,
+    timestamp: true,
+    avatars: true,
+    behavior: 'all'
+  }
+}).render().setUser('kwissle').start();
+</script>
+
+<p style="float:right">
+<a target="_blank" href="http://twitter.com/#!/kwissle">Visit the Kwissle Twitter profile &rarr;</a>
+</p>
+
+<p>
+See also: <a href="{{ reverse_url('social_media_facebook') }}">Facebook</a>
+</p>
+
+{% end %}
