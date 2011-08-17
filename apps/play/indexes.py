@@ -74,3 +74,8 @@ def test():
 
     #curs = db.Question.find({'state':'abc123'}).explain()['cursor']
     #assert 'BtreeCursor' in curs
+
+    curs = (db.PlayedQuestion
+           .find({'play.$id': {'$in': [any_obj_id]}})
+           ).explain()['cursor']
+    assert 'BtreeCursor' in curs
