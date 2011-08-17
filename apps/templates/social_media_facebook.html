@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content_inner %}
+
+<h1>{{ page_title }}</h1>
+
+<iframe src="http://www.facebook.com/plugins/likebox.php?href=http%3A%2F%2Fwww.facebook.com%2Fpages%2FKwisslecom%2F111557698935021&amp;width=800&amp;colorscheme=dark&amp;show_faces=true&amp;border_color=%232b2b2b&amp;stream=true&amp;header=false&amp;height=495" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:800px; height:495px;" allowTransparency="true"></iframe>
+
+<p style="float:right">
+<a target="_blank" href="http://www.facebook.com/pages/Kwisslecom/111557698935021">Visit the Kwissle Facebook page &rarr;</a>
+</p>
+
+<p>
+See also: <a href="{{ reverse_url('social_media_twitter') }}">Twitter</a>
+</p>
+
+{% end %}

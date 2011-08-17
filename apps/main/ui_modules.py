@@ -8,9 +8,13 @@ from utils.tornado_static import *
 
 class Footer(tornado.web.UIModule):
     def render(self, user=None):
+        user_settings = None
+        if user:
+            user_settings = self.handler.get_user_settings(user, fast=True)
         return self.render_string("modules/footer.html",
           calendar_link=self.request.path != '/',
           user=user,
+          user_settings=user_settings,
          )
 
 class TruncateWords(tornado.web.UIModule):

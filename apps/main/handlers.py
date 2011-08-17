@@ -889,6 +889,30 @@ class UserSettingsToggle(BaseHandler):
             raise HTTPError(400, "No valid settings toggled")
         self.write("OK")
 
+@route('/socialmedia/$', name='social_media')
+class SocialMediaHandler(BaseHandler):
+
+    def get(self):
+        options = self.get_base_options()
+        options['page_title'] = "Social Media"
+        self.render('social_media.html', **options)
+
+@route('/socialmedia/facebook/$', name='social_media_facebook')
+class SocialMediaFacebookHandler(BaseHandler):
+
+    def get(self):
+        options = self.get_base_options()
+        options['page_title'] = "Facebook"
+        self.render('social_media_facebook.html', **options)
+
+@route('/socialmedia/twitter/$', name='social_media_twitter')
+class SocialMediaTwitterHandler(BaseHandler):
+
+    def get(self):
+        options = self.get_base_options()
+        options['page_title'] = "Twitter"
+        self.render('social_media_twitter.html', **options)
+
 
 @route('/sitemap.xml$', name='sitemap_xml')
 class SitemapXMLHandler(BaseHandler):
