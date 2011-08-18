@@ -3,6 +3,10 @@
 {% block content_inner %}
 
 <form action="" method="post">{% module xsrf_form_html() %}
+{% if next_url %}
+<input type="hidden" name="next_url" value="{{ next_url }}">
+{% end %}
+
 {% for field in form %}
   <p class="field">
     {% raw field.label %}<br>
