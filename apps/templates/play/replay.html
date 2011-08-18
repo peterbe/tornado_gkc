@@ -102,7 +102,8 @@
 
 <p><a href="{{ reverse_url('play_replays') }}">&larr; Back to all past plays</a>
 &nbsp;
-<a href="{{ reverse_url('play') }}">Play another battle! &rarr;</a>
+
+<a href="{{ reverse_url('start_play') }}{% if not play.rules.default %}{{ play.rules._id }}{% end %}">Play another battle! &rarr;</a>
 </p>
 
 {% if play_messages.count() %}

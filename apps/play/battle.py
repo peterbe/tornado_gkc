@@ -364,4 +364,6 @@ class Battle(object):
         self.loaded_image = set()
 
     def has_all_loaded_image(self):
-        return len(self.loaded_image) == len(self.participants)
+        non_bot_participants = [x for x in self.participants
+                                if not isinstance(x, ComputerClient)]
+        return len(self.loaded_image) == len(non_bot_participants)

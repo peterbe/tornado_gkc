@@ -41,9 +41,9 @@
       <td>{% module TimeSince(play.add_date) %} ago</td>
       <td>{% set rules=play.rules %}
         {% if rules.default %}
-        default rules
+        <a href="{{ reverse_url('rules_page', rules._id) }}">default rules</a>
         {% else %}
-        '{{ rules.name }}'
+        <a href="{{ reverse_url('rules_page', rules._id) }}">'{{ rules.name }}'</a>
         {% end %}
       </td>
       <td>{% for user_ in play.users %}
