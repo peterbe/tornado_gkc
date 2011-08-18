@@ -1376,7 +1376,51 @@ class ClientTestCase(BaseTestCase):
         play = self.db.Play.one({'_id': ObjectId(client._sent[-2]['play_id'])})
         self.assertEqual(play.rules, r)
 
+
+    def test_play_bot_questions_only(self):
+        q1 = self._create_question()
+        self._attach_image(q1)
+        self._attach_knowledge(q1)
+
+        q2 = self._create_question()
+        self._attach_image(q2)
+        self._attach_knowledge(q2)
+
+        q3 = self._create_question()
+        self._attach_image(q3)
+        self._attach_knowledge(q3)
+
+        user, client, request = self._create_connected_client('peterbe')
+        battle = client.current_client_battles[str(user._id)]
+        battle.no_questions = 2
+        client.on_message(dict(against_computer=1))
+
+        self.assertTrue(client._sent[-3]['your_name'])
+        self.assertTrue(client._sent[-2]['init_scoreboard'])
+        self.assertTrue(client._sent[-1]['wait'])
+
+        battle.min_wait_delay -= client._sent[-1]['wait']
+        client.on_message(dict(next_question=1))
+
+        self.assertTrue(client._sent[-2]['question']['image'])
+        self.assertTrue(client._sent[-1]['bot_answers'])
+
+        client.on_message(dict(loaded_image=1))
+        #client.on_message(dict(bot_answers=1))
+        self.assertTrue(client._sent[-2]['bot_answers'])
+        self.assertTrue(client._sent[-1]['show_image'])
+
+        client.on_message(dict(answer='yes'))
+        self.assertTrue(client._sent[-3]['answered']['right'])
+        self.assertTrue(user.username in client._sent[-2]['update_scoreboard'])
+        self.assertTrue(client._sent[-1]['wait'])
         return
+
+        print client._sent[-3]
+        print
+        print client._sent[-2]
+        print
+        print client._sent[-1]
 
 
         print client._sent[-1]
