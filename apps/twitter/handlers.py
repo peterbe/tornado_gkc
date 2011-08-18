@@ -1,5 +1,6 @@
 from pymongo.objectid import InvalidId, ObjectId
 import tornado.auth
+from pprint import pformat
 import tornado.web
 from tornado.web import HTTPError
 import logging
@@ -96,8 +97,6 @@ class TwitterManualPost(BaseHandler, TwitterPostingsMixin):
 
         return message
 
-
-
     @tornado.web.asynchronous
     @login_redirect
     def post(self):
@@ -127,10 +126,22 @@ class TwitterManualPost(BaseHandler, TwitterPostingsMixin):
             logging.info(self.request.arguments)
             self.write("No new entry :(")
             return
-        from pprint import pprint
-        pprint(new_entry)
-        self.set_header("Content-Type", "text/plain")
-        logging.info("NEW_ENTRY=%r" % new_entry)
-        self.write("Posted a message!\n%s" % str(new_entry))
+        #from pprint import pprint
+        #pprint(new_entry)
+        twitter_url_tmpl = 'https://twitter.com/#!/%(username)s/status/%(id)s'
+        twitter_url = twitter_url_tmpl % {
+          'username': 'kwissle',
+          'id': new_entry['id']
+        }
+        self.push_flash_message("Question published",
+            '<a href="%s">On Twitter</a>' % twitter_url)
+
+        url = self.reverse_url('review_accepted')
+
+        logging.info("NEW_ENTRY=%s" % pformat(new_entry))
+        self.redirect(url)
+        #self.set_header("Content-Type", "text/plain")
+        #logging.info("NEW_ENTRY=%r" % new_entry)
+        #self.write("Posted a message!\n%s" % pformat(new_entry))
         #self.write(new_entry)
-        self.finish()
+        #self.finish()
