@@ -852,10 +852,7 @@ class PublishQuestionHandler(QuestionsBaseHandler):
         self.push_flash_message("Question published!",
             "Question is now ready for game play!")
 
-        if self.get_argument('tweet', False):
-            url = self.reverse_url('twitter_manual_post')
-            url += '?published=%s' % question._id
-        elif 1:
+        if 1:
             url = self.reverse_url('review_accepted')
         else:
             url = self.reverse_url('questions')
@@ -865,6 +862,13 @@ class PublishQuestionHandler(QuestionsBaseHandler):
             else:
                 url += '?'
             url += 'skip=%s' % self.get_argument('skip')
+
+        if self.get_argument('tweet', False):
+            next_url = url
+            url = self.reverse_url('twitter_manual_post')
+            url += '?published=%s' % question._id
+            url += '&next_url=%s' % urllib.quote(next_url)
+
         self.redirect(url)
 
 @route('/questions/(\w{24})/retract/$', name="retract_question")
