@@ -8,7 +8,7 @@ suitable for aggressive HTTP caching.
 (c) mail@peterbe.com
 """
 
-__version__ = '1.3'
+__version__ = '1.4'
 
 import os
 import cPickle
@@ -199,12 +199,17 @@ class StaticURL(tornado.web.UIModule):
         save_dir = os.path.join(save_dir, 'combined')
         mkdir(save_dir)
         combined_name = []
+        _previous_parent_name = None
         for name in names:
+            parent_name = os.path.split(os.path.dirname(name))[-1]
             name, ext = os.path.splitext(os.path.basename(name))
+            if parent_name and parent_name != _previous_parent_name:
+                name = '%s.%s' % (parent_name, name)
             if ext != first_ext:
                 raise ValueError("Mixed file extensions (%s, %s)" %\
                  (first_ext, ext))
             combined_name.append(name)
+            _previous_parent_name = parent_name
         if sum(len(x) for x in combined_name) > max_length:
             combined_name = [x.replace('.min','.m').replace('.pack','.p')
                              for x in combined_name]
