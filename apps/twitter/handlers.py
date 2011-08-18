@@ -12,6 +12,8 @@ from utils.decorators import login_required, login_redirect
 from .forms import PostForm
 import settings
 
+from utils.goo_gl import shorten as url_shorten
+
 # XXX can't this be moved into utils?
 class djangolike_request_dict(dict):
     def getlist(self, key):
@@ -79,6 +81,7 @@ class TwitterManualPost(BaseHandler, TwitterPostingsMixin):
             form = PostForm(message=message)
         options['form'] = form
         options['page_title'] = "Manual Twitter Post"
+        options['next_url'] = self.get_argument('next_url', None)
         self.render('twitter/post.html', **options)
 
     def _create_message(self, _id, use_url_shortener=False):
@@ -86,8 +89,8 @@ class TwitterManualPost(BaseHandler, TwitterPostingsMixin):
         url = get_question_slug_url(question)
         url = 'http://%s%s' % (self.request.host, url)
         if use_url_shortener:
-            from utils.goo_gl import shorten
-            url = shorten(url)
+
+            url = url_shorten(url)
         message = "New question: %s\n%s" % (question.text, url)
         if question.genre and question.genre.approved:
             message += '\n#%s' % question.genre.name
@@ -108,6 +111,7 @@ class TwitterManualPost(BaseHandler, TwitterPostingsMixin):
         form = PostForm(data)
         if form.validate():
             message = form.message.data
+            next_url = self.get_argument('next_url', None)
             #self.finish(message)
             #return
             access_token = settings.TWITTER_KWISSLE_ACCESS_TOKENS[0]
@@ -115,11 +119,12 @@ class TwitterManualPost(BaseHandler, TwitterPostingsMixin):
                 "/statuses/update",
                 post_args={"status": message},
                 access_token=access_token,
-                callback=self.async_callback(self._on_post))
+                callback=self.async_callback(lambda x: self._on_post(x, next_url=next_url)),
+                next_url=next_url)
         else:
             self.get(form=form)
 
-    def _on_post(self, new_entry):
+    def _on_post(self, new_entry, next_url=None):
         if not new_entry:
             # Call failed; perhaps missing permission?
             #self.authorize_redirect()
@@ -136,7 +141,10 @@ class TwitterManualPost(BaseHandler, TwitterPostingsMixin):
         self.push_flash_message("Question published",
             '<a href="%s">On Twitter</a>' % twitter_url)
 
-        url = self.reverse_url('review_accepted')
+        if next_url:
+            url = next_url
+        else:
+            url = self.reverse_url('review_accepted')
 
         logging.info("NEW_ENTRY=%s" % pformat(new_entry))
         self.redirect(url)
