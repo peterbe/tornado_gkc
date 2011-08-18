@@ -1313,16 +1313,22 @@ _random_cache = {}
 @route('/(\w{24})/(.*)', name="view_public_question")
 class ViewPublicQuestionHandler(QuestionsBaseHandler):
 
-    def get(self, _id, question_slug):
-        options = self.get_base_options()
+    def _find_question(self, _id, question_slug):
         question_slug = question_slug.replace(' ','+')
         question = None
-        for question_ in (self.db.Question
-                         .find({'_id': ObjectId(_id),
-                                'state': PUBLISHED})):
-            url = get_question_slug_url(question_)
-            if question_slug in url:
-                question = question_
+        try:
+            for question_ in (self.db.Question
+                             .find({'_id': ObjectId(_id),
+                                    'state': PUBLISHED})):
+                url = get_question_slug_url(question_)
+                if question_slug in url:
+                    return question_
+        except InvalidId:
+            raise HTTPError(404, "Invalid ID")
+
+    def get(self, _id, question_slug):
+        options = self.get_base_options()
+        question = self._find_question(_id, question_slug)
         if not question:
             raise HTTPError(404, "Question not found")
 
@@ -1355,3 +1361,9 @@ class ViewPublicQuestionHandler(QuestionsBaseHandler):
         options['knowledge'] = (self.db.QuestionKnowledge
                                 .one({'question.$id': question._id}))
         self.render('questions/view_public_question.html', **options)
+
+    def head(self, _id, question_slug):
+        question = self._find_question(_id, question_slug)
+        if not question:
+            raise HTTPError(404, "Question not found")
+        self.write('')
