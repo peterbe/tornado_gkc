@@ -20,6 +20,10 @@ tr.band-1000 td { font-size:70%; }
 
 <h1>{{ page_title }}</h1>
 
+{% if user.anonymous %}
+{% module AnonymousPester() %}
+{% end %}
+
 <table>
   {% for i, pp in enumerate(play_points) %}
   <tr class="band-{% module HighscoreBand(pp.highscore_position) %}">
