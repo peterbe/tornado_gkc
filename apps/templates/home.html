@@ -30,12 +30,18 @@ There are current <strong>{{ count_published_questions }}</strong> published
 
 {% else %}
 
-<div style="float:right">
+<div style="float:right" class="play-now">
 <p><strong>I can't wait!</strong></p>
 
-<h2><a href="{{ reverse_url('start_play') }}" rel="nofollow">Play now!</a></h2>
-<p>...and sign in later</p>
-
+<h2><a href="#" rel="nofollow">Play now!</a></h2>
+<p class="note">...and sign in later</p>
+<form action="{{ reverse_url('start_play') }}" style="display:none">
+<p><label for="play-now-username">Enter a username:</label>
+   <input name="username" id="play-now-username">
+   <input type="submit" value="Let's go!">
+</p>
+<p class="error"></p>
+</form>
 </div>
 
 <p style="margin-top:60px">
@@ -52,7 +58,11 @@ There are current <strong>{{ count_published_questions }}</strong> published
 
 {% end %}
 
+{% end %}
 
 
-
+{% block extra_js %}
+{% if not user %}
+{% module Static("js/play-now.js") %}
+{% end %}
 {% end %}

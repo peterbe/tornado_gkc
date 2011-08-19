@@ -1,3 +1,4 @@
+import re
 import datetime
 from string import zfill
 from random import randint
@@ -36,7 +37,7 @@ class BasePlayHandler(BaseHandler):
 @route('/play/start/$', name='start_play')
 class StartPlayingHandler(BasePlayHandler):
 
-    def _get_next_anonymous_username(self):
+    def get_next_anonymous_username(self):
         #count = self.db.User.find({'anonymous': True}).count()
         def random_username():
             return u'anonymous%s' % zfill(randint(1, 1000), 4)
@@ -45,16 +46,49 @@ class StartPlayingHandler(BasePlayHandler):
             username = random_username()
         return username
 
+    def is_username_taken(self, username):
+        return (self.db.User
+              .find({'username': re.compile(re.escape(username), re.I),
+                     'anonymous': False})
+              .count())
+
     def get(self):
         if not self.get_current_user():
             # create a anoynmous temporary user and
-            user = self.db.User()
-            user.username = self._get_next_anonymous_username()
-            user.anonymous = True
-            user.save()
+            user = None
+            username = self.get_argument('username', '').strip()
+            if username:
+                if self.is_username_taken(username):
+                    raise HTTPError(400, "Username already taken")
+                else:
+                    user = (self.db.User
+                            .one({'username': re.compile(re.escape(username), re.I),
+                                  'anonymous': True}))
+            else:
+                username = self.get_next_anonymous_username()
+            if not user:
+                user = self.db.User()
+                user.username = username
+                user.anonymous = True
+                user.save()
             self.set_secure_cookie("user", str(user._id), expires_days=1)
 
         self.redirect(self.reverse_url('play'))
+
+@route('/play/start/check_username.json$', name='start_play_check_username')
+class StartPlayingHandler(StartPlayingHandler):
+    def get(self):
+        data = {}
+        username = self.get_argument('username', '').strip()
+        if not username:
+            data['username'] = self.get_next_anonymous_username()
+        elif self.is_username_taken(username):
+            data['taken'] = True
+        else:
+            data['username'] = username
+
+        self.write_json(data)
+
 
 @route('/play/start/(\w{24})$', name='start_play_rule')
 class StartPlayingByRulesHandler(StartPlayingHandler):
