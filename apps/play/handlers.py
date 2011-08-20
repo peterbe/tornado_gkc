@@ -38,7 +38,6 @@ class BasePlayHandler(BaseHandler):
 class StartPlayingHandler(BasePlayHandler):
 
     def get_next_anonymous_username(self):
-        #count = self.db.User.find({'anonymous': True}).count()
         def random_username():
             return u'anonymous%s' % zfill(randint(1, 1000), 4)
         username = random_username()
@@ -52,7 +51,7 @@ class StartPlayingHandler(BasePlayHandler):
                      'anonymous': False})
               .count())
 
-    def get(self):
+    def get(self, rules=None):
         if not self.get_current_user():
             # create a anoynmous temporary user and
             user = None
@@ -73,10 +72,14 @@ class StartPlayingHandler(BasePlayHandler):
                 user.save()
             self.set_secure_cookie("user", str(user._id), expires_days=1)
 
+        if not rules and self.get_secure_cookie('rules'):
+            # old cookie
+            self.clear_cookie('rules')
+
         self.redirect(self.reverse_url('play'))
 
 @route('/play/start/check_username.json$', name='start_play_check_username')
-class StartPlayingHandler(StartPlayingHandler):
+class StartPlayingCheckUsernameHandler(StartPlayingHandler):
     def get(self):
         data = {}
         username = self.get_argument('username', '').strip()
@@ -102,8 +105,7 @@ class StartPlayingByRulesHandler(StartPlayingHandler):
             raise HTTPError(404, "Rules unknown")
 
         self.set_secure_cookie('rules', str(rules._id))
-        super(StartPlayingByRulesHandler, self).get()
-
+        super(StartPlayingByRulesHandler, self).get(rules=rules)
 
 
 @route('/play/battle$', name='play')
