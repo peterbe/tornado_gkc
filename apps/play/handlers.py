@@ -116,7 +116,7 @@ class PlayHandler(BasePlayHandler):
         user_settings = self.get_user_settings(user)
         config = {
           'SOCKET_PORT': 8888,
-          'HIGHSCORE_URL': '/play/highscore/',
+          'HIGHSCORE_URL': '/play/highscore/',#XXX replace with reverse_url()
           'HOMEPAGE_URL': '/',
           'DEBUG': self.application.settings['debug'],
           'ENABLE_SOUNDS': not getattr(user_settings, 'disable_sound', False),
@@ -281,16 +281,42 @@ class PlayHighscoreHandler(BaseHandler):
           .one({'username': settings.COMPUTER_USERNAME}))
         if computer:
             search['user.$id'] = {'$ne': computer['_id']}
+
+        default_rules = self.db.Rules.one({'default': True})
         if rules:
             search['rules'] = rules._id
         else:
-            search['rules'] = self.db.Rules.one({'default': True})._id
+            search['rules'] = default_rules._id
         play_points = (self.db.PlayPoints
                        .find(search)
                        .sort('points', -1)
                        )
         options['play_points'] = play_points
-        options['page_title'] = "Highscore"
+
+        other_rules = []
+        for rule in self.db.Rules.find().limit(10).sort('modify_date'):
+            if search['rules'] == rule['_id']:
+                continue
+            play_search = {'rules': rule['_id'],
+                           'finished': {'$ne': None}}
+            last_played = (self.db.Play.collection
+                           .find(play_search)
+                           .sort('finished', -1)
+                           .limit(1))
+
+            for x in last_played:
+                count = self.db.Play.find(play_search).count()
+                other_rules.append((x['finished'], count, rule))
+
+        other_rules.sort()
+        other_rules.reverse()
+        other_rules = [(r, c) for (__, c, r) in other_rules]
+        options['other_rules'] = other_rules
+
+        if rules and not rules.default:
+            options['page_title'] = "Highscore - %s" % rules.name
+        else:
+            options['page_title'] = "Highscore"
         options['rules'] = rules
         self.render("play/highscore.html", **options)
 

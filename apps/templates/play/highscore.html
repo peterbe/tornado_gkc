@@ -2,7 +2,8 @@
 
 {% block extra_head %}
 <style>
-table { width:75%; margin:auto;}
+#other-rules { float:right; min-width:200px; }
+table { width:65%; margin:auto;}
 tr.band-1 td { font-size:155%; }
 tr.band-2 td { font-size:135%; }
 tr.band-3 td { font-size:125%; }
@@ -14,15 +15,32 @@ tr.band-1000 td { font-size:70%; }
 {% end %}
 
 {% block content_inner %}
-{% if rules and not rules.default %}
-<h2>Rules: {{ rules.name }}</h2>
-{% end %}
-
-<h1>{{ page_title }}</h1>
 
 {% if user and user.anonymous %}
 {% module AnonymousPester() %}
 {% end %}
+
+
+{% if other_rules %}
+<div id="other-rules">
+  <h3>Other highscore lists</h3>
+  <ul>
+    {% for rule, count in other_rules %}
+    <li><a href="{% if rule.default %}{{ reverse_url('play_highscore') }}{% else %}{{ reverse_url('play_highscore_rules', rule._id) }}{% end %}">{{ rule.name }}</a>
+      <span class="count">(played {{ count }} times)</span>
+    </li>
+    {% end %}
+  </ul>
+</div>
+{% end %}
+
+<h1>Highscore
+{% if rules and not rules.default %}
+-
+ <a href="{{ reverse_url('rules_page', rules._id) }}">{{ rules.name }}</a>
+{% end %}
+</h1>
+
 
 <table>
   {% for i, pp in enumerate(play_points) %}
