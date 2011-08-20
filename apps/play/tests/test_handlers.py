@@ -251,8 +251,8 @@ class HandlersTestCase(BaseHTTPTestCase):
         computer.username = settings.COMPUTER_USERNAME
         computer.save()
 
-
         pp1 = self.db.PlayPoints()
+        pp1.rules = self.default_rules_id
         pp1.user = user1
         pp1.points = 20
         pp1.wins = 2
@@ -263,6 +263,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(pp1.highscore_position, 1)
 
         pp2 = self.db.PlayPoints()
+        pp2.rules = self.default_rules_id
         pp2.user = user2
         pp2.points = 30
         pp2.wins = 3
@@ -290,9 +291,10 @@ class HandlersTestCase(BaseHTTPTestCase):
         url = self.reverse_url('play_highscore')
         response = self.client.get(url)
         self.assertEqual(response.code, 200)
-        self.assertTrue(-1 < response.body.find(user2.username)
-                           < response.body.find(user1.username))
-        self.assertTrue(computer.username not in response.body)
+        body = response.body
+        self.assertTrue(-1 < body.find(user2.username)
+                           < body.find(user1.username))
+        self.assertTrue(computer.username not in body)
 
 
     def test_update_points_basic(self):
@@ -496,7 +498,7 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         user = self.db.User.one({'username': 'peterbe'})
         anon = self.db.User()
-        anon.username = u'anon'
+        anon.username = u'Anon'
         anon.anonymous = True
         anon.save()
 
@@ -544,7 +546,7 @@ class HandlersTestCase(BaseHTTPTestCase):
                                           own_rules._id))
 
         # run it once for the loser too
-        self._login(username=u'anon')
+        self._login(username=u'Anon')
 
         response = self.client.get(url, {'play_id': play._id})
         self.assertEqual(response.code, 200)
