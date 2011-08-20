@@ -283,6 +283,8 @@ class PlayHighscoreHandler(BaseHandler):
             search['user.$id'] = {'$ne': computer['_id']}
         if rules:
             search['rules'] = rules._id
+        else:
+            search['rules'] = self.db.Rules.one({'default': True})._id
         play_points = (self.db.PlayPoints
                        .find(search)
                        .sort('points', -1)

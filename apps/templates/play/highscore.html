@@ -20,7 +20,7 @@ tr.band-1000 td { font-size:70%; }
 
 <h1>{{ page_title }}</h1>
 
-{% if user.anonymous %}
+{% if user and user.anonymous %}
 {% module AnonymousPester() %}
 {% end %}
 
