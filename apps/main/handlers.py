@@ -570,8 +570,19 @@ class LoginHandler(BaseAuthHandler):
         self.render("user/login.html", **options)
 
 
+@route('/login/normal-registration/', name='login_normal_registration_interest')
+class NormalRegistrationInterestHandler(LoginHandler):  # pragma: no cover
+    def get(self):
+        options = self.get_base_options()
+        options['page_title'] = "Normal registration"
+        http_user_agent = self.request.headers.get('User-Agent')
+        logging.warn("Someone prefers a normal registration form (%s)"
+                     % http_user_agent)
+        self.render("user/normal-registration.html", **options)
+
+
 @route('/login/fake/', name='fake_login')
-class FakeLoginHandler(LoginHandler): # pragma: no cover
+class FakeLoginHandler(LoginHandler):  # pragma: no cover
     def get(self):
         assert self.application.settings['debug']
         if self.get_argument('username', None):

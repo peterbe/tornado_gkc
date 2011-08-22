@@ -1,0 +1,25 @@
+{% extends "../base.html" %}
+
+{% block extra_head %}
+<style type="text/css">
+</style>
+{% end %}
+
+{% block content_inner %}
+
+<h2>Interesting...</h2>
+
+<p>The reason Kwissle is using Twitter, Facebook and Google to out source the
+sign-in process is to avoid having to solve the problems they already have
+solutions for such as security and forgotten password reminders, etc.</p>
+
+<p>You know, Kwissle will <strong class="yellow">never post anything into your Facebook, Twitter or Google account</strong>.
+</p>
+
+<p>However, note taken. If lots of people prefer a normal registration form and sign-up it will
+be seriously considered.</p>
+
+<p>For now, use the <a href="{{ reverse_url('login') }}">out sourced login &amp; sign-up</a>
+</p>
+
+{% end %}
