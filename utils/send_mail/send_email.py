@@ -1,9 +1,12 @@
 import time
 import random
 import os
+from email.generator import Generator
 from email.Header import Header
 from email.MIMEText import MIMEText
+from email.MIMEMultipart import MIMEMultipart
 from email.Utils import formatdate
+from cStringIO import StringIO
 
 from dns_name import DNS_NAME
 from importlib import import_module
@@ -227,7 +230,7 @@ class EmailMessage(object):
         """
         basetype, subtype = mimetype.split('/', 1)
         if basetype == 'text':
-            encoding = self.encoding or settings.DEFAULT_CHARSET
+            encoding = self.encoding or 'utf-8'
             attachment = SafeMIMEText(smart_str(content, encoding), subtype, encoding)
         else:
             # Encode non-text attachments with base64.
@@ -250,6 +253,104 @@ class EmailMessage(object):
             attachment.add_header('Content-Disposition', 'attachment',
                                   filename=filename)
         return attachment
+
+class EmailMultiAlternatives(EmailMessage):
+    """
+    A version of EmailMessage that makes it easy to send multipart/alternative
+    messages. For example, including text and HTML versions of the text is
+    made easier.
+    """
+    alternative_subtype = 'alternative'
+
+    def __init__(self, subject='', body='', from_email=None, to=None, bcc=None,
+            connection=None, attachments=None, headers=None, alternatives=None,
+            cc=None):
+        """
+        Initialize a single email message (which can be sent to multiple
+        recipients).
+
+        All strings used to create the message can be unicode strings (or UTF-8
+        bytestrings). The SafeMIMEText class will handle any necessary encoding
+        conversions.
+        """
+        if cc:
+            raise NotImplementedError
+        super(EmailMultiAlternatives, self).__init__(
+          subject, body, from_email, to,
+          bcc=bcc,
+          connection=connection,
+          attachments=attachments,
+          headers=headers,
+        )
+        self.alternatives = alternatives or []
+
+    def attach_alternative(self, content, mimetype):
+        """Attach an alternative content representation."""
+        assert content is not None
+        assert mimetype is not None
+        self.alternatives.append((content, mimetype))
+
+    def _create_message(self, msg):
+        return self._create_attachments(self._create_alternatives(msg))
+
+    def _create_alternatives(self, msg):
+        encoding = self.encoding or 'utf-8'
+        if self.alternatives:
+            body_msg = msg
+            msg = SafeMIMEMultipart(_subtype=self.alternative_subtype, encoding=encoding)
+            if self.body:
+                msg.attach(body_msg)
+            for alternative in self.alternatives:
+                msg.attach(self._create_mime_attachment(*alternative))
+        return msg
+
+
+class SafeMIMEText(MIMEText):
+
+    def __init__(self, text, subtype, charset):
+        self.encoding = charset
+        MIMEText.__init__(self, text, subtype, charset)
+
+    def __setitem__(self, name, val):
+        name, val = forbid_multi_line_headers(name, val, self.encoding)
+        MIMEText.__setitem__(self, name, val)
+
+    def as_string(self, unixfrom=False):
+        """Return the entire formatted message as a string.
+        Optional `unixfrom' when True, means include the Unix From_ envelope
+        header.
+
+        This overrides the default as_string() implementation to not mangle
+        lines that begin with 'From '. See bug #13433 for details.
+        """
+        fp = StringIO()
+        g = Generator(fp, mangle_from_ = False)
+        g.flatten(self, unixfrom=unixfrom)
+        return fp.getvalue()
+
+
+class SafeMIMEMultipart(MIMEMultipart):
+
+    def __init__(self, _subtype='mixed', boundary=None, _subparts=None, encoding=None, **_params):
+        self.encoding = encoding
+        MIMEMultipart.__init__(self, _subtype, boundary, _subparts, **_params)
+
+    def __setitem__(self, name, val):
+        name, val = forbid_multi_line_headers(name, val, self.encoding)
+        MIMEMultipart.__setitem__(self, name, val)
+
+    def as_string(self, unixfrom=False):
+        """Return the entire formatted message as a string.
+        Optional `unixfrom' when True, means include the Unix From_ envelope
+        header.
+
+        This overrides the default as_string() implementation to not mangle
+        lines that begin with 'From '. See bug #13433 for details.
+        """
+        fp = StringIO()
+        g = Generator(fp, mangle_from_ = False)
+        g.flatten(self, unixfrom=unixfrom)
+        return fp.getvalue()
 
 
 def get_connection(backend, fail_silently=False, **kwds):
@@ -287,3 +388,45 @@ def send_email(backend, subject, message, from_email, recipient_list,
     return EmailMessage(subject, message, from_email, recipient_list,
                         connection=connection,
                         headers=headers).send()
+
+def send_multipart_email(backend,
+                         text_part, html_part, subject, recipients,
+                         sender, fail_silently=False, bcc=None,
+                         auth_user=None, auth_password=None,
+                         connection=None):
+    """
+    This function will send a multi-part e-mail with both HTML and
+    Text parts.
+
+    template_name must NOT contain an extension. Both HTML (.html) and TEXT
+        (.txt) versions must exist, eg 'emails/public_submit' will use both
+        public_submit.html and public_submit.txt.
+
+    email_context should be a plain python dictionary. It is applied against
+        both the email messages (templates) & the subject.
+
+    subject can be plain text or a Django template string, eg:
+        New Job: {{ job.id }} {{ job.title }}
+
+    recipients can be either a string, eg 'a@b.com' or a list, eg:
+        ['a@b.com', 'c@d.com']. Type conversion is done if needed.
+
+    sender can be an e-mail, 'Name <email>' or None. If unspecified, the
+        DEFAULT_FROM_EMAIL will be used.
+
+    """
+
+    if not isinstance(recipients, list):
+        recipients = [recipients]
+    if bcc is not None and not isinstance(bcc, list):
+        bcc = [bcc]
+
+    connection = connection or get_connection(backend,
+                                    username=auth_user,
+                                    password=auth_password,
+                                    fail_silently=fail_silently)
+    msg = EmailMultiAlternatives(subject, text_part, sender, recipients,
+                                 connection=connection,
+                                 bcc=bcc)
+    msg.attach_alternative(html_part, "text/html")
+    return msg.send(fail_silently)

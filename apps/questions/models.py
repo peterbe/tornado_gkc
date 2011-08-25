@@ -110,7 +110,7 @@ class QuestionImage(BaseDocument):
       'question': Question,
       'render_attributes': dict,
     }
-    gridfs = {'files':['original']}
+    gridfs = {'files': ['original']}
 
 #OK = u"OK"
 VERIFIED = u"VERIFIED"

@@ -1,0 +1,10 @@
+{% extends "../base.html" %}
+
+{% block content_inner %}
+<ul>
+  {% for count, user_ in published_users %}
+  <li><a href="{{ reverse_url('newsletter_preview', user_._id) }}">{{ user_.username }}</a>
+      ({{ count }} questions)
+  {% end %}
+</ul>
+{% end %}
