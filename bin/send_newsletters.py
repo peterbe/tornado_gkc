@@ -26,14 +26,7 @@ def main(*args):
     else:
         max_users = options.users
 
-
-    # TEMPORARY
     now = datetime.datetime.utcnow()
-#    print "NOW", now
-#    for x in (db.NewsletterSettings
-#               .find()
-#               .sort('next_send')):
-#        print x.next_send
     to_send = (db.NewsletterSettings
                .find({'next_send': {'$lt': now}})
                .limit(max_users)
@@ -52,8 +45,12 @@ def main(*args):
         if user['email'] not in ('peterbe@gmail.com',
                                  'mail@peterbe.com',
                                  'ashleynoval@gmail.com',
+                                 'abbas@abbashalai.com',
+                                 'sguidi@gmail.com',
+                                 'westc25@gmail.com',
                                  ):
-            print "IN ALPHA TESTING MODE ONLY SENDING TO SOME"
+            print "\tIN ALPHA TESTING MODE ONLY SENDING TO SOME"
+            print "\tSkipping:", user['email']
             continue
 
         url = base_url + '/newsletter/%s/send/' % each.user

@@ -7,13 +7,19 @@ body {
   font-family:'Trebuchet MS','Lucida Grande',Verdana,Arial,Sans-Serif;
 }
 a.question { font-weight:bold; }
-.footer { margin-top:25px; font-size:12px; color:#666; }
+.footer {
+  margin-top:45px;
+  font-size:12px;
+  color:#666;
+  text-align:center;
+}
+.review { font-size:0.8em; }
 </style>
 {% end %}
 
 {% block content_inner %}
-<p>Hi {{ user.first_name }},
-This is your {{ frequency }} newsletter from <a href="http://kwissle.com">Kwissle.com</a>.
+<p>Hi {{ user.first_name }},<br>
+This is your {{ frequency }} newsletter from <a href="/">Kwissle.com</a>.
 You are receiving this because you added questions.</p>
 
 
@@ -24,18 +30,22 @@ You are receiving this because you added questions.</p>
 {% end %}
 
 {% if published_count %}
-<h3>Congratulations! {{ published_count }} published question{% if published_count != 1 %}s{% end %}</h3>
+<h3>{{ published_count }} published question{% if published_count != 1 %}s{% end %}</h3>
   {% for question in published %}
   <p><a href="{{ reverse_url('view_question', question._id) }}"
         class="question"
-        title="Click to see your question">{{ question.text }}</a><br/>
+        title="Click to see your question">{{ question.text }}</a>
+        {% if question.has_image() %}
+        (picture question)
+        {% end %}
+        <br/>
 
   </p>
   {% end %}
 {% end %}
 
 {% if accepted_count %}
-<h3>Great! {{ accepted_count }} question{% if accepted_count != 1 %}s{% end %} accepted</h3>
+<h3>{{ accepted_count }} question{% if accepted_count != 1 %}s{% end %} accepted</h3>
   {% for question in accepted %}
   <p><a href="{{ reverse_url('view_question', question._id) }}"
         class="question"
@@ -45,21 +55,38 @@ You are receiving this because you added questions.</p>
 {% end %}
 
 {% if reviews_count %}
-<h3>Interesting! {{ reviews_count }} review{% if reviews_count != 1 %}s{% end %} on your accepted questions</h3>
+<h3>{{ reviews_count }} review{% if reviews_count != 1 %}s{% end %} on your accepted questions</h3>
+  {% set prev_text='' %}
   {% for review in reviews %}
-  <p>On <strong>{{ review.question.text }}</strong><br>
+  <p>
+    {% if review.question.text != prev_text %}
+    On <a href="{{ reverse_url('view_question', review.question._id) }}"
+        class="question"
+        title="Click to see your question">{{ review.question.text }}</a><br>
+    {% set prev_text=review.question.text %}
+    {% end %}
+  <span class="review">
   <strong>Rating:</strong> {% module ShowRating(review.rating) %}<br>
   <strong>Difficulty:</strong> {% module ShowDifficulty(review.difficulty) %}<br>
   <strong>Verdict:</strong> {% module ShowVerdict(review.verdict) %}<br>
   {% if review.comment %}
   <strong>Comment:</strong> {% raw linkify(review.comment) %}
   {% end %}
+  </span>
   </p>
   {% end %}
 {% end %}
 
-{% if played_count %}
+{% if played_count or question_points %}
 <h3>Stats</h3>
+
+{% if question_points %}
+<p>You now have <a href="{{ reverse_url('question_points') }}"><strong>{{ question_points }}
+Kwissle Question Point{% if question_points != 1 %}s{% end %}</strong></a> thanks to these questions.
+</p>
+{% end %}
+
+{% if played_count %}
 <p>
 Your <strong>{{ total_published_count }} published question{% if total_published_count != 1 %}s{% end %}</strong>
  have been played <strong>{{ played_count }} time{% if played_count != 1 %}s{% end %}</strong>
@@ -67,11 +94,12 @@ Your <strong>{{ total_published_count }} published question{% if total_published
  {{ since.strftime('%d %B %Y') }}.
 </p>
 {% end %}
-
 {% end %}
 
-
-
 <p class="footer">
-**************************** NO UNSUBSCRIBE LINK ****************************
+********************** KWISSLE NEWSLETTER EXPERIMENT ***********************<br>
+**************************** NO UNSUBSCRIBE LINK YET ****************************
 </p>
+
+
+{% end %}
