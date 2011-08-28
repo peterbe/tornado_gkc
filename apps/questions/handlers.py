@@ -399,7 +399,6 @@ class AddQuestionHandler(QuestionsBaseHandler):
             self.get(form=form)
 
 
-
 @route('/questions/(\w{24})/$', name="view_question")
 class ViewQuestionHandler(QuestionsBaseHandler):
 

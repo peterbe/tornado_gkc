@@ -13,6 +13,7 @@ APPS = (
   'widget',
   'twitter',
   'rules',
+  'newsletter',
 )
 DATABASE_NAME = "gkc"
 
@@ -25,6 +26,7 @@ COOKIE_SECRET = "12orTzK2XQAGUYdkL5gmueJIFuY37EQn92XsTo1v/Vo="
 
 WEBMASTER = 'webmaster@kwissle.com'
 #WEBMASTER = 'mailer@elasticemail.com'
+NEWSLETTER_SENDER = 'Kwissle newsletter <newsletter@kwissle.com>'
 ADMIN_EMAILS = ['peterbe@gmail.com', 'ashleynoval@gmail.com']
 DEVELOPER_EMAILS = ['peterbe@gmail.com']
 

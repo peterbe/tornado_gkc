@@ -6,3 +6,5 @@ wtforms
 cssmin
 xappy
 PIL
+lxml
+premailer

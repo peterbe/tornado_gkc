@@ -1,3 +1,4 @@
+
 from hashlib import md5
 import uuid
 import datetime
@@ -17,15 +18,15 @@ class BaseDocument(Document):
     }
 
     default_values = {
-      'add_date': datetime.datetime.now,
-      'modify_date': datetime.datetime.now
+      'add_date': datetime.datetime.utcnow,
+      'modify_date': datetime.datetime.utcnow
     }
     use_autorefs = True
     use_dot_notation = True
 
     def save(self, *args, **kwargs):
         if '_id' in self and kwargs.get('update_modify_date', True):
-            self.modify_date = datetime.datetime.now()
+            self.modify_date = datetime.datetime.utcnow()
         super(BaseDocument, self).save(*args, **kwargs)
 
     def __eq__(self, other_doc):
@@ -94,7 +95,7 @@ class UserSettings(BaseDocument):
     structure = {
       'user': User,
       'disable_sound': bool,
-      'newsletter_opt_out': bool,
+      'newsletter_opt_out': bool, # XXX needs to be removed
       'twitter': dict,
       'facebook': dict,
       'google': dict,
@@ -104,18 +105,12 @@ class UserSettings(BaseDocument):
     required_fields = ['user']
     default_values = {
       'disable_sound': False,
-      'newsletter_opt_out': False,
+      'newsletter_opt_out': False, # XXX needs to be removed
     }
 
     validators = {
     }
 
-    # XXX Move these to indexes.py
-    #indexes = [
-    #  {'fields': 'user.$id',
-    #   'check': False,
-    #   'unique': True},
-    #]
 
     @staticmethod
     def get_bool_keys():

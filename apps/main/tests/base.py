@@ -9,6 +9,7 @@ import re
 import hmac
 import hashlib
 import unittest
+import collections
 from urllib import urlencode
 from cStringIO import StringIO
 
@@ -126,6 +127,77 @@ class _DatabaseTestCaseMixin(object):
         assert question.has_image()
         return question_image
 
+    def _create_play(self, users, rules=None, outcome=None):
+        if rules is None:
+            rules = self.db.Rules.one({'default': True})
+
+        if outcome:
+            no_questions = len(outcome)
+        else:
+            no_questions = rules.no_questions
+
+        play = self.db.Play()
+        play.rules = rules._id
+        play.users = users
+        play.no_questions = no_questions
+        play.no_players = len(users)
+        play.started = datetime.datetime.now() - datetime.timedelta(seconds=60)
+        play.finished = datetime.datetime.now()
+        play.save()
+
+        if not outcome:
+            # randomize the outcome
+            outcome = []
+            for i in range(no_questions):
+                range_ = [3, 1, 1, 0, -1]
+                row = []
+                _prev = None
+                for user in users:
+                    random.shuffle(range_)
+                    a = range_[0]
+                    while a == _prev:
+                        random.shuffle(range_)
+                        a = range_[0]
+                    row.append(a)
+                    _prev = a
+                outcome.append(row)
+
+        counts = collections.defaultdict(int)
+        for points in outcome:
+            q = self._create_question()
+            for i, user in enumerate(users):
+                counts[user] += points[i]
+                pq = self.db.PlayedQuestion()
+                pq.play = play
+                pq.question = q
+                pq.user = user
+                if points[i] > 0:
+                    pq.right = True
+                    pq.answer = u'Yes'
+                    if points[i] > 1:
+                        pq.alternatives = False
+                    else:
+                        pq.alternatives = True
+                else:
+                    pq.right = False
+                    if points[i] < 0:
+                        pq.answer = u'wrong'
+                    pq.alternatives = False
+                pq.save()
+
+        highest_count = max(counts.values())
+        for user in counts:
+            if counts[user] == highest_count:
+                if play.winner:
+                    # one already set
+                    play.winner = None
+                    play.draw = True
+                else:
+                    play.winner = user
+
+        play.save()
+        return play
+
 
 class BaseModelsTestCase(unittest.TestCase, _DatabaseTestCaseMixin):
 
@@ -218,3 +290,11 @@ class BaseHTTPTestCase(BaseAsyncTestCase, HTTPClientMixin):
                         digestmod=hashlib.sha1)
         for part in parts: hash.update(part)
         return hash.hexdigest()
+
+    def _get_html_attributes(self, tag, html):
+        _elem_regex = re.compile('<%s (.*?)>' % tag, re.M | re.DOTALL)
+        _attrs_regex = re.compile('(\w+)="([^"]+)"')
+        all_attrs = []
+        for input in _elem_regex.findall(html):
+            all_attrs.append(dict(_attrs_regex.findall(input)))
+        return all_attrs
