@@ -43,10 +43,11 @@ class NewsletterBaseHandler(QuestionsBaseHandler):
         newsletter_settings = self._get_newsletter_settings(user)
         if newsletter_settings.last_send:
             return newsletter_settings.last_send
-        now = datetime.datetime.utcnow()
-        frequency = newsletter_settings.frequency
-        timedelta = frequency_to_timedelta(frequency)
-       	return newsletter_settings.next_send - timedelta
+        #now = datetime.datetime.utcnow()
+        #frequency = newsletter_settings.frequency
+        #timedelta = frequency_to_timedelta(frequency)
+       	#return newsletter_settings.next_send - timedelta
+        return user.add_date
 
     def _get_frequency(self, user):
         newsletter_settings = self._get_newsletter_settings(user)
@@ -118,6 +119,8 @@ class NewsletterBaseHandler(QuestionsBaseHandler):
             _plays.add(pq['play'].id)
         options['played_count'] = len(_plays)
         options['unique_players_count'] = len(_unique_users)
+
+        options['question_points'] = self.get_total_questions_points(user)
 
         if not (options['published_count'] +
                 options['accepted_count'] +
