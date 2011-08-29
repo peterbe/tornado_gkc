@@ -206,7 +206,8 @@ class NewsletterPreviewAnyHandler(NewsletterBaseHandler):  # pragma: no cover
             _published_users[q['author'].id] += 1
         published_users = []
         for u in self.db.User.find({'_id': {'$in': _published_users.keys()}}):
-            published_users.append((_published_users[u._id], u))
+            ns = self.db.NewsletterSettings.one({'user': u._id})
+            published_users.append((_published_users[u._id], u, ns))
 
         options['published_users'] = published_users
         self.render('newsletter/preview_any.html', **options)

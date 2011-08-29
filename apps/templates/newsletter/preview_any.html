@@ -1,10 +1,33 @@
 {% extends "../base.html" %}
 
 {% block content_inner %}
-<ul>
-  {% for count, user_ in published_users %}
-  <li><a href="{{ reverse_url('newsletter_preview', user_._id) }}">{{ user_.username }}</a>
-      ({{ count }} questions)
+<table>
+  <tr>
+    <th>User</th>
+    <th># questions</th>
+    <th>Last</th>
+    <th>Next</th>
+  </tr>
+  {% for count, user_, newsletter_settings in published_users %}
+  <tr>
+    <td><a href="{{ reverse_url('newsletter_preview', user_._id) }}">{{ user_.username }}</a></td>
+    <td>{{ count }}</td>
+    <td>
+       {% if newsletter_settings %}
+         {% if newsletter_settings.last_send %}
+         {{ newsletter_settings.last_send.strftime('%d %b %Y %H:%M') }}
+         {% else %}
+         not yet
+         {% end %}
+       {% end %}
+     </td>
+     <td>
+       {% if newsletter_settings %}
+       {{ newsletter_settings.next_send.strftime('%d %b %Y %H:%M') }}
+       {% end %}
+     </td>
+   </tr>
+
   {% end %}
-</ul>
+</table>
 {% end %}
