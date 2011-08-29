@@ -1,4 +1,4 @@
-from wtforms import Form, BooleanField, TextField, TextAreaField, validators
+from wtforms import Form, BooleanField, TextField, TextAreaField, validators, SelectField
 from wtforms.widgets import html_params, escape, TextInput
 
 class BaseForm(Form):
@@ -25,3 +25,12 @@ class SettingsForm(BaseForm):
     email = TextField("E-mail", [validators.Email()])
     first_name = TextField("First name")
     last_name = TextField("Last name")
+    newsletter_frequency = SelectField("Newsletter frequency")
+
+    def __init__(self, newsletter_frequency_options=None, *args, **kwargs):
+        super(SettingsForm, self).__init__(*args, **kwargs)
+        if not newsletter_frequency_options:
+            del self.newsletter_frequency
+        else:
+            choices = [(x, x) for x in newsletter_frequency_options]
+            self.newsletter_frequency.choices = choices
