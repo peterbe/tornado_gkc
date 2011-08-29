@@ -186,10 +186,17 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         if user_id:
             return self.db.User.one({'_id': ObjectId(user_id)})
 
-    # shortcut where the user parameter is not optional
     def get_user_settings(self, user, fast=False):
         return self.get_current_user_settings(user=user, fast=fast)
 
+    def get_newsletter_settings(self, user, fast=False):
+        if fast:
+            conn = self.db.NewsletterSettings.collection
+        else:
+            conn = self.db.NewsletterSettings
+        return conn.one({'user': user._id})
+
+    # shortcut where the user parameter is not optional
     def get_current_user_settings(self,
                                   user=None,
                                   fast=False,
@@ -408,6 +415,15 @@ class SettingsHandler(BaseHandler):
     """Currently all this does is changing your name and email but it might
     change in the future.
     """
+
+    NEWSLETTER_FREQUENCIES = (
+      'daily',
+      'weekly',
+      'bi-weekly',
+      'monthly',
+      'quarterly',
+    )
+
     @login_redirect
     def get(self):
         options = self.get_base_options()
@@ -415,7 +431,15 @@ class SettingsHandler(BaseHandler):
                        first_name=options['user'].first_name,
                        last_name=options['user'].last_name,
                        )
-        options['form'] = SettingsForm(**initial)
+        newsletter_settings = self.get_newsletter_settings(options['user'])
+        newsletter_frequency_options = None
+        if newsletter_settings:
+            initial['newsletter_frequency'] = newsletter_settings.frequency
+            newsletter_frequency_options = self.NEWSLETTER_FREQUENCIES
+        options['form'] = SettingsForm(
+          newsletter_frequency_options=newsletter_frequency_options,
+          **initial
+        )
         options['page_title'] = "Settings"
         came_from = self.get_argument('came_from', None)
         if came_from:
@@ -432,6 +456,9 @@ class SettingsHandler(BaseHandler):
         email = self.get_argument('email', u'').strip()
         first_name = self.get_argument('first_name', u'').strip()
         last_name = self.get_argument('last_name', u'').strip()
+        newsletter_frequency = self.get_argument('newsletter_frequency', None)
+        if newsletter_frequency:
+            assert newsletter_frequency in self.NEWSLETTER_FREQUENCIES
 
         if email and not valid_email(email):
             raise HTTPError(400, "Not a valid email address")
@@ -452,6 +479,11 @@ class SettingsHandler(BaseHandler):
         user.first_name = first_name
         user.last_name = last_name
         user.save()
+
+        if newsletter_frequency:
+            newsletter_settings = self.get_newsletter_settings(user)
+            newsletter_settings.frequency = newsletter_frequency
+            newsletter_settings.save()
 
         if _email_verification_sent:
             self.push_flash_message("Settings saved",
