@@ -11,7 +11,15 @@ input {
 
 {% block content_inner %}
 
-<h3>Settings</h3>
+{% if must_verify_email %}
+<p style="border:1px solid white;padding:10px;">
+Hi,<br>
+To be able to submit questions you need to have a valid email address and it needs to
+be verified.
+</p>
+{% end %}
+
+<h2>Settings</h2>
 
 {% if form.errors %}
     <ul class="errors general-errors">
@@ -24,6 +32,9 @@ input {
 {% end %}
 
 <form action="" class="question" method="post">{% module xsrf_form_html() %}
+{% if came_from %}
+<div style="display:none"><input type="hidden" name="came_from" value="{{ came_from }}"></div>
+{% end %}
 
 <p class="field">
 <label for="username">Username</label>

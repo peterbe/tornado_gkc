@@ -6,7 +6,7 @@ from time import mktime
 import datetime
 from apps.main.tests.base import BaseHTTPTestCase, TestClient
 from utils import format_time_ampm, get_question_slug_url
-import utils.send_mail as mail
+#import utils.send_mail as mail
 from utils.http_test_client import TestClient
 from apps.questions.models import *
 
@@ -182,6 +182,12 @@ class HandlersTestCase(BaseHTTPTestCase):
         cookie = self._login()
         user = self.db.User.one(username='peterbe')
         assert user
+
+        # pretend this user goes to verify his email
+        user_settings = self.db.UserSettings()
+        user_settings.user = user
+        user_settings.email_verified = user.email
+        user_settings.save()
 
         question = self.db.Question()
         question.text = u"Who wrote what?"
@@ -477,6 +483,17 @@ class HandlersTestCase(BaseHTTPTestCase):
         response = self.client.post(submit_question_url, {})
         self.assertEqual(response.code, 302)
         submitted_url = self.reverse_url('submitted_question', question._id)
+        # you can't post without first verifying your email address
+        self.assertTrue('/settings/' in response.headers['location'])
+        self.assertTrue('email=must' in response.headers['location'])
+        # pretend this user goes to verify his email
+        user_settings = self.db.UserSettings()
+        user_settings.user = user
+        user_settings.email_verified = user.email
+        user_settings.save()
+
+        response = self.client.post(submit_question_url, {})
+        self.assertEqual(response.code, 302)
         self.assertEqual(submitted_url, response.headers['location'])
         response = self.client.get(url)
         self.assertEqual(response.code, 200)
@@ -732,6 +749,12 @@ class HandlersTestCase(BaseHTTPTestCase):
         self._login()
         user = self.db.User.one(username='peterbe')
         assert user
+
+        # pretend this user goes to verify his email
+        user_settings = self.db.UserSettings()
+        user_settings.user = user
+        user_settings.email_verified = user.email
+        user_settings.save()
 
         maths = self.db.Genre()
         maths.name = u'Celebs'
@@ -997,6 +1020,50 @@ class HandlersTestCase(BaseHTTPTestCase):
         response = self.client.get(url)
         self.assertEqual(response.code, 200)
         self.assertTrue(question.text in response.body)
+
+    def test_must_have_email_before_submitting(self):
+        self._login(email='')
+        url = self.reverse_url('add_question')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+
+        data = dict(text=u"H\ex3r mar dU? ",
+                    answer="Bra   ",
+                    accept="Hyffsat",
+                    alternatives=" Bra  \nOk\nFine\nIlla",
+                    genre="Life ",
+                    spell_correct='yes',
+                    comment=""
+                    )
+        response = self.client.post(url, data)
+        self.assertEqual(response.code, 302)
+        redirected_to = response.headers['Location']
+        q, = self.db.Question.find()
+        self.assertEqual(
+          redirected_to,
+          self.reverse_url('submit_question', q._id)
+        )
+        response = self.client.get(redirected_to)
+        self.assertEqual(response.code, 200)
+        self.assertTrue('enter your email address' in response.body)
+        # suppose you ignore that warning and click to submit
+        response = self.client.post(redirected_to, {})
+        self.assertEqual(response.code, 302)
+        url = self.reverse_url('settings')
+        self.assertTrue(response.headers['location'].startswith(url))
+
+        # suppose you're being a good boy and fill one in
+        data = {'email': 'good@boy.com',
+                'first_name': 'Good',
+                'last_name': 'Boy',
+                'came_from': redirected_to}
+        response = self.client.post(url, data)
+        self.assertEqual(response.code, 302)
+        self.assertTrue(response.headers['location']
+                        .startswith(redirected_to))
+
+        response = self.client.get(redirected_to)
+        self.assertEqual(response.code, 200)
 
     def _find_thumbnail_tag(self, content):
         return list(self._find_thumbnail_tags(content))[0]

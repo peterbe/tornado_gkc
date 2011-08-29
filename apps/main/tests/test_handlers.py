@@ -119,6 +119,9 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(user.last_name, None)
         self.assertTrue(user.email)
 
+        user_settings = self.db.UserSettings.one()
+        self.assertEqual(user_settings.email_verified, user.email)
+
     def test_twitter_login(self):
         from apps.main.handlers import TwitterAuthHandler
         TwitterAuthHandler.get_authenticated_user = \
@@ -138,6 +141,9 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(user.first_name, 'Peter Bengtsson')
         self.assertEqual(user.last_name, None)
         self.assertTrue(not user.email)
+
+        user_settings = self.db.UserSettings.one()
+        self.assertEqual(user_settings.email_verified, None)
 
     def test_facebook_login(self):
         url = self.reverse_url('auth_facebook')
@@ -161,6 +167,8 @@ class HandlersTestCase(BaseHTTPTestCase):
         user_settings = self.db.UserSettings.one({'user.$id': user._id})
         assert user_settings
         self.assertTrue(user_settings.facebook)
+        self.assertEqual(user_settings.email_verified, None)
+
         # log out and do it again
         self.client.get(self.reverse_url('logout'))
         response = self.client.get(url, dict(session='peter'))
@@ -617,6 +625,57 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(response.code, 404)
         self.assertTrue(BaseHandler.page_not_found_page_title
                         in response.body)
+
+    def test_sending_email_verification(self):
+        self._login()
+        user, = self.db.User.find()
+        user.email = u''
+        user.save()
+
+        url = self.reverse_url('settings')
+        response = self.client.get(url)
+        self.assertEqual(response.code, 200)
+        data = {
+          'email': 'new@email.com',
+          'first_name': user.first_name,
+          'last_name': user.last_name,
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.code, 302)
+        email_sent = mail.outbox[-1]
+        self.assertEqual(email_sent.to, ['new@email.com'])
+        self.assertEqual(email_sent.from_email, settings.WEBMASTER)
+        self.assertTrue('email verification' in email_sent.subject)
+        regex = re.compile('(http.*?)\s')
+        for url in regex.findall(email_sent.body):
+            if 'verify-email' in urlparse(url).path:
+                verify_url = urlparse(url).path
+
+        # first mess with it a bit
+        bogus_verify_url = self.reverse_url('verify_email',
+                                            'xxxxxxxxxxxxx',
+                                            'aaa')
+        response = self.client.get(bogus_verify_url)
+        self.assertEqual(response.code, 404)
+
+        bogus_verify_url = self.reverse_url('verify_email',
+                                            str(user._id).replace('0','1'),
+                                            'aaa')
+        response = self.client.get(bogus_verify_url)
+        self.assertEqual(response.code, 404)
+
+        bogus_verify_url = self.reverse_url('verify_email',
+                                            user._id,
+                                            'aaa')
+        response = self.client.get(bogus_verify_url)
+        self.assertEqual(response.code, 400)
+
+        response = self.client.get(verify_url)
+        self.assertEqual(response.code, 302)
+
+        user_settings = self.db.UserSettings.one({'user.$id': user._id})
+        self.assertEqual(user_settings.email_verified, 'new@email.com')
+
 
 def google_get_authenticated_user(self, callback, **kw):
     callback({

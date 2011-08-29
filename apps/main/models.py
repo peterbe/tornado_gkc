@@ -96,6 +96,7 @@ class UserSettings(BaseDocument):
       'user': User,
       'disable_sound': bool,
       'newsletter_opt_out': bool, # XXX needs to be removed
+      'email_verified': unicode,
       'twitter': dict,
       'facebook': dict,
       'google': dict,

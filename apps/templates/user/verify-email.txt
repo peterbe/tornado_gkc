@@ -1,0 +1,10 @@
+Hi {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% end %},
+
+To verify your new email address *{{ email }}* click this link:
+
+{{ url }}
+
+
+--
+Kwissle
+http://kwissle.com/

@@ -56,7 +56,14 @@
     {% else %}
     <form action="{{ reverse_url('accept_question', question._id) }}" method="post" id="accept">
       {% module xsrf_form_html() %}
-      <div><input type="submit" value="Accept"></div>
+      <div><input type="submit" value="Accept"
+            {% if not author_email_verified %}disabled{% end %}
+      >{% if not author_email_verified %}
+        <span style="font-size:0.8em">
+        this user has not verified their email address
+        </span>
+       {% end %}
+      </div>
     </form>
     {% end %}
   {% end %}

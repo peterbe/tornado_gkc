@@ -417,6 +417,14 @@ class SettingsHandler(BaseHandler):
                        )
         options['form'] = SettingsForm(**initial)
         options['page_title'] = "Settings"
+        came_from = self.get_argument('came_from', None)
+        if came_from:
+            assert came_from.startswith('/')
+            assert '://' not in came_from
+        options['came_from'] = came_from
+        options['must_verify_email'] = (
+          self.get_argument('email', None) == 'must'
+        )
         self.render("user/settings.html", **options)
 
     @login_redirect
@@ -435,15 +443,81 @@ class SettingsHandler(BaseHandler):
             if existing_user and existing_user != user:
                 raise HTTPError(400, "Email address already used by someone else")
 
+        _email_verification_sent = False
+        if user.email != email and email:
+            self.send_email_verification(user, email)
+            _email_verification_sent = True
+
         user.email = email
         user.first_name = first_name
         user.last_name = last_name
         user.save()
 
-        self.push_flash_message("Settings saved",
-          "Your changes have been successfully saved")
-        self.redirect('/')
+        if _email_verification_sent:
+            self.push_flash_message("Settings saved",
+              "An email has been sent for you to verify your email address")
+        else:
+            self.push_flash_message("Settings saved",
+              "Your changes have been successfully saved")
 
+        url = self.get_argument('came_from', '/')
+        assert url.startswith('/'), url
+        if _email_verification_sent:
+            p = '&' if '?' in url else '?'
+            url += '%s=email-verification=sent' % p
+        self.redirect(url)
+
+    def send_email_verification(self, user, email):
+        user_settings = self.get_user_settings(user)
+        if not user_settings:
+            user_settings = self.create_user_settings(user)
+        add_date_ts = mktime(user.add_date.timetuple())
+        tag = '%s-%s' % (email, add_date_ts)
+        hash = md5(tag).hexdigest()
+
+        url = '%s://%s' % (self.request.protocol, self.request.host)
+        url += self.reverse_url('verify_email',
+                               user._id,
+                               hash)
+        options = {
+          'url': url,
+          'user': user,
+          'email': email,
+        }
+        body = self.render_string('user/verify-email.txt', **options)
+        send_email(self.application.settings['email_backend'],
+               "Kwissle email verification",
+               body,
+               self.application.settings['webmaster'],
+               [email],
+               )
+
+@route('/verify-email/(\w{24})/([a-f0-9]+)/$', name='verify_email')
+class VerifyEmailCallbackHandler(SettingsHandler):
+
+    def get(self, _id, hash):
+        try:
+            user = self.db.User.one({'_id': ObjectId(_id)})
+        except InvalidId:
+            raise HTTPError(404, 'Invalid ID')
+        if not user:
+            raise HTTPError(404, 'User not found')
+
+        # check the hash
+        add_date_ts = mktime(user.add_date.timetuple())
+        tag = '%s-%s' % (user.email, add_date_ts)
+        if md5(tag).hexdigest() != hash:
+            raise HTTPError(400, 'Invalid hash')
+
+        user_settings = self.get_user_settings(user)
+        user_settings.email_verified = user.email
+        user_settings.save()
+
+        self.push_flash_message("Email verified",
+          "Awesome! Now your email address is verified")
+
+        url = '/'
+        self.redirect(url)
 
 @route('/settings/social_media.json$', name='social_media_json')
 class SocialMediaUserHandler(BaseHandler):
@@ -594,6 +668,7 @@ class FakeLoginHandler(LoginHandler):  # pragma: no cover
             usernames = []
             for user in self.db.User.find().sort('username'):
                 usernames.append(dict(username=user.username,
+                                      email=user.email,
                                       questions=(self.db.Question
                                                  .find({'author.$id': user._id})
                                                  .count())))
@@ -676,6 +751,8 @@ class GoogleAuthHandler(BaseAuthHandler, tornado.auth.GoogleMixin):
         if not user_settings:
             user_settings = self.create_user_settings(user)
         user_settings.google = user_struct
+        if user.email:
+            user_settings.email_verified = user.email
         user_settings.save()
 
         self.post_login_successful(user)
@@ -749,6 +826,8 @@ class FacebookAuthHandler(BaseAuthHandler, tornado.auth.FacebookMixin):
         if not user_settings:
             user_settings = self.create_user_settings(user)
         user_settings.facebook = user_struct
+        if email:
+            user_settings.email_verified = email
         user_settings.save()
 
         self.post_login_successful(user)
@@ -810,6 +889,8 @@ class TwitterAuthHandler(BaseAuthHandler, tornado.auth.TwitterMixin):
         if not user_settings:
             user_settings = self.create_user_settings(user)
         user_settings.twitter = user_struct
+        if email:
+            user_settings.email_verified = email
         user_settings.save()
 
         self.post_login_successful(user)
