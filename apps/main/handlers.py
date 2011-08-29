@@ -433,7 +433,7 @@ class SettingsHandler(BaseHandler):
                        )
         newsletter_settings = self.get_newsletter_settings(options['user'])
         newsletter_frequency_options = None
-        if newsletter_settings:
+        if newsletter_settings and newsletter_settings.last_send:
             initial['newsletter_frequency'] = newsletter_settings.frequency
             newsletter_frequency_options = self.NEWSLETTER_FREQUENCIES
         options['form'] = SettingsForm(
