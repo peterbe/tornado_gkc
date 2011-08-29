@@ -3,6 +3,9 @@
 <ul>
 {% for item in users %}
   <li><a href="{{ reverse_url('fake_login') }}?username={{ item['username'] }}">{{ item['username'] }}</a>
+    {% if item['email'] %}
+    <span style="color:#999">{{ item['email'] }}</span>
+    {% end %}
     {% if item['questions'] %}<span>({{ item['questions'] }} questions)</span>{% end %}
   </li>
 {% end %}

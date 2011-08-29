@@ -37,6 +37,16 @@ class QuestionsBaseHandler(BaseHandler):
         options['q'] = self.get_argument('q', u'').strip()
         return options
 
+    def must_verify_email(self, user):
+        if self.is_admin_user(user):
+            return False
+        if not user.email:
+            return True
+        user_settings = self.get_user_settings(user, fast=True)
+        if not user_settings:
+            return True
+        return user.email != user_settings['email_verified']
+
     def find_question(self, _id):
         if isinstance(_id, basestring):
             try:
@@ -416,6 +426,11 @@ class ViewQuestionHandler(QuestionsBaseHandler):
         options['difficulty_total'] = None
         options['skip'] = None
         options['can_edit'] = False
+        options['author_email_verified'] = None
+
+        if question.state != PUBLISHED:
+            options['author_email_verified'] = not self.must_verify_email(
+              question.author)
 
         if question.state != DRAFT:
             options['reviews'] = (self.db.QuestionReview
@@ -633,6 +648,7 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
     @authenticated_plus(lambda u: not u.anonymous)
     def get(self, question_id):
         options = self.get_base_options()
+        #user_settings = self.get_user_settings(options['user'], fast=True)
         question = self.must_find_question(question_id, options['user'])
         options['question'] = question
         if question.state not in (DRAFT, REJECTED):
@@ -641,6 +657,7 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
             elif not self.is_admin_user(options['user']):
                 raise HTTPError(403, "Not your question")
         options['page_title'] = "Submit question"
+        options['needs_email_address'] = not options['user'].email
         self.render('questions/submit.html', **options)
 
     @authenticated_plus(lambda u: not u.anonymous)
@@ -654,6 +671,14 @@ class SubmitQuestionHandler(QuestionsBaseHandler):
                 raise HTTPError(403, "Not your question")
         if not self.can_submit_question(question):
             raise HTTPError(400, "You can't submit this question. Go back to edit")
+
+        if self.must_verify_email(user):
+            url = self.reverse_url('settings')
+            url += '?came_from=%s' % urllib.quote(self.request.path)
+            url += '&email=must'
+            self.redirect(url)
+            return
+
         question.state = SUBMITTED
         question.submit_date = datetime.datetime.now()
         question.save()

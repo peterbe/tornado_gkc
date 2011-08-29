@@ -2,6 +2,13 @@
 
 {% block content_inner %}
 
+{% if needs_email_address %}
+<p>
+To submit questions you need to
+<a href="{{ reverse_url('settings') }}?came_from={{ request.path }}">enter your email address</a>
+</p>
+{% end %}
+
 <p>
 <strong>Question:</strong>
 <span>{{ question.text }}</span>
@@ -40,7 +47,7 @@ or go back to <a href="{{ reverse_url('edit_question', question._id) }}">&larr; 
 </form>
 
 
-<p><a href="/questions/" class="btn">&larr; back to questions dashboard</a></p>
+<p><a href="{{ reverse_url('questions') }}" class="btn">&larr; back to questions dashboard</a></p>
 
 
 {% end %}
