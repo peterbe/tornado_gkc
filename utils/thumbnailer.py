@@ -1,4 +1,7 @@
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 import os
 
 def _mkdir(newdir):
@@ -20,6 +23,9 @@ def _mkdir(newdir):
             os.mkdir(newdir)
 
 def get_thumbnail(save_path, image_data, (max_width, max_height), quality=85):
+    if not Image:
+        raise SystemError("PIL.Image was not imported")
+
     if os.path.isfile(save_path):
         image = Image.open(save_path)
         #print "FOUND", save_path
