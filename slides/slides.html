@@ -156,7 +156,7 @@
 
 <section class="chapter">
     <h2>tornadio code</h2>
-<div class="highlight"><pre><span class="n">online</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+<div class="highlight"><pre><span class="n">online</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span> &nbsp;<span class="k"># imagine this is Redis</span>
 
 <span class="k">class</span> <span class="nc">Client</span><span class="p">(</span><span class="n">tornadio</span><span class="o">.</span><span class="n">SocketConnection</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">on_open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="o">**</span><span class="n">__</span><span class="p">):</span>
@@ -187,7 +187,7 @@
       <li>Ignore the NodeJS stuff
       </li>
       <li>Not perfect</li>
-      <li>Version 0.7 exciting (about 3 weeks ago)</li>
+      <li>Version 0.8 now latest (named channels!)</li>
     </ul>
     <footer>next: socket.io code</footer>
 </section>
@@ -221,6 +221,19 @@
       <li>Unit testing tornadio is easy and predictable</li>
       <li>Don't attempt what socket.io does</li>
     </ul>
+    <footer>next: more lessons learned</footer>
+</section>
+
+<section class="chapter">
+    <h2>More lessons learned (bonus slide!)</h2>
+    <ul style="margin-top:15px">
+      <li>don't initialize on connection
+      <ul>
+        <li>XHR/long polling doesn't support cookies</li>
+	<li>makes it harder to re-connect</li>
+      </ul>
+     </li>
+    </ul>
     <footer>next: Kwissle's future</footer>
 </section>
 
@@ -232,12 +245,22 @@
       <li>Mobile (maybe iPhone/iPad/Android app)</li>
       <li>Play for money</li>
     </ul>
+    <footer>next: Kwissle's future (2)</footer>
+</section>
+
+<section class="chapter">
+    <h2>Kwissle's future version 2</h2>
+    <ul>
+      <li><strike>Start playing anonymously</strike></li>
+      <li><strike>Define your own rules and share</strike></li>
+      <li>release code</li>
+    </ul>
     <footer>next: the end</footer>
 </section>
 
 <section class="chapter">
     <h2>The End</h2>
-    <p>Challenge your friends and help you with more questions</p>
+    <p>Challenge your friends and help out with more questions</p>
     <p><a href="http://kwissle.com">http://kwissle.com</a></p>
 </section>    
 
