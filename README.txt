@@ -66,3 +66,15 @@ Now, run the restore:
         $ ~/worklog/mongodb/bin/mongorestore dump
 	
 	
+To see if the Flash policy server is running
+--------------------------------------------
+
+Run this:
+
+        $ python -c 'print "<policy-file-request/>%c" % 0' | nc 127.0.0.1 843
+	
+To start it with upstart, run this:
+
+        # start flashpolicyd
+	
+	
