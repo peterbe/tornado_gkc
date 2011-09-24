@@ -1,9 +1,13 @@
 #!/usr/bin/env python
-import os, sys
-if os.path.abspath(os.curdir) not in sys.path:
-    sys.path.insert(0, os.path.abspath(os.curdir))
-
+import os
 import unittest
+import site
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+path = lambda *a: os.path.join(ROOT,*a)
+
+site.addsitedir(path('vendor'))
+
 
 TEST_MODULES = [
     'apps.main.tests.test_handlers',

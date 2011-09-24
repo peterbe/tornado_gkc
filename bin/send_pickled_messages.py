@@ -25,7 +25,6 @@ def main():
 
     t0 = time.time()
     tornado.options.parse_command_line()
-    from utils.send_mail import send_email
     if options.debug or options.dry_run:
         from utils.send_mail.backends.console import EmailBackend
     else:

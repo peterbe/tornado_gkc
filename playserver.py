@@ -1,10 +1,17 @@
 #!/usr/bin/env python
 #
+
+import site
+import os
+ROOT = os.path.abspath(os.path.dirname(__file__))
+path = lambda *a: os.path.join(ROOT,*a)
+site.addsitedir(path('vendor'))
+
+import logging
 import time
 
 import tornadio.server
 import tornado.options
-import logging
 import settings
 
 from tornado.options import define, options
