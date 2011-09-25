@@ -75,7 +75,7 @@
 
 <section class="chapter">
     <h2>MongoKit (2)</h2>
-<p class="label">"ORM"</p>    
+<p class="label">"ORM" (aka. ODM)</p>    
 <div class="highlight"><pre><span class="n">user_settings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">UserSettings</span><span class="o">.</span><span class="n">one</span><span class="p">(</span><span class="n">_search</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">create_if_necessary</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">user_settings</span><span class="p">:</span>
     <span class="n">user_settings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">UserSettings</span><span class="p">()</span>
@@ -91,8 +91,23 @@
                                <span class="s">&#39;user.$id&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;$nin&#39;</span><span class="p">:</span> <span class="n">bot_ids</span><span class="p">}})</span>
                         <span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="s">&#39;add_date&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)):</span>
 </pre></div>    
+    <footer>next: MongoLite (bonus slide!)</footer>
+</section>
+
+<section class="chapter">
+    <h2>MongoLite (bonus slide!)</h2>
+    
+    <p class="quote">&quot;MongoLite is a fork of MongoKit by the same author. It aims to come back to simplicity by stripping a lot of features and replacing them with best practices.&quot;</p>
+    
+    <!--<ul style="margin-top:10px">
+      <li>
+    </ul>-->
+    
+    
+
     <footer>next: Tornado</footer>
 </section>
+
 
 <section class="chapter">
     <h2>Tornado</h2>
