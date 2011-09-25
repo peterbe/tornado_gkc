@@ -206,20 +206,20 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
 
         if not user:
             raise ValueError("Can't get settings when there is no user")
-        _search = {'user.$id': user['_id']}
+        _search = {'user': user['_id']}
         if fast:
             return self.db.UserSettings.collection.one(_search) # skip mongokit
         else:
             user_settings = self.db.UserSettings.one(_search)
             if create_if_necessary and not user_settings:
                 user_settings = self.db.UserSettings()
-                user_settings.user = user
+                user_settings.user = user['_id']
                 user_settings.save()
             return user_settings
 
     def create_user_settings(self, user, **default_settings):
         user_settings = self.db.UserSettings()
-        user_settings.user = user
+        user_settings.user = user['_id']
         for key in default_settings:
             setattr(user_settings, key, default_settings[key])
         user_settings.save()
@@ -329,14 +329,14 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
         if not text:
             raise ValueError("AT the moment we can't accept blank texts on flash "\
                              "messages because gritter won't be able to show it")
-        for msg in self.db.FlashMessage.collection.find({'user.$id':user._id})\
+        for msg in self.db.FlashMessage.collection.find({'user':user._id})\
           .sort('add_date', -1).limit(1):
             if msg['title'] == title and msg['text'] == text:
                 # but was it several seconds ago?
                 if (datetime.datetime.now() - msg['add_date']).seconds < 3:
                     return
         msg = self.db.FlashMessage()
-        msg.user = user
+        msg.user = user._id
         msg.title = unicode(title)
         msg.text = unicode(text)
         msg.save()
@@ -346,7 +346,7 @@ class BaseHandler(tornado.web.RequestHandler, HTTPSMixin):
             user = self.get_current_user()
             if not user:
                 return []
-        _search = {'user.$id':user._id}
+        _search = {'user':user._id}
         if unread:
             _search['read'] = False
         return self.db.FlashMessage.find(_search).sort('add_date', 1)
@@ -594,15 +594,6 @@ class BaseAuthHandler(BaseHandler):
         email_body += "%s\n" % user.email
         if extra_message:
             email_body += '%s\n' % extra_message
-
-        #user_settings = self.get_current_user_settings(user)
-        #if user_settings:
-        #    bits = []
-        #    for key, value in UserSettings.structure.items():
-        #        if value == bool:
-        #            yes_or_no = getattr(user_settings, key, False)
-        #            bits.append('%s: %s' % (key, yes_or_no and 'Yes' or 'No'))
-        #    email_body += "User settings:\n\t%s\n" % ', '.join(bits)
 
         send_email(self.application.settings['email_backend'],
                    subject,

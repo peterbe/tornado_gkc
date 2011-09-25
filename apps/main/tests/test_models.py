@@ -25,16 +25,17 @@ class ModelsTestCase(BaseModelsTestCase):
     def test_user_settings(self):
         user = self.db.User()
         user.username = u'peterbe'
-        settings = self.db.UserSettings()
+        user.save()
 
+        settings = self.db.UserSettings()
         self.assertRaises(RequireFieldError, settings.save)
-        settings.user = user
+        settings.user = user._id
         settings.save()
 
         self.assertFalse(settings.newsletter_opt_out)
 
         model = self.db.UserSettings
-        self.assertEqual(model.find({'user.$id': user._id}).count(), 1)
+        self.assertEqual(model.find({'user': user._id}).count(), 1)
 
     def test_delete_user_deletes_settings(self):
         user = self.db.User()
@@ -42,7 +43,7 @@ class ModelsTestCase(BaseModelsTestCase):
         user.save()
 
         settings = self.db.UserSettings()
-        settings.user = user
+        settings.user = user._id
         settings.save()
 
         assert self.db.UserSettings.find().count() == 1
@@ -77,3 +78,18 @@ class ModelsTestCase(BaseModelsTestCase):
         diff = user.modify_date - user.add_date
         milliseconds = diff.microseconds / 1000.0
         self.assertTrue(diff.microseconds >= 100)
+
+    def test_flash_message(self):
+        user = self.db.User()
+        user.username = u'peterbe'
+        user.save()
+
+        msg = self.db.FlashMessage()
+        msg.user = user._id
+        msg.title = u'Title'
+        msg.validate()
+        msg.save()
+
+        self.assertEqual(msg.user.username, u'peterbe')
+        self.assertEqual(msg.read, False)
+        self.assertEqual(msg.text, u'')

@@ -10,13 +10,9 @@ Then go to:
 
 """
 
+import here
 
 import code, re
-import os, sys
-p = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if p not in sys.path:
-    sys.path.insert(0, p)
-
 import tornado.options
 from tornado.options import define, options
 

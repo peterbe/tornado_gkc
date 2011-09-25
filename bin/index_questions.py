@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
-import code, re
-import os, sys
-p = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if p not in sys.path:
-    sys.path.insert(0, p)
+import here
+import os
 
 import time
 import datetime

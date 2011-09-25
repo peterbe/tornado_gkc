@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-import os, sys
-p = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if p not in sys.path:
-    sys.path.insert(0, p)
+from here import ROOT
+import os
 
 def main(*apps):
 
@@ -23,9 +21,9 @@ def main(*apps):
         apps.remove('--clear-all-first')
 
     if not apps:
-        apps = [x for x in os.listdir(os.path.join(p, 'apps'))
-                if (os.path.isdir(os.path.join(p, 'apps', x)) and
-                    os.path.isfile(os.path.join(p, 'apps', x, 'indexes.py')))]
+        apps = [x for x in os.listdir(os.path.join(ROOT, 'apps'))
+                if (os.path.isdir(os.path.join(ROOT, 'apps', x)) and
+                    os.path.isfile(os.path.join(ROOT, 'apps', x, 'indexes.py')))]
 
     for app in apps:
         _indexes = __import__('apps.%s' % app, globals(), locals(), ['indexes'], -1)

@@ -230,7 +230,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(play_message.read, False)
         self.assertEqual(play_message.play, play)
 
-        flash_message = self.db.FlashMessage.one({'user.$id': user2._id})
+        flash_message = self.db.FlashMessage.one({'user': user2._id})
         assert flash_message
         self.assertEqual(flash_message.text, u'hi!')
 
