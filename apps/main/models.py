@@ -1,6 +1,7 @@
 
 from hashlib import md5
 import uuid
+from pymongo.objectid import ObjectId
 import datetime
 from mongokit import Document, ValidationError
 from utils import encrypt_password
@@ -83,7 +84,7 @@ class User(BaseDocument):
     def delete(self):
         try:
             for us in (self.db.UserSettings
-                       .find({'user.$id': self['_id']})):
+                       .find({'user': self['_id']})):
                 us.delete()
         finally:
             super(User, self).delete()
@@ -93,7 +94,7 @@ class User(BaseDocument):
 class UserSettings(BaseDocument):
     __collection__ = 'user_settings'
     structure = {
-      'user': User,
+      'user': ObjectId,
       'disable_sound': bool,
       'newsletter_opt_out': bool, # XXX needs to be removed
       'email_verified': unicode,
@@ -112,6 +113,9 @@ class UserSettings(BaseDocument):
     validators = {
     }
 
+    @property
+    def user(self):
+        return self.db.User.find_one({'_id': self['user']})
 
     @staticmethod
     def get_bool_keys():
@@ -124,7 +128,7 @@ class UserSettings(BaseDocument):
 class FlashMessage(BaseDocument):
     __collection__ = 'flash_messages'
     structure = {
-      'user': User,
+      'user': ObjectId,
       'title': unicode,
       'text': unicode,
       'read': bool,
@@ -135,9 +139,6 @@ class FlashMessage(BaseDocument):
     }
     required_fields = ['user', 'title']
 
-    # XXX Move these to indexes.py
-    #indexes = [
-    #  {'fields': 'user.$id',
-    #   'check': False},
-    #  {'fields': 'read'},
-    #]
+    @property
+    def user(self):
+        return self.db.User.find_one({'_id': self['user']})

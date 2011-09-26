@@ -1,12 +1,6 @@
 #!/usr/bin/env python
-import os
+import here
 import unittest
-import site
-
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-path = lambda *a: os.path.join(ROOT,*a)
-
-site.addsitedir(path('vendor'))
 
 
 TEST_MODULES = [

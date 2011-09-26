@@ -185,7 +185,7 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         # pretend this user goes to verify his email
         user_settings = self.db.UserSettings()
-        user_settings.user = user
+        user_settings.user = user._id
         user_settings.email_verified = user.email
         user_settings.save()
 
@@ -488,7 +488,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertTrue('email=must' in response.headers['location'])
         # pretend this user goes to verify his email
         user_settings = self.db.UserSettings()
-        user_settings.user = user
+        user_settings.user = user._id
         user_settings.email_verified = user.email
         user_settings.save()
 
@@ -752,7 +752,7 @@ class HandlersTestCase(BaseHTTPTestCase):
 
         # pretend this user goes to verify his email
         user_settings = self.db.UserSettings()
-        user_settings.user = user
+        user_settings.user = user._id
         user_settings.email_verified = user.email
         user_settings.save()
 

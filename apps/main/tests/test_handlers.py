@@ -164,7 +164,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         self.assertEqual(user.last_name, 'Bengtsson')
         self.assertTrue(not user.email)
 
-        user_settings = self.db.UserSettings.one({'user.$id': user._id})
+        user_settings = self.db.UserSettings.one({'user': user._id})
         assert user_settings
         self.assertTrue(user_settings.facebook)
         self.assertEqual(user_settings.email_verified, None)
@@ -673,7 +673,7 @@ class HandlersTestCase(BaseHTTPTestCase):
         response = self.client.get(verify_url)
         self.assertEqual(response.code, 302)
 
-        user_settings = self.db.UserSettings.one({'user.$id': user._id})
+        user_settings = self.db.UserSettings.one({'user': user._id})
         self.assertEqual(user_settings.email_verified, 'new@email.com')
 
 

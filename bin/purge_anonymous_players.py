@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-import os, sys
-p = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if p not in sys.path:
-    sys.path.insert(0, p)
-
+import here
 import datetime
 import tornado.options
 from tornado.options import define, options
@@ -30,6 +26,7 @@ def main(*args):
         assert user.anonymous
         assert not db.Question.find({'author.$id': user._id}).count()
         search = {'user.$id': user._id}
+        slim_search = {'user': user._id}
         assert not db.QuestionReview.find(search).count()
 
         for qp in db.QuestionPoints.find(search):
@@ -37,12 +34,12 @@ def main(*args):
             if options.verbose:
                 print "\tdelete question points"
 
-        for us in db.UserSettings.find(search):
+        for us in db.UserSettings.find(slim_search):
             us.delete()
             if options.verbose:
                 print "\tdelete settings"
 
-        for fm in db.FlashMessage.find(search):
+        for fm in db.FlashMessage.find(slim_search):
             fm.delete()
             if options.verbose:
                 print "\tdelete flash message"
