@@ -2,7 +2,7 @@ import random
 import logging
 import time
 from pymongo.objectid import InvalidId, ObjectId
-from utils.routes import route
+from tornado_utils.routes import route
 from apps.main.handlers import BaseHandler
 from apps.questions.models import PUBLISHED
 from tornado.web import HTTPError

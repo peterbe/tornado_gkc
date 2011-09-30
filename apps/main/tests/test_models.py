@@ -1,5 +1,6 @@
 from mongokit import RequireFieldError, ValidationError
 import datetime
+from tornado_utils import encrypt_password
 from apps.main.models import UserSettings
 from base import BaseModelsTestCase
 
@@ -15,7 +16,6 @@ class ModelsTestCase(BaseModelsTestCase):
 
         inst = self.db.users.User.one()
         assert inst.username
-        from utils import encrypt_password
         inst.password = encrypt_password('secret')
         inst.save()
 

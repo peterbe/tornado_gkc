@@ -9,7 +9,7 @@ import tornado.web
 from tornado.web import HTTPError
 from apps.main.handlers import BaseHandler
 from apps.play.models import PlayPoints
-from utils.routes import route
+from tornado_utils.routes import route
 from utils import dict_plus
 import settings
 

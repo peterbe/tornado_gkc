@@ -24,7 +24,7 @@ from tornado.options import define, options
 
 # app
 import settings
-from utils.routes import route
+from tornado_utils.routes import route
 from utils.git import get_git_revision
 
 ################################################################################
