@@ -1,6 +1,6 @@
 import datetime
 from apps.main.models import BaseDocument, User, register
-from utils.edit_distance import EditDistance
+from tornado_utils.edit_distance import EditDistance
 
 @register
 class Genre(BaseDocument):

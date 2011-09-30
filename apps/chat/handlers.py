@@ -1,7 +1,7 @@
 import tornado.web
 from tornado.web import HTTPError
 from apps.main.handlers import BaseHandler
-from utils.routes import route
+from tornado_utils.routes import route
 import settings
 
 @route('/chat/$', name='chat')

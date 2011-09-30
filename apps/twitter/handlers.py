@@ -6,19 +6,15 @@ from tornado.web import HTTPError
 import logging
 
 from apps.main.handlers import BaseAuthHandler, BaseHandler
-from utils.routes import route
+from tornado_utils import djangolike_request_dict
+from tornado_utils.routes import route
+from tornado_utils.goo_gl import shorten as url_shorten
 from utils import get_question_slug_url
 from utils.decorators import login_required, login_redirect
 from .forms import PostForm
 import settings
 
-from utils.goo_gl import shorten as url_shorten
 
-# XXX can't this be moved into utils?
-class djangolike_request_dict(dict):
-    def getlist(self, key):
-        value = self.get(key)
-        return self.get(key)
 
 class TwitterPostingsMixin(tornado.auth.TwitterMixin):
 

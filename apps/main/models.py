@@ -4,7 +4,7 @@ import uuid
 from pymongo.objectid import ObjectId
 import datetime
 from mongokit import Document, ValidationError
-from utils import encrypt_password
+from tornado_utils import encrypt_password
 
 from mongokit import Connection
 connection = Connection()

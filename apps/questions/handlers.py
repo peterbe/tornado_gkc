@@ -12,10 +12,11 @@ import tornado.web
 from tornado.web import HTTPError
 from utils.decorators import login_redirect, authenticated_plus
 from apps.main.handlers import BaseHandler
-from utils.routes import route
-from utils.send_mail import send_email
-from utils.stopwords import strip_stopwords
-from utils import dict_plus, get_question_slug_url, djangolike_request_dict
+from tornado_utils.routes import route
+from tornado_utils.send_mail import send_email
+from tornado_utils.stopwords import strip_stopwords
+from tornado_utils import djangolike_request_dict
+from utils import dict_plus, get_question_slug_url
 import settings
 
 from models import STATES, DRAFT, SUBMITTED, REJECTED, ACCEPTED, PUBLISHED

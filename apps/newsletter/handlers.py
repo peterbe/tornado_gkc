@@ -4,9 +4,9 @@ import logging
 from pymongo.objectid import ObjectId
 from tornado.web import HTTPError
 from utils.decorators import login_redirect, authenticated_plus
-from utils.routes import route
-from utils.html2text import html2text
-from utils.send_mail import send_multipart_email
+from tornado_utils.routes import route
+from tornado_utils.html2text import html2text
+from tornado_utils.send_mail import send_multipart_email
 from apps.questions.models import (
   DRAFT, SUBMITTED, REJECTED, ACCEPTED, PUBLISHED
 )

@@ -1,9 +1,9 @@
 from pymongo.objectid import ObjectId, InvalidId
 from apps.main.handlers import BaseHandler
-from utils.routes import route
+from tornado_utils.routes import route
 from tornado.web import HTTPError
 from utils.decorators import login_redirect, authenticated_plus
-from utils import djangolike_request_dict
+from tornado_utils import djangolike_request_dict
 from forms import RulesForm
 
 class BaseRulesHandler(BaseHandler):

@@ -3,7 +3,7 @@ from pprint import pprint
 from pymongo.objectid import ObjectId
 import time
 from collections import defaultdict
-from utils.edit_distance import EditDistance
+from tornado_utils.edit_distance import EditDistance
 
 from bot import ComputerClient, predict_bot_answer
 

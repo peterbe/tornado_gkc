@@ -23,14 +23,14 @@ import tornado.web
 from tornado.web import HTTPError
 
 # app
-from utils.routes import route
+from tornado_utils.routes import route
 from models import *
-from utils.send_mail import send_email
+from tornado_utils.send_mail import send_email
 from utils.decorators import login_required, login_redirect
-from utils import parse_datetime, niceboolean, \
+from tornado_utils import parse_datetime, niceboolean, \
   DatetimeParseError, valid_email, random_string, \
-  all_hash_tags, all_atsign_tags, generate_random_color, \
-  get_question_slug_url
+  all_hash_tags, all_atsign_tags, generate_random_color
+from utils import get_question_slug_url
 from forms import SettingsForm
 import settings
 
