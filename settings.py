@@ -27,7 +27,7 @@ COOKIE_SECRET = "12orTzK2XQAGUYdkL5gmueJIFuY37EQn92XsTo1v/Vo="
 WEBMASTER = 'webmaster@kwissle.com'
 #WEBMASTER = 'mailer@elasticemail.com'
 NEWSLETTER_SENDER = 'Kwissle newsletter <newsletter@kwissle.com>'
-ADMIN_EMAILS = ['peterbe@gmail.com', 'ashleynoval@gmail.com']
+ADMIN_EMAILS = ['peterbe@gmail.com']
 DEVELOPER_EMAILS = ['peterbe@gmail.com']
 
 TWITTER_CONSUMER_KEY = 'UcZ80RJk7x4FVWE0d93ig'
