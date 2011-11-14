@@ -7,7 +7,7 @@
 }
 #authenticators p {
   float:left;
-  width:33%;
+  width:22%;
 }
 #anonymous_play_points {
 }
@@ -31,7 +31,7 @@ you have already earned.</p>
 </div>
 {% end %}
 
-<h3>Kwissle will NOT post things into your account. Ever!</h3>
+<h3>Kwissle will NEVER post things into your account. Ever!</h3>
 
 <div id="authenticators">
 <p>
@@ -44,6 +44,9 @@ you have already earned.</p>
 
 <p>
 <a href="/auth/facebook/" title="Facebook"><img src="{% module StaticURL("images/facebook.png") %}" alt="Facebook"></a>
+</p>
+<p>
+<a href="#" id="browserid-signin" title="Mozilla BrowserID"><img src="{% module StaticURL('images/sign_in_blue.png') %}" alt="Sign in"></a>
 </p>
 </div>
 
@@ -59,4 +62,9 @@ remember</span>.
 <div class="clearer">&nbsp;</div>
 {% end %}
 
+{% end %}
+
+{% block extra_js %}
+<script src="https://browserid.org/include.js" type="text/javascript"></script>
+{% module Static("js/login.js") %}
 {% end %}
