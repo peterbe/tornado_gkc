@@ -4,7 +4,7 @@ from time import mktime
 import tornado.web
 import settings
 import json
-from utils.thumbnailer import get_thumbnail
+from tornado_utils.thumbnailer import get_thumbnail
 
 class QuestionImageThumbnailMixin:
 

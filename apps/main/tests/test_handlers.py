@@ -10,8 +10,9 @@ import simplejson as json
 
 import settings
 from base import BaseHTTPTestCase
-from utils import encrypt_password, get_question_slug_url
-import utils.send_mail as mail
+from tornado_utils import encrypt_password
+from utils import get_question_slug_url
+import tornado_utils.send_mail as mail
 
 
 class HandlersTestCase(BaseHTTPTestCase):

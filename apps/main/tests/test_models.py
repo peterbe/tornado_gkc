@@ -1,5 +1,6 @@
 from mongokit import RequireFieldError, ValidationError
 import datetime
+from tornado_utils import encrypt_password
 from apps.main.models import UserSettings
 from base import BaseModelsTestCase
 
@@ -15,7 +16,6 @@ class ModelsTestCase(BaseModelsTestCase):
 
         inst = self.db.users.User.one()
         assert inst.username
-        from utils import encrypt_password
         inst.password = encrypt_password('secret')
         inst.save()
 
@@ -93,3 +93,27 @@ class ModelsTestCase(BaseModelsTestCase):
         self.assertEqual(msg.user.username, u'peterbe')
         self.assertEqual(msg.read, False)
         self.assertEqual(msg.text, u'')
+
+
+    def test_user_by_username(self):
+        user = self.db.User()
+        user.username = u'peterbe'
+        user.email = u'peterbe@test.com'
+        user.save()
+
+        assert user._id
+        self.assertEqual(self.db.User.find_by_username('peterbe')._id,
+                         user._id)
+
+        self.assertEqual(self.db.User.find_by_username('PETERBe')._id,
+                         user._id)
+
+        self.assertTrue(self.db.User.find_by_username('xxxxx') is None)
+
+        self.assertEqual(self.db.User.find_by_email('peterbe@test.com')._id,
+                         user._id)
+
+        self.assertEqual(self.db.User.find_by_email('PETERBE@test.com')._id,
+                         user._id)
+
+        self.assertTrue(self.db.User.find_by_email('xx@xxx') is None)

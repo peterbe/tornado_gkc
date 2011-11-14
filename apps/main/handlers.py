@@ -12,25 +12,27 @@ from collections import defaultdict
 from pymongo.objectid import InvalidId, ObjectId
 from time import mktime, sleep, time
 import datetime
-from urllib import quote
+from urllib import quote, urlencode
 import os.path
 import re
 import logging
 
 # tornado
+import tornado.gen
+import tornado.httpclient
 import tornado.auth
 import tornado.web
 from tornado.web import HTTPError
 
 # app
-from utils.routes import route
+from tornado_utils.routes import route
 from models import *
-from utils.send_mail import send_email
+from tornado_utils.send_mail import send_email
 from utils.decorators import login_required, login_redirect
-from utils import parse_datetime, niceboolean, \
+from tornado_utils import parse_datetime, niceboolean, \
   DatetimeParseError, valid_email, random_string, \
-  all_hash_tags, all_atsign_tags, generate_random_color, \
-  get_question_slug_url
+  all_hash_tags, all_atsign_tags, generate_random_color
+from utils import get_question_slug_url
 from forms import SettingsForm
 import settings
 
@@ -720,6 +722,63 @@ class AuthLoginHandler(BaseAuthHandler): # pragma: no cover
 
         return user
 
+
+@route('/auth/login/browserid/', name='auth_login_browserid')
+class BrowserIDAuthLoginHandler(AuthLoginHandler):
+
+    def check_xsrf_cookie(self):
+        pass
+
+    @tornado.web.asynchronous
+    def post(self):
+        assertion = self.get_argument('assertion')
+        http_client = tornado.httpclient.AsyncHTTPClient()
+        domain = self.request.host
+        url = 'https://browserid.org/verify'
+        data = {
+          'assertion': assertion,
+          'audience': domain,
+        }
+        response = http_client.fetch(
+          url,
+          method='POST',
+          body=urlencode(data),
+          callback=self.async_callback(self._on_response)
+        )
+
+    def _on_response(self, response):
+        if 'email' in response.body:
+            # all is well
+            struct = tornado.escape.json_decode(response.body)
+            assert struct['email']
+            email = struct['email']
+            user = self.db.User.find_by_email(email)
+
+            if user:
+                next_url = self.get_next_url()
+            else:
+                username = email.split('@')[0]
+                c = 1
+                while self.db.User.find_by_username(username):
+                    # taken!
+                    c += 1
+                    username = email.split('@')[0] + '-%d' % c
+                # create a new account
+                user = self.db.User()
+                user.username = unicode(username)
+                user.email = unicode(email)
+                user.set_password(random_string(20))
+                user.save()
+                next_url = self.reverse_url('settings')
+
+            self.post_login_successful(user)
+            self.set_secure_cookie('user', str(user._id),
+                                   expires_days=100)
+            self.write_json({'next_url': next_url})
+
+        else:
+            self.write_json({'ERROR': response.body})
+        self.finish()
 
 
 @route('/auth/google/', name='auth_google')

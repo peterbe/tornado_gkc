@@ -1,10 +1,10 @@
-
+import re
 from hashlib import md5
 import uuid
 from pymongo.objectid import ObjectId
 import datetime
 from mongokit import Document, ValidationError
-from utils import encrypt_password
+from tornado_utils import encrypt_password
 
 from mongokit import Connection
 connection = Connection()
@@ -88,6 +88,20 @@ class User(BaseDocument):
                 us.delete()
         finally:
             super(User, self).delete()
+
+    def find_by_username(self, username):
+        return self._find_by_key('username', username)
+
+    def find_by_email(self, email):
+        return self._find_by_key('email', email)
+
+    def _find_by_key(self, key, value):
+        user = self.db.User.one({key: value})
+        if not user:
+            user = self.db.User.one({key:
+              re.compile(re.escape(value), re.I)})
+        return user
+
 
 
 @register
