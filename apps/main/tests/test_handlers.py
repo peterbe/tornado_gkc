@@ -677,6 +677,98 @@ class HandlersTestCase(BaseHTTPTestCase):
         user_settings = self.db.UserSettings.one({'user': user._id})
         self.assertEqual(user_settings.email_verified, 'new@email.com')
 
+    def test_browserid_login_stranger(self):
+        url = self.reverse_url('auth_login_browserid')
+        import apps.main.handlers
+        _prev = apps.main.handlers.tornado.httpclient.AsyncHTTPClient
+        try:
+            apps.main.handlers.tornado.httpclient.AsyncHTTPClient = \
+              make_mock_asynchttpclient({
+                'status': 'okay',
+                'email': 'peterbe@test.com',
+              })
+
+            response = self.client.post(url, {'assertion': 'xxx'})
+            assert response.code == 200
+            struct = json.loads(response.body)
+            self.assertEqual(struct['next_url'], self.reverse_url('settings'))
+        finally:
+            apps.main.handlers.tornado.httpclient.AsyncHTTPClient = _prev
+
+    def test_browserid_login_known(self):
+        bob = self.db.User()
+        bob.username = u'bob'
+        bob.email = u'Peterbe@test.com'
+        bob.save()
+
+        url = self.reverse_url('auth_login_browserid')
+        import apps.main.handlers
+        _prev = apps.main.handlers.tornado.httpclient.AsyncHTTPClient
+        try:
+            apps.main.handlers.tornado.httpclient.AsyncHTTPClient = \
+              make_mock_asynchttpclient({
+                'status': 'okay',
+                'email': 'peterbe@test.com',
+              })
+
+            response = self.client.post(url, {'assertion': 'xxx'})
+            assert response.code == 200
+            struct = json.loads(response.body)
+            self.assertEqual(struct['next_url'], '/')
+        finally:
+            apps.main.handlers.tornado.httpclient.AsyncHTTPClient = _prev
+
+
+    def test_browserid_login_clashing_username(self):
+        bob = self.db.User()
+        bob.username = u'bob'
+        bob.email = u'bob@else.com'
+        bob.save()
+
+        bob2 = self.db.User()
+        bob2.username = u'bob-2'
+        bob2.email = u'bob@different.com'
+        bob2.save()
+
+        url = self.reverse_url('auth_login_browserid')
+        import apps.main.handlers
+        _prev = apps.main.handlers.tornado.httpclient.AsyncHTTPClient
+        try:
+            apps.main.handlers.tornado.httpclient.AsyncHTTPClient = \
+              make_mock_asynchttpclient({
+                'status': 'okay',
+                'email': 'bob@test.com',
+              })
+
+            response = self.client.post(url, {'assertion': 'xxx'})
+            assert response.code == 200
+            struct = json.loads(response.body)
+            self.assertEqual(struct['next_url'], self.reverse_url('settings'))
+            self.assertTrue(self.db.User.one({'username': 'bob-3'}))
+        finally:
+            apps.main.handlers.tornado.httpclient.AsyncHTTPClient = _prev
+
+
+class _Response(object):
+    def __init__(self, code, body):
+        self.code = code
+        self.body = body
+
+class MockAsyncHTTPClient(object):
+    def __init__(self, response, status=200):
+        self.status = status
+        self.response = response
+
+    def fetch(self, url, callback=None, *args, **kwargs):
+        callback(_Response(self.status, self.response))
+
+    def __call__(self):
+        return self
+
+
+def make_mock_asynchttpclient(response):
+    return MockAsyncHTTPClient(json.dumps(response))
+
 
 def google_get_authenticated_user(self, callback, **kw):
     callback({

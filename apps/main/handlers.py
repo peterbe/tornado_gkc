@@ -16,6 +16,7 @@ from urllib import quote, urlencode
 import os.path
 import re
 import logging
+from mongokit import MultipleResultsFound
 
 # tornado
 import tornado.gen
@@ -759,7 +760,12 @@ class BrowserIDAuthLoginHandler(AuthLoginHandler):
             else:
                 username = email.split('@')[0]
                 c = 1
-                while self.db.User.find_by_username(username):
+                while True:
+                    try:
+                        if not self.db.User.find_by_username(username):
+                            break
+                    except MultipleResultsFound:
+                        pass
                     # taken!
                     c += 1
                     username = email.split('@')[0] + '-%d' % c
