@@ -11,7 +11,7 @@ def main(*args):
     tornado.options.parse_command_line()
     from apps.main.models import User, connection
     from apps.play.models import Play, PlayedQuestion
-    from pymongo.objectid import InvalidId, ObjectId
+    from bson.objectid import ObjectId, InvalidId
     db = connection.gkc
     unfinished = db.Play.find({'finished': None})
     if options.verbose:

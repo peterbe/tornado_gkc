@@ -6,7 +6,7 @@ print
 
 collection = connection.gkc[Play.__collection__]
 rules_collection = connection.gkc[Rules.__collection__]
-assert rules_collection.Rules.find({'default': True}).count()
+#assert rules_collection.Rules.find({'default': True}).count()
 
 search = {'rules':{'$exists': False}}
 #search = {'rules':None}

@@ -1,7 +1,7 @@
 import datetime
 import collections
 import logging
-from pymongo.objectid import ObjectId
+from bson.objectid import ObjectId
 from tornado.web import HTTPError
 from utils.decorators import login_redirect, authenticated_plus
 from tornado_utils.routes import route

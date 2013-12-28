@@ -144,7 +144,7 @@ def main(*args):
     limit = options.questions
     if options.ids:
         import re
-        from pymongo.objectid import ObjectId
+        from bson.objectid import ObjectId
         ids = [x for x in re.split('(\w+)', options.ids)
                  if len(x.strip()) > 1]
         ids = [ObjectId(x) for x in ids]

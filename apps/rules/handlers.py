@@ -1,4 +1,4 @@
-from pymongo.objectid import ObjectId, InvalidId
+from bson.objectid import ObjectId, InvalidId
 from apps.main.handlers import BaseHandler
 from tornado_utils.routes import route
 from tornado.web import HTTPError

@@ -9,7 +9,7 @@ from cStringIO import StringIO
 from urlparse import urlparse
 from pprint import pprint
 from collections import defaultdict
-from pymongo.objectid import InvalidId, ObjectId
+from bson.objectid import ObjectId, InvalidId
 from time import mktime, sleep, time
 import datetime
 from urllib import quote, urlencode

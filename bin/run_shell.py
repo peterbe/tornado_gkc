@@ -11,7 +11,7 @@ if __name__ == '__main__':
     from apps.questions.models import Question, Genre, QuestionReview
     from apps.play.models import Play, PlayedQuestion, PlayMessage, PlayPoints
     from mongokit import Connection, Document as mongokit_Document
-    from pymongo.objectid import InvalidId, ObjectId
+    from bson.objectid import ObjectId, InvalidId
     con = Connection()
 
     import settings

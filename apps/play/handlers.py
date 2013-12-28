@@ -4,7 +4,7 @@ from string import zfill
 from random import randint
 from collections import defaultdict
 from pymongo import ASCENDING, DESCENDING
-from pymongo.objectid import InvalidId, ObjectId
+from bson.objectid import ObjectId, InvalidId
 import tornado.web
 from tornado.web import HTTPError
 from apps.main.handlers import BaseHandler

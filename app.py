@@ -13,7 +13,7 @@ import re
 import os.path
 from mongokit import Connection, Document as mongokit_Document
 import logging
-import xappy
+#import xappy
 
 # tornado
 import tornado.httpserver

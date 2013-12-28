@@ -8,7 +8,7 @@ import os.path as op
 import tornadio.router
 import tornadio.server
 import tornado.web
-from pymongo.objectid import InvalidId, ObjectId
+from bson.objectid import InvalidId, ObjectId
 from tornado.options import define, options
 import logging
 from apps.main.models import User

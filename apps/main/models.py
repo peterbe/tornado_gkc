@@ -1,7 +1,7 @@
 import re
 from hashlib import md5
 import uuid
-from pymongo.objectid import ObjectId
+from bson.objectid import ObjectId, InvalidId
 import datetime
 from mongokit import Document, ValidationError
 from tornado_utils import encrypt_password

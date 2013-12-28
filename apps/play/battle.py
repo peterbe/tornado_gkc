@@ -1,6 +1,6 @@
 import datetime
 from pprint import pprint
-from pymongo.objectid import ObjectId
+from bson.objectid import ObjectId
 import time
 from collections import defaultdict
 from tornado_utils.edit_distance import EditDistance

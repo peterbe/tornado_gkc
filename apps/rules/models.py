@@ -1,4 +1,4 @@
-from pymongo.objectid import ObjectId
+from bson.objectid import ObjectId
 from apps.main.models import BaseDocument, User, register
 from apps.questions.models import Genre
 

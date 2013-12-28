@@ -3,7 +3,7 @@ import time
 import os.path as op
 import logging
 import random
-from pymongo.objectid import ObjectId
+from bson.objectid import ObjectId
 import tornado.web
 import tornadio.router
 
