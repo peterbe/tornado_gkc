@@ -383,12 +383,11 @@ var Gossip = (function() {
 var socket
 , dead_battle = false
 , confirm_exit = true
-, has_connected = false
 , still_alive_interval
 ;
 
 $(function() {
-  socket = new io.Socket(null, {port: CONFIG.SOCKET_PORT, rememberTransport: false});
+  socket = new io.Socket(CONFIG.SOCKET_HOST, {port: CONFIG.SOCKET_PORT, rememberTransport: false});
 
 
   var waiting_message_interval = setInterval(function() {
@@ -400,21 +399,8 @@ $(function() {
   }, 1000);
 
   socket.on('connect', function() {
-      /*
-       * Commented out because it breaks things horribly.
-       * It would be better if re-connection just worked without
-       * creating a new battle.
-      if (has_connected) {
-         // don't allow it to re-connect if
-         $('#error_warning').show();
-         $('#error_warning pre').text("Re-connected");
-         dead_battle = true;
-         $(window).unbind('beforeunload');
-         return;
-      } else {
-         has_connected = true;
-      }
-       */
+
+     send({auth_initiate: {user_id: CONFIG.user_id, rules:CONFIG.rules}});
 
      clearInterval(waiting_message_interval);
      $('#waiting .message').text('Waiting for an opponent');
