@@ -52,6 +52,9 @@ THUMBNAIL_DIRECTORY = path('static/thumbnails')
 
 DEFAULT_WIDGET_CACHE_TIME = 20 # seconds
 
+SOCKET_HOST = 'socket.kwissle.com'
+SOCKET_PORT = 80
+
 try:
     from local_settings import *
 except ImportError:

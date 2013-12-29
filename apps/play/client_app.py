@@ -63,9 +63,11 @@ class Client(tornadio.SocketConnection):
             self.send(dict(error={'message': 'Unable to find login information. Try reloading',
                                   'code': errors.ERROR_NOT_LOGGED_IN}))
             return
-        cookie_parser = CookieParser(request)
-        user_id = cookie_parser.get_secure_cookie('user')
-        rules = cookie_parser.get_secure_cookie('rules')
+
+    def _auth_initiate(self, user_id, rules):
+        #cookie_parser = CookieParser(request)
+        #user_id = cookie_parser.get_secure_cookie('user')
+        #rules = cookie_parser.get_secure_cookie('rules')
 
         if rules:
             rules = self.db.Rules.collection.one({'_id': ObjectId(rules)})
@@ -138,6 +140,13 @@ class Client(tornadio.SocketConnection):
     def on_message(self, message, client=None):
         if client is None:
             client = self
+
+        if message.get('auth_initiate'):
+            user_id = message['auth_initiate']['user_id']
+            rules = message['auth_initiate'].get('rules')
+            self._auth_initiate(user_id, rules)
+            return
+
         #print "<--", repr(message)
         if not hasattr(client, 'user_id'):
             return

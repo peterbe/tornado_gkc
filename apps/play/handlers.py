@@ -116,8 +116,11 @@ class PlayHandler(BasePlayHandler):
         options = self.get_base_options()
         user = self.get_current_user()
         user_settings = self.get_user_settings(user)
+        user_id = self.get_secure_cookie("user")
         config = {
-          'SOCKET_PORT': 8888,
+          'user_id': user_id,
+          'SOCKET_HOST': settings.SOCKET_HOST,
+          'SOCKET_PORT': settings.SOCKET_PORT,
           'HIGHSCORE_URL': '/play/highscore/',#XXX replace with reverse_url()
           'HOMEPAGE_URL': '/',
           'DEBUG': self.application.settings['debug'],
